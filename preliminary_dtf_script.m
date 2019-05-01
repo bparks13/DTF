@@ -190,6 +190,8 @@ ind_trial=ind_rest(1):ind_right(1);
 oneTrial_vim=vim(ind_trial);
 oneTrial_cort=cort(ind_trial);
 
+x=[oneTrial_vim,oneTrial_cort];
+
 %% Calculate the MVAR model
 
 numSeries=2;
@@ -261,7 +263,7 @@ for i=1:nFreqs
 %     end
     tmp_pdc(:,:,i)=I-reshape(sum(bsxfun(@times,reshape(AR,numSeries^2,modelOrder),...
         exp(-(2*pi*1i/fs)*(1:modelOrder)*freqRange(i))),2),numSeries,numSeries);
-% This is the matrix calculation from SIFT, unverified
+% This is the matrix calculation from SIFT
 end
 
 % Calculate H from the inverse of the PDC above
