@@ -16,7 +16,7 @@ clear; close all; clc;
 
 %% Test whiteness
 
-h=test_model(E,x);
+h=test_model(E,length(x));
 
 if h
     disp('WARNING: Null hypothesis of uncorrelated errors rejected.')
@@ -31,4 +31,6 @@ gamma=dtf(estMdl,freqRange,fs);
 %% Plot
 
 labels={'Vim','Cortex'};
-plot_connectivity(gamma,freqRange,labels)
+plot_connectivity(gamma,x,freqRange,labels)
+
+
