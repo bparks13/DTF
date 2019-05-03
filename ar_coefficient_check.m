@@ -4,4 +4,4 @@
 truth_model=ar(1).estMdl;
 
 numperiods=length(x)-truth_model.P*2;
-Y=forecast(truth_model,numperiods,x(1:truth_model.P*2,:,1));
+Y=forecast(truth_model,numperiods,x(:,:,1));

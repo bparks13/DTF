@@ -8,19 +8,28 @@ CCC;
 %% Load all trials
 
 FILE='\\gunduz-lab.bme.ufl.edu\Study_ET_Closed_Loop\ET_CL_004\2018_06_20\preproc\run5.mat';
-channels=[7,6;4,3];
-labels={'Vim (2-1)','Cortex (3-2)'};
+channels=[8,7;4,3;2,1];
+labels={'Vim (3-2)','Cortex (3-2)','Cortex (1-0)'};
 condition=1; % 1 == Rest
 
-order_lp=8;
-cutoff_lp=200;
-[num_lp,den_lp]=CreateLPF_butter(fs,order_lp,cutoff_lp);
+order_notch=4;
+cutoff_notch=[54,66;114,126;176,184;236,244];
 
-filtering=struct('lpf',[]);
+filtering=struct('notch',[]);
+
+for i=1:length(cutoff_notch)
+    [filtering.notch(i).num,filtering.notch(i).den]=CreateBSF_butter(2400,order_notch,cutoff_notch(i,:));
+end
+
+order_lp=4;
+cutoff_lp=800;
+[num_lp,den_lp]=CreateLPF_butter(2400,order_lp,cutoff_lp);
+
 filtering.lpf.num=num_lp;
 filtering.lpf.den=den_lp;
 
 [x,fs]=load_data(FILE,channels,condition,filtering);
+[x_all,~]=load_data(FILE,channels,[],filtering);
 
 numTrials=size(x,3);
 numChannels=length(channels);
@@ -32,24 +41,29 @@ res=struct('E',[]); % residuals (E from estimate)
 crit=struct('BIC',[]);
 
 for i=1:numTrials
+    fprintf('%d - ',i);
     [ar(i).estMdl,res(i).E,crit(i).BIC]=mvar(squeeze(x(:,:,i)));
 end
 
 %% Test whiteness
 
-h=ones(numTrials,1);
+h=ones(numTrials,numChannels);
+pVal=zeros(numTrials,numChannels);
 
 for i=1:numTrials
-    h(i)=test_model(res(i).E,length(x(:,:,i)));
+    [pass,h(i,:),pVal(i,:)]=test_model(res(i).E,length(x(:,:,i)));
     
-    if h(i)
+    if ~pass
         fprintf('WARNING: Null hypothesis of uncorrelated errors rejected for trial %d\n',i);
+        for j=1:numChannels
+            fprintf('\t%s: h = %d with p = %.4f\n',labels{j},h(i,j),pVal(i,j));
+        end
     end
 end
 
 %% Calculate DTF
 
-freqRange=2:100;
+freqRange=2:50;
 
 gamma=zeros(numChannels,numChannels,length(freqRange),numTrials);
 
@@ -86,3 +100,8 @@ config.seriesType=3;
 config.hFig=figure;
 
 plot_connectivity(avg_gamma,avg_psd,freqRange,labels,config);
+
+%% Save a file containing relevant information
+
+save('ET_CL_004__2018_06_20_5','ar','avg_gamma','avg_psd','condition','crit','FILE','freqRange',...
+    'fs','gamma','h','labels','res','x');

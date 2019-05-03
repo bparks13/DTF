@@ -39,13 +39,13 @@ data=load(file);
 
 fs=data.datastorage.src.LFP.Fs;
 
-tmp_x=zeros(size(data.datastorage.src.LFP.data,1),length(channels));
+tmp_x=zeros(size(data.datastorage.src.LFP.data,1)-1,length(channels));
 
 numChannels=length(channels);
 
-if length(channels) > 1
+if size(channels,2) > 1
     for i=1:numChannels
-        tmp_x(:,i)=data.datastorage.src.LFP.data(:,channels(i,1))-data.datastorage.src.LFP.data(:,channels(i,2));
+        tmp_x(:,i)=data.datastorage.src.LFP.data(1:end-1,channels(i,1))-data.datastorage.src.LFP.data(1:end-1,channels(i,2));
     end
 else
     for i=1:numChannels
@@ -54,7 +54,7 @@ else
 end
 
 order_hp=4;
-cutoff_hp=1;
+cutoff_hp=2;
 [num_hp,den_hp]=CreateHPF_butter(fs,order_hp,cutoff_hp);
 
 for i=1:numChannels
@@ -71,8 +71,7 @@ for i=1:numChannels
     tmp_x(:,i)=filtfilt(num_comb,den_comb,tmp_x(:,i));
 end
 
-%%% Add in flexible filtering parameters from the filtering struct here. Only defaults for
-%%% now
+% Flexible filtering parameters from the filtering struct 
 
 if nargin > 3 && isstruct(filtering)
     if isfield(filtering,'lpf')
@@ -80,6 +79,21 @@ if nargin > 3 && isstruct(filtering)
             tmp_x(:,i)=filtfilt(filtering.lpf.num,filtering.lpf.den,tmp_x(:,i));
         end
     end
+    
+    if isfield(filtering,'notch')
+        for i=1:length(filtering.notch)
+            for j=1:numChannels
+                tmp_x(:,j)=filtfilt(filtering.notch(i).num,filtering.notch(i).den,tmp_x(:,j));
+            end
+        end
+    end
+end
+
+% If no condition is given (condition is empty), return the whole signal
+
+if isempty(condition)
+    x=tmp_x;
+    return
 end
 
 % Extract all trials matching 'condition'

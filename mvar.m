@@ -17,7 +17,8 @@ function [estMdl,E,criterion]=mvar(x,config)
 %    - estMdl: Output from varm and estimate, containing the estimated AR model
 %       coefficients, among other things
 %    - E: Residuals of the model fit, used for testing the whiteness of the model. Size is
-%    
+%       [(n - o) x s], where n is the number of samples, o is the model order, and s is
+%       the number of series
 %    - criterion: Optional output, contains the information criterion chosen in config
 %
 % See also: varm, estimate, summarize, test_model
