@@ -8,8 +8,8 @@ CCC;
 %% Load all trials
 
 FILE='\\gunduz-lab.bme.ufl.edu\Study_ET_Closed_Loop\ET_CL_004\2018_06_20\preproc\run5.mat';
-channels=[8,7;4,3;2,1];
-labels={'Vim (3-2)','Cortex (3-2)','Cortex (1-0)'};
+channels=[8,7;6,5;4,3;2,1];
+labels={'Vim (3-2)','Vim (1-0)','Cortex (3-2)','Cort (1-0)'};
 condition=1; % 1 == Rest
 
 order_notch=4;
@@ -20,13 +20,6 @@ filtering=struct('notch',[]);
 for i=1:length(cutoff_notch)
     [filtering.notch(i).num,filtering.notch(i).den]=CreateBSF_butter(2400,order_notch,cutoff_notch(i,:));
 end
-
-order_lp=4;
-cutoff_lp=800;
-[num_lp,den_lp]=CreateLPF_butter(2400,order_lp,cutoff_lp);
-
-filtering.lpf.num=num_lp;
-filtering.lpf.den=den_lp;
 
 [x,fs]=load_data(FILE,channels,condition,filtering);
 [x_all,~]=load_data(FILE,channels,[],filtering);
@@ -103,5 +96,7 @@ plot_connectivity(avg_gamma,avg_psd,freqRange,labels,config);
 
 %% Save a file containing relevant information
 
-save('ET_CL_004__2018_06_20_5','ar','avg_gamma','avg_psd','condition','crit','FILE','freqRange',...
+save('ET_CL_004__2018_06_20_5__ONECOND_ONECOMB','ar','avg_gamma','avg_psd','condition','crit','FILE','freqRange',...
     'fs','gamma','h','labels','res','x');
+
+

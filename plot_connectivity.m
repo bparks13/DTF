@@ -18,6 +18,8 @@ function plot_connectivity(connectivity,series,freqRange,labels,config)
 %           [default]), 2 (AR coefficients), 3 (pre-calculated PSD)
 %       fs: Sampling frequency in Hz. If not defined, assumed to be 2400 Hz
 %       hFig: Handle to an existing figure, does not create a new figure anymore
+%       figTitle: String containing a figure title, containing for example the condition
+%           being tested, or the patient/date/run combo, or all of the above.
 %
 %   Outputs:
 %    - Figure containing subplots with PSD on the diagonal, and DTF connectivity
@@ -30,6 +32,7 @@ fs=2400;
 bool_calcOrigPSD=true;
 bool_calcARPSD=false;
 bool_newFig=true;
+figTitle='';
 
 if nargin > 4 && isstruct(config)
     if isfield(config,'fs')
@@ -52,6 +55,10 @@ if nargin > 4 && isstruct(config)
     
     if isfield(config,'hFig')
         bool_newFig=false;
+    end
+    
+    if isfield(config,'figTitle')
+        figTitle=config.figTitle;
     end
 end
 
@@ -94,5 +101,10 @@ end
 linkaxes(ax_diag); xlim([freqRange(1) freqRange(end)]); 
 subplot(numSeries,numSeries,numSeries); linkaxes(ax_offdiag); 
 xlim([freqRange(1) freqRange(end)]); ylim([0 1]);
+
+if ~isempty(figTitle)
+    tmp_hFig=gcf;
+    tmp_hFig.Name=figTitle;
+end
 
 end

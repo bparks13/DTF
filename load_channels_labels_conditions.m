@@ -1,5 +1,5 @@
-function [channels,labels]=load_channels_labels_conditions(patient,record_date,run_id,config)
-%% [channels,labels]=load_channels_and_labels(patient,record_date,run_id,config)
+function [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(patient,record_date,run_id,config)
+%% [channels,labels,conditions,cond_labels]=load_channels_and_labels(patient,record_date,run_id,config)
 %
 %  Given the relevant information, return the channels and labels corresponding to those
 %  channels. Additional options can be given using 'config'.
@@ -11,7 +11,7 @@ function [channels,labels]=load_channels_labels_conditions(patient,record_date,r
 %    - config: Optional struct input that allows for additional parameters to be given
 %       default: Bool denoting whether to use the predetermined set of channels and labels
 %           or not. Default value is true; if true, overrides all following fields even if
-%           they exist
+%           they exist. Must be defined as false for any preset/custom inputs to be used
 %       preset: Int defining a preset channels/labels combination. Will have a different
 %           meaning depending on the specific patient/date/run combination used. If this
 %           is defined it will override the following fields even if they exist. 
@@ -31,6 +31,9 @@ function [channels,labels]=load_channels_labels_conditions(patient,record_date,r
 %       If monopolar channels are given, it lists the structure and number (i.e. Vim0), if
 %       bipolar channels are given, it lists the structure and the order of subtraction
 %       (i.e. Vim (3-2)).
+%    - conditions: Vector containing all possible conditions available for this specific
+%       set of inputs. Size is [1 x m], where m is the number of conditions returned
+%    - cond_labels: Cell array consisting of strings denoting what each condition is
 %
 
 if nargin == 3
@@ -53,7 +56,7 @@ else
         
         if isfield(config,'custom')
             bool_custom=any(config.custom);
-            channels=config.custom;
+            channels=config.custom; %#ok<NASGU>
         else
             bool_custom=false;
         end
@@ -67,6 +70,8 @@ if bool_default
             if strcmp(run_id,'run5')
                 channels=[8,7;6,5;4,3;2,1];
                 labels={'Vim (3-2)','Vim (1-0)','Cort (3-2)','Cort (1-0)'};
+                conditions=[1,2,3,4,5];
+                cond_labels={'Rest','CueRight','CueLeft','MoveRight','MoveLeft'};
                 return
             else
                 disp('WARNING: Invalid run number given. Please set channels/labels for this combination');
@@ -88,5 +93,7 @@ end
 
 channels=[];
 labels=[];
+conditions=[];
+cond_labels=[];
 
 end

@@ -11,8 +11,8 @@ function [x,fs]=load_data(file,channels,condition,filtering)
 %       conditions depending on the specific file opened. Ensure that the value given
 %       matches the file given
 %    - channels: Vector of ints defining which channels to extract. If it is a matrix, the
-%       bipolar combination of channels is taken, with the first column channel subtracted
-%       from the second column channel
+%       bipolar combination of channels is taken, with the second column channel subtracted
+%       from the first column channel. Size is [c x 2], where c is the number of channels
 %    - filtering: Struct containing optional additional filtering parameters
 %       hpf: If defined, should be a struct containing num and den. Default is to use a
 %           4th order butterworth filter, with a cutoff of 1 Hz
@@ -32,8 +32,8 @@ function [x,fs]=load_data(file,channels,condition,filtering)
 %  See also: varm, estimate, mvar, dtf, test_model, plot_connectivity
 %
 
-% example conditions: for ET_CL_04, 2018_06_20: 1 (rest), 2 (cue right), 3 (cue left), 4 (
-% move right), 5 (move left)
+% example conditions: for ET_CL_04, 2018_06_20, run 5: 1 (rest), 2 (cue right), 3 (cue 
+% left), 4 (move right), 5 (move left)
 
 data=load(file);
 
@@ -91,7 +91,7 @@ end
 
 % If no condition is given (condition is empty), return the whole signal
 
-if isempty(condition)
+if isempty(condition) || ~any(condition)
     x=tmp_x;
     return
 end
