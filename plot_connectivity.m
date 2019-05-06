@@ -107,4 +107,6 @@ if ~isempty(figTitle)
     tmp_hFig.Name=figTitle;
 end
 
+drawnow;
+
 end

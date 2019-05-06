@@ -2,7 +2,7 @@
 %
 %  Collect all connectivity values for all conditions in one run of one patient
 %
-%   See also: mvar, plot_connectivity, dtf, load_data
+%  See also: mvar, plot_connectivity, dtf, load_data
 
 CCC;
 
@@ -12,18 +12,21 @@ PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
 PATIENT_ID='ET_CL_004';
 RECORDING_DATE='2018_06_20';
 MIDPATH='preproc';
-RUN_ID='run5';
-ADDON='__ALLCOND_ALLCOMB';
+RUN_ID='run5_fs600';
+ADDON='__ALLCOND_ALLCOMB_fs600';
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
+% config=struct('default',false,'preset',1);
 [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID);
-% channels=[8,7;6,5;4,3;2,1];
-% labels={'Vim (3-2)','Vim (1-0)','Cort (3-2)','Cort (1-0)'};
-% conditions=[1,2,3,4,5]; % 1 == Rest, 2 == cue right, 3 == cue left, 4 == move right, 5 == move left
-% cond_labels={'Rest','CueRight','CueLeft','MoveRight','MoveLeft'};
+
+if isempty(channels) || isempty(labels) || isempty(conditions) || isempty(cond_labels)
+    return
+end
+
 fs_filtering=extract_sampling_frequency(FILE);
 
 order_notch=4;
-cutoff_notch=[54,66;114,126;176,184;236,244];
+% cutoff_notch=[54,66;114,126;176,184;236,244];
+cutoff_notch=[54,66;114,126];
 
 filtering=struct('notch',[]);
 
@@ -60,8 +63,8 @@ for j=1:numConditions
     %% Calculate all MVAR models
 
     for i=1:numTrials
-        fprintf('%d - ',i);
-        [ar(i).(currCond).estMdl,res(i).(currCond).E,crit(i).(currCond).BIC]=mvar(squeeze(x.(currCond)(:,:,i)));
+        fprintf('%d/%d - ',i,numTrials);
+        [ar.(currCond)(i).estMdl,res.(currCond)(i).E,crit.(currCond)(i).BIC]=mvar(squeeze(x.(currCond)(:,:,i)));
     end
 
     %% Test whiteness
@@ -71,7 +74,7 @@ for j=1:numConditions
     pass.(currCond)=0;
 
     for i=1:numTrials
-        [pass.(currCond),h.(currCond)(i,:),pVal.(currCond)(i,:)]=test_model(res(i).(currCond).E,length(x.(currCond)(:,:,i)));
+        [pass.(currCond),h.(currCond)(i,:),pVal.(currCond)(i,:)]=test_model(res.(currCond)(i).E,length(x.(currCond)(:,:,i)));
 
         if ~pass.(currCond)
             fprintf('WARNING: Null hypothesis of uncorrelated errors rejected for trial %d\n',i);
@@ -86,7 +89,7 @@ for j=1:numConditions
     gamma.(currCond)=zeros(numChannels,numChannels,length(freqRange),numTrials);
 
     for i=1:numTrials
-        gamma.(currCond)(:,:,:,i)=dtf(ar(i).(currCond).estMdl,freqRange,fs);
+        gamma.(currCond)(:,:,:,i)=dtf(ar.(currCond)(i).estMdl,freqRange,fs);
     end
 
     %% Plot all connectivities and PSDs stacked
@@ -99,7 +102,7 @@ for j=1:numConditions
         plot_connectivity(gamma.(currCond)(:,:,:,i),squeeze(x.(currCond)(:,:,i)),freqRange,labels,config);
     end
 
-    %% Calculate and plot averages of connectivities and PSDs
+    %% Calculate averages of connectivities and PSDs
 
     avg_psd.(currCond)=zeros(length(freqRange),numChannels);
     avg_gamma.(currCond)=zeros(numChannels,numChannels,length(freqRange));
@@ -115,15 +118,38 @@ for j=1:numConditions
     avg_psd.(currCond)=avg_psd.(currCond)/numTrials;
     avg_gamma.(currCond)=avg_gamma.(currCond)/numTrials;
 
+    %% Plot averages of connectivities and PSDs
+    
     config.seriesType=3;
     config.hFig=figure;
     config.figTitle=sprintf('%s, %s, %s - %s: Average',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
 
     plot_connectivity(avg_gamma.(currCond),avg_psd.(currCond),freqRange,labels,config);
+    
+    %% Plot the criterion of all the trials
+    
+    config=struct;
+    
+    config.hFig=figure;
+    
+    for i=1:numTrials
+        plot_criterion(crit.(currCond)(i).BIC,config);
+    end
 end
 
-save(fullfile(pwd,sprintf('%s__%s__%s%s.mat',PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON)),'ar',...
-    'avg_gamma','avg_psd','condition','crit','FILE','freqRange','fs','gamma','h','labels','res','x');
+%% Save relevant variables
+
+count=1;
+
+newFile=fullfile(pwd,sprintf('%s__%s__%s%s.mat',PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON));
+
+while exist(newFile,'file')
+    newFile=fullfile(pwd,sprintf('%s__%s__%s%s_(%d).mat',PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON,count));
+    count=count+1;
+end
+
+save(newFile,'ar','avg_gamma','avg_psd','channels','conditions','cond_labels','crit',...
+    'FILE','freqRange','filtering','fs','gamma','h','labels','res','x','x_all');
 
 
 

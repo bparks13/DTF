@@ -67,7 +67,7 @@ if bool_default
     % set all default parameters here for patients/dates/runs
     if strcmp(patient,'ET_CL_004')
         if strcmp(record_date,'2018_06_20')
-            if strcmp(run_id,'run5')
+            if strcmp(run_id,'run5') || strcmp(run_id,'run5_fs600')
                 channels=[8,7;6,5;4,3;2,1];
                 labels={'Vim (3-2)','Vim (1-0)','Cort (3-2)','Cort (1-0)'};
                 conditions=[1,2,3,4,5];
@@ -85,6 +85,25 @@ if bool_default
 elseif ~isempty(preset_value)
     % create some presets here as I need them; this is not expected to be a very large
     % section, but used for testing specific subsets/combinations of channels
+    if strcmp(patient,'ET_CL_004')
+        if strcmp(record_date,'2018_06_20')
+            if strcmp(run_id,'run5')
+                if preset_value == 1
+                    channels=[6,5;4,3];
+                    labels={'Vim (1-0)','Cort (3-2)'};
+                    conditions=[1];
+                    cond_labels={'Rest','CueRight','CueLeft','MoveRight','MoveLeft'};
+                    return
+                end
+            else
+                disp('WARNING: Invalid run number given. Please set channels/labels for this combination');
+            end
+        else
+            disp('WARNING: Invalid recording date given. Please set channels/labels for this combination');
+        end
+    else
+        disp('WARNING: Invalid patient ID given. Please set channels/labels for this combination');
+    end
 elseif bool_custom
     % define a way to intake channels themselves
 else
