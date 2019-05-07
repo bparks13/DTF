@@ -1,17 +1,18 @@
-function [Theta_hat,SigmaZ_hat,sigma_hat]=estimate_ar_coefficients(X,m)
-%% [Theta_hat,SigmaZ_hat,sigma_hat]=estimate_ar_coefficients(X,m)
+function [AR,C]=estimate_ar_coefficients(X,m)
+%% [AR,SigmaZ_hat]=estimate_ar_coefficients(X,m)
 %
-%  Given a signal and the model order desired, returns the AR coefficients (Theta_hat) and
-%  the variance of the error term from the estimated parameters (SigmaZ_hat)
+%  Given a signal and the model order desired, returns the AR coefficients (AR) and
+%  the variance of the error term from the estimated parameters (C)
 %
 %   Inputs:
 %    - X: Vector of signals to estimate. Size is [N x 1], where N is the number of samples
 %    - m: AR model order to estimate
 %
 %   Outputs:
-%    - Theta_hat: Estimated AR coefficients, size is [m x 1]
-%    - SigmaZ_hat: Estimated variance of the error term 
-%    - sigma_hat: Estimated variance of the signal (sigma_squared)
+%    - AR: Estimated AR coefficients, size is [m x 1]
+%    - C: Estimated variance of the error term 
+%
+%  See also: mvar, dtf, estimate_residuals
 %
 
 [rxx,lags] = xcov(X,m,'unbiased');
@@ -24,8 +25,8 @@ for i=1:m
     R_n(:,i) = rxx(tmpidx:tmpidx+m-1);
 end
 
-Theta_hat = R_n\r_n; % Predictor for AR coefficients
-SigmaZ_hat = rxx(lags>=0)'*[1; -Theta_hat];
-sigma_hat = rxx(idx0);
+AR = R_n\r_n; % Predictor for AR coefficients
+C = rxx(lags>=0)'*[1; -AR];
+% Sigma_hat = rxx(idx0);
 
 end

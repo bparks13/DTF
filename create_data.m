@@ -13,6 +13,9 @@ function [X]=create_data(N,m,stdZ,a)
 %
 %   Outputs:
 %    - X: Vector of signals created by the AR model. Size is [N x 1]
+%
+%  See also: mvar, estimate_ar_coeffecients, dtf, estimate_residuals
+%
 
 if nargin == 0
     N = 100000;   % Number of points
@@ -26,11 +29,13 @@ if(m ~= length(a))
     return
 end
 
-X = zeros(N,1);
+X = zeros(N+m,1);
 
 for i = m+1:N
     X(i) = sum(X(i-1:-1:i-m).*a) + stdZ.*randn(1);
 end
+
+X=X(m+1:end);
 
 
 end
