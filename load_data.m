@@ -49,7 +49,7 @@ if size(channels,2) > 1
     end
 else
     for i=1:numChannels
-        tmp_x(:,i)=data.datastorage.src.LFP.data(:,channels(i));
+        tmp_x(:,i)=data.datastorage.src.LFP.data(1:end-1,channels(i));
     end
 end
 

@@ -34,4 +34,6 @@ plot(criterion,'k-o'); hold on;
 minCritInd=find(criterion==min(criterion));
 plot(minCritInd,criterion(minCritInd),'r*');
 
+drawnow;
+
 end

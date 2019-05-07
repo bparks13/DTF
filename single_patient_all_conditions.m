@@ -12,26 +12,26 @@ PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
 PATIENT_ID='ET_CL_004';
 RECORDING_DATE='2018_06_20';
 MIDPATH='preproc';
-RUN_ID='run5_fs600';
-ADDON='__ALLCOND_ALLCOMB_fs600';
+RUN_ID='run5';
+ADDON='__ALLCOND_ALLCOMB_MONO';
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
-% config=struct('default',false,'preset',1);
-[channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID);
+config=struct('default',false,'preset',2);
+[channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID,config);
+% [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID);
 
 if isempty(channels) || isempty(labels) || isempty(conditions) || isempty(cond_labels)
     return
 end
 
-fs_filtering=extract_sampling_frequency(FILE);
+fs=extract_sampling_frequency(FILE);
 
 order_notch=4;
-% cutoff_notch=[54,66;114,126;176,184;236,244];
-cutoff_notch=[54,66;114,126];
+cutoff_notch=[54,66;114,126;176,184;236,244];
 
 filtering=struct('notch',[]);
 
 for i=1:length(cutoff_notch)
-    [filtering.notch(i).num,filtering.notch(i).den]=CreateBSF_butter(fs_filtering,order_notch,cutoff_notch(i,:));
+    [filtering.notch(i).num,filtering.notch(i).den]=CreateBSF_butter(fs,order_notch,cutoff_notch(i,:));
 end
 
 numConditions=length(conditions);

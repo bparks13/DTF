@@ -67,7 +67,7 @@ if bool_default
     % set all default parameters here for patients/dates/runs
     if strcmp(patient,'ET_CL_004')
         if strcmp(record_date,'2018_06_20')
-            if strcmp(run_id,'run5') || strcmp(run_id,'run5_fs600')
+            if strcmp(run_id,'run5') || strcmp(run_id,'run5_fs600') || strcmp(run_id,'run5_fs300')
                 channels=[8,7;6,5;4,3;2,1];
                 labels={'Vim (3-2)','Vim (1-0)','Cort (3-2)','Cort (1-0)'};
                 conditions=[1,2,3,4,5];
@@ -91,7 +91,13 @@ elseif ~isempty(preset_value)
                 if preset_value == 1
                     channels=[6,5;4,3];
                     labels={'Vim (1-0)','Cort (3-2)'};
-                    conditions=[1];
+                    conditions=1;
+                    cond_labels={'Rest','CueRight','CueLeft','MoveRight','MoveLeft'};
+                    return
+                elseif preset_value == 2
+                    channels=[8;7;6;5;4;3;2;1];
+                    labels={'Vim 3','Vim 2','Vim 1','Vim 0','Cort 3','Cort 2','Cort 1','Cort 0'};
+                    conditions=[1,2,3,4,5];
                     cond_labels={'Rest','CueRight','CueLeft','MoveRight','MoveLeft'};
                     return
                 end
