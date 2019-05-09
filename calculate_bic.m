@@ -12,6 +12,6 @@ function bic=calculate_bic(logL,modelOrder,N)
 %    - bic: Bayesian Information Criterion
 %
 
-bic=-2*logL+modelOrder*log(N);
+bic = -2 * logL + modelOrder * log(N - modelOrder);
 
 end

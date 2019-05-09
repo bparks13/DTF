@@ -1,5 +1,5 @@
-function [x,fs]=load_data(file,channels,condition,filtering)
-%% [x,fs]=load_data(file,channels,condition,filtering)
+function [x,fs,x_all]=load_data(file,channels,condition,filtering)
+%% [x,fs,x_all]=load_data(file,channels,condition,filtering)
 %
 %  Given a filename and the specific condition to take data from, returns the signal from
 %  all the trials matching that condition, and the sampling frequency used for this file.
@@ -14,13 +14,18 @@ function [x,fs]=load_data(file,channels,condition,filtering)
 %       bipolar combination of channels is taken, with the second column channel subtracted
 %       from the first column channel. Size is [c x 2], where c is the number of channels
 %    - filtering: Struct containing optional additional filtering parameters
-%       hpf: If defined, should be a struct containing num and den. Default is to use a
-%           4th order butterworth filter, with a cutoff of 1 Hz
-%       comb: If defined, should be a struct containing num and den. Default is to use a
-%           60 Hz comb filter, with a qFactor of 35
-%       lpf: If defined, should be a struct containing num and den. No default
-%       notch: If defined, should be a struct containing num and den. No default. Can
-%           contain more than one set of num and den for multiple notches
+%       hpf: If defined, should be a struct containing num and den for a high pass filter. 
+%           Default is to use a 4th order butterworth filter, with a cutoff of 1 Hz
+%       comb: If defined, should be a struct containing num and den for a comb filter. 
+%           Default is to use a 60 Hz comb filter, with a qFactor of 35
+%       lpf: If defined, should be a struct containing num and den for a low pass filter. 
+%           No default
+%       notch: If defined, should be a struct containing num and den for a notch filter. 
+%           No default. Can contain more than one set of num and den for multiple notches
+%       ma: If defined, should be an integer defining the number of samples to run
+%           through the moving average
+%       NO_FILTERING: If defined at all, skips all filtering steps except for high pass
+%           filtering, and returns the signal as is.
 %
 %   Outputs:
 %    - x: Matrix of values for all channels and all trials matching a particular
@@ -28,6 +33,8 @@ function [x,fs]=load_data(file,channels,condition,filtering)
 %       shortest length trial, c is the number of channels, and t is the number of trials
 %       for that particular condition
 %    - fs: Sampling frequency in Hz
+%    - x_all: Optional output, which is the entire timeline of the signal for the entire
+%       run
 %
 %  See also: varm, estimate, mvar, dtf, test_model, plot_connectivity
 %
@@ -39,51 +46,82 @@ data=load(file);
 
 fs=data.datastorage.src.LFP.Fs;
 
-tmp_x=zeros(size(data.datastorage.src.LFP.data,1)-1,length(channels));
+numChannels=size(channels,1);
 
-numChannels=length(channels);
+x_all=zeros(size(data.datastorage.src.LFP.data,1)-1,numChannels);
 
 if size(channels,2) > 1
     for i=1:numChannels
-        tmp_x(:,i)=data.datastorage.src.LFP.data(1:end-1,channels(i,1))-data.datastorage.src.LFP.data(1:end-1,channels(i,2));
+        x_all(:,i)=data.datastorage.src.LFP.data(1:end-1,channels(i,1))-data.datastorage.src.LFP.data(1:end-1,channels(i,2));
     end
 else
     for i=1:numChannels
-        tmp_x(:,i)=data.datastorage.src.LFP.data(1:end-1,channels(i));
+        x_all(:,i)=data.datastorage.src.LFP.data(1:end-1,channels(i));
     end
-end
-
-order_hp=4;
-cutoff_hp=2;
-[num_hp,den_hp]=CreateHPF_butter(fs,order_hp,cutoff_hp);
-
-for i=1:numChannels
-    tmp_x(:,i)=filtfilt(num_hp,den_hp,tmp_x(:,i));
-end
-
-f0=60;
-w0=f0/(fs/2);
-qFactor=35;
-bw=w0/qFactor;
-[num_comb,den_comb]=iircomb(fs/f0,bw,'notch');
-
-for i=1:numChannels
-    tmp_x(:,i)=filtfilt(num_comb,den_comb,tmp_x(:,i));
 end
 
 % Flexible filtering parameters from the filtering struct 
 
 if nargin > 3 && isstruct(filtering)
-    if isfield(filtering,'lpf')
-        for i=1:numChannels
-            tmp_x(:,i)=filtfilt(filtering.lpf.num,filtering.lpf.den,tmp_x(:,i));
+    if isfield(filtering,'NO_FILTERING')
+         if isfield(filtering,'hpf')
+            for i=1:numChannels
+                x_all(:,i)=filtfilt(filtering.hpf.num,filtering.hpf.den,x_all(:,i));
+            end
+        else
+            order_hp=4;
+            cutoff_hp=1;
+            [num_hp,den_hp]=CreateHPF_butter(fs,order_hp,cutoff_hp);
+
+            for i=1:numChannels
+                x_all(:,i)=filtfilt(num_hp,den_hp,x_all(:,i));
+            end
         end
-    end
-    
-    if isfield(filtering,'notch')
-        for i=1:length(filtering.notch)
+    else
+        if isfield(filtering,'hpf')
+            for i=1:numChannels
+                x_all(:,i)=filtfilt(filtering.hpf.num,filtering.hpf.den,x_all(:,i));
+            end
+        else
+            order_hp=4;
+            cutoff_hp=1;
+            [num_hp,den_hp]=CreateHPF_butter(fs,order_hp,cutoff_hp);
+
+            for i=1:numChannels
+                x_all(:,i)=filtfilt(num_hp,den_hp,x_all(:,i));
+            end
+        end
+        
+        f0=60;
+        w0=f0/(fs/2);
+        qFactor=35;
+        bw=w0/qFactor;
+        [num_comb,den_comb]=iircomb(fs/f0,bw,'notch');
+
+        for i=1:numChannels
+            x_all(:,i)=filtfilt(num_comb,den_comb,x_all(:,i));
+        end
+
+        if isfield(filtering,'lpf')
+            for i=1:numChannels
+                x_all(:,i)=filtfilt(filtering.lpf.num,filtering.lpf.den,x_all(:,i));
+            end
+        end
+
+        if isfield(filtering,'notch')
+            for i=1:length(filtering.notch)
+                for j=1:numChannels
+                    x_all(:,j)=filtfilt(filtering.notch(i).num,filtering.notch(i).den,x_all(:,j));
+                end
+            end
+        end
+
+        if isfield(filtering,'ma')
+            a=1;
+            b=ones(filtering.ma,1)/filtering.ma;
+
             for j=1:numChannels
-                tmp_x(:,j)=filtfilt(filtering.notch(i).num,filtering.notch(i).den,tmp_x(:,j));
+                x_all(:,j)=filter(b,a,x_all(:,j));
             end
         end
     end
@@ -92,7 +130,8 @@ end
 % If no condition is given (condition is empty), return the whole signal
 
 if isempty(condition) || ~any(condition)
-    x=tmp_x;
+    x=x_all;
+    x_all=[];
     return
 end
 
@@ -131,7 +170,9 @@ minLength=min(ind_curr_end-ind_curr_start);
 x=zeros(minLength,numChannels,numTrials);
 
 for i=1:numTrials
-    x(:,:,i)=tmp_x(ind_curr_start(i):ind_curr_start(i)+minLength-1,:);
+    x(:,:,i)=x_all(ind_curr_start(i):ind_curr_start(i)+minLength-1,:);
 end
+
+
 
 end

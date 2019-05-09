@@ -12,14 +12,25 @@ channels=[8,7;6,5;4,3;2,1];
 labels={'Vim (3-2)','Vim (1-0)','Cortex (3-2)','Cort (1-0)'};
 condition=1; % 1 == Rest
 
+fs=extract_sampling_frequency(FILE);
+
 order_notch=4;
 cutoff_notch=[54,66;114,126;176,184;236,244];
 
-filtering=struct('notch',[]);
+filtering=struct;
 
 for i=1:length(cutoff_notch)
-    [filtering.notch(i).num,filtering.notch(i).den]=CreateBSF_butter(2400,order_notch,cutoff_notch(i,:));
+    [filtering.notch(i).num,filtering.notch(i).den]=CreateBSF_butter(fs,order_notch,cutoff_notch(i,:));
 end
+
+order_hp=4;
+cutoff_hp=6;
+[num_hp,den_hp]=CreateHPF_butter(fs,order_hp,cutoff_hp);
+
+filtering.hpf.num=num_hp;
+filtering.hpf.den=den_hp;
+
+filtering.ma=4;
 
 [x,fs]=load_data(FILE,channels,condition,filtering);
 [x_all,~]=load_data(FILE,channels,[],filtering);

@@ -54,8 +54,7 @@ for j=1:numConditions
     
     fprintf('Beginning condition ''%s''\n',currCond);
     
-    [x.(currCond),fs]=load_data(FILE,channels,conditions(j),filtering);
-    [x_all.(currCond),~]=load_data(FILE,channels,[],filtering);
+    [x.(currCond),fs,x_all.(currCond)]=load_data(FILE,channels,conditions(j),filtering);
 
     numTrials=size(x.(currCond),3);
     numChannels=length(channels);
