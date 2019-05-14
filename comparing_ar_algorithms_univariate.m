@@ -1,41 +1,40 @@
 CCC;
 
-%% Create a model
+%% Create a univariate model
 
-% N=100000;
-% modelOrder=6;
-% stdZ=1;
-% a=[0.5,0.3,0.1,0.05,0.01,0.005]';
-% X=create_data(N,modelOrder,stdZ,a); % parameters are automatically: 100000, 2, 2, [0.5 0.2]'
+N=10000;
+modelOrder=2;
+stdZ=2;
+[X,a]=create_data(); % parameters are automatically: 100000, 2, 2, [0.5 0.2]'
 
-FILE='\\gunduz-lab.bme.ufl.edu\Study_ET_Closed_Loop\ET_CL_004\2018_06_20\preproc\run5.mat';
-
-% fs=extract_sampling_frequency(FILE);
+% FILE='\\gunduz-lab.bme.ufl.edu\Study_ET_Closed_Loop\ET_CL_004\2018_06_20\preproc\run5.mat';
 % 
-% order_notch=4;
-% cutoff_notch=[54,66;114,126;176,184;236,244];
-
-filtering=struct('NO_FILTERING',true);
-
-% for i=1:length(cutoff_notch)
-%     [filtering.notch(i).num,filtering.notch(i).den]=CreateBSF_butter(fs,order_notch,cutoff_notch(i,:));
-% end
+% % fs=extract_sampling_frequency(FILE);
+% % 
+% % order_notch=4;
+% % cutoff_notch=[54,66;114,126;176,184;236,244];
 % 
-% order_hp=4;
-% cutoff_hp=6;
-% [num_hp,den_hp]=CreateHPF_butter(fs,order_hp,cutoff_hp);
+% filtering=struct('NO_FILTERING',true);
 % 
-% filtering.hpf.num=num_hp;
-% filtering.hpf.den=den_hp;
+% % for i=1:length(cutoff_notch)
+% %     [filtering.notch(i).num,filtering.notch(i).den]=CreateBSF_butter(fs,order_notch,cutoff_notch(i,:));
+% % end
+% % 
+% % order_hp=4;
+% % cutoff_hp=6;
+% % [num_hp,den_hp]=CreateHPF_butter(fs,order_hp,cutoff_hp);
+% % 
+% % filtering.hpf.num=num_hp;
+% % filtering.hpf.den=den_hp;
+% % 
+% % filtering.ma=20;
 % 
-% filtering.ma=20;
-
-X=load_data(FILE,[2,1],1,filtering);
-X=X(:,1,1);
-
-modelOrder=30;
-N=length(X);
-a=nan(modelOrder,1);
+% X=load_data(FILE,[2,1],1,filtering);
+% X=X(:,1,1);
+% 
+% modelOrder=30;
+% N=length(X);
+% a=nan(modelOrder,1);
 
 %% Calculate model coefficients and estimated variances using Yule Walker
 

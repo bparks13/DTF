@@ -1,5 +1,5 @@
-function [estMdl,E,criterion]=mvar(x,config)
-%% [estMdl,E,criterion]=mvar(x,config)
+function [mdl,E,criterion]=mvar(x,config)
+%% [mdl,E,criterion]=mvar(x,config)
 %  
 %  Given a matrix of signals, and optionally a configuration struct, construct a
 %  multi-variate autoregressive model of the signals.
@@ -14,14 +14,20 @@ function [estMdl,E,criterion]=mvar(x,config)
 %       [default], 2 (model order and criterion tested)
 %
 %   Outputs:
-%    - estMdl: Output from varm and estimate, containing the estimated AR model
-%       coefficients, among other things
+%    - mdl: Struct containing the AR model fit for the data given, from Yule-Walker
+%       equations
+%       AR: Autoregressive coefficients as found by estimate_ar_coefficients
+%       C: Covariance matrx as calculated by the Yule-Walker equations
+%       logL: Log-likelihood of the model fit, used for calculating information criterion
+%       order: Model order that is found to have the lowest information criterion
+%       numSeries: Number of series in the model
 %    - E: Residuals of the model fit, used for testing the whiteness of the model. Size is
 %       [(n - o) x s], where n is the number of samples, o is the model order, and s is
 %       the number of series
 %    - criterion: Optional output, contains the information criterion chosen in config
 %
-% See also: varm, estimate, summarize, test_model
+% See also: estimate_ar_coefficients, estimate_residuals, calculate_loglikelihood,
+% calculate_bic
 %
 
 % Defaults
@@ -44,32 +50,46 @@ if nargin > 1 && isstruct(config)
 end
 
 numSeries=size(x,2);
+numOrders=length(orderRange);
+numSamples=length(x);
 
-criterion=zeros(max(orderRange),1);
+criterion=zeros(numOrders,1);
 
 minCrit=inf;
+
+mdl=struct('AR',[],'C',[],'logL',[],'order',[],'numSeries',numSeries);
 
 if output ~= 0
     fprintf('Beginning order estimation:\n');
 end
 
-for i=orderRange
-    mdl=varm(numSeries,i);
-
-    [estMdl,~,~,~]=estimate(mdl,x);
-
-    results=summarize(estMdl);
+for i=1:numOrders
+%     mdl=varm(numSeries,i);
+%     [estMdl,~,~,~]=estimate(mdl,x);
+%     results=summarize(estMdl);
+    [AR,C]=estimate_ar_coefficients(x,orderRange(i));
+    E=estimate_residuals(x,AR);
+    logL=calculate_loglikelihood(E,C);
+    criterion(i)=calculate_bic(logL,orderRange(i),numSamples-orderRange(i));
     
     if strcmp(crit,'bic')
-        criterion(i)=results.BIC;
-        if results.BIC < minCrit
-            minCrit=results.BIC;
+        if criterion(i) < minCrit
+            minCrit=criterion(i);
+            mdl.AR=AR;
+            mdl.C=C;
+            mdl.logL=logL;
+            mdl.order=orderRange(i);
         end
+%         criterion(i)=results.BIC;
+%         if results.BIC < minCrit
+%             minCrit=results.BIC;
+%         end
     elseif strcmp(crit,'aic')
-        criterion(i)=results.AIC;
-        if results.AIC < minCrit
-            minCrit=results.AIC;
-        end
+        disp('WARNING: No AIC calculation implemented. No criterion tested.');
+%         criterion(i)=results.AIC;
+%         if results.AIC < minCrit
+%             minCrit=results.AIC;
+%         end
     end
     
     if output == 1
@@ -79,14 +99,12 @@ for i=orderRange
     end
 end
 
-modelOrder=find(criterion==minCrit);
-
 if output ~= 0
-    fprintf('\nDone: Minimum %s found at model order %d\n',crit,modelOrder);
+    fprintf('\nDone: Minimum %s found at model order %d\n',crit,mdl.order);
 end
 
-mdl=varm(numSeries,modelOrder);
-[estMdl,~,~,E]=estimate(mdl,x);
+% mdl=varm(numSeries,modelOrder);
+% [estMdl,~,~,E]=estimate(mdl,x);
 
 end
 

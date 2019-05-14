@@ -3,9 +3,9 @@ CCC;
 %% Create ground-truth models
 
 N = 10000;                 % Number of samples
-m = 30;                      % Model order
+m = 1;                      % Model order
 stdZ = 1;                   % Standard deviation of the error term
-d = 8;                      % Number of time series
+d = 2;                      % Number of time series
 % A = [0.5,0.001;0.003,0.4];  % MAR coefficients. Should be [d x d x m]
 A = zeros(d,d,m);
 I = eye(d);

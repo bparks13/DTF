@@ -27,7 +27,8 @@ function [pass,h,pVal]=test_model(E,len,config)
 %    - h: Hypothesis rejection values of each series
 %    - pVal: P-value of the test for each series
 %
-% See also: varm, estimate, lbqtest, mvar
+% See also: mvar, estimate_ar_coefficients, estimate_residuals, calculate_loglikelihood,
+%   calculate_bic
 %
 
 if length(len) > 1

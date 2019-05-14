@@ -102,4 +102,22 @@ bic=calculate_bic(logL,modelOrder,N-modelOrder);
 
 [pass,h,pVal]=test_model(E,N);
 
+%% Code for visualizing multivariate data
+
+t=(0:length(X)-1)/2400;
+
+figure;
+subplot(211);
+plot(t,X(:,1),'b'); hold on;
+plot(t(modelOrder+1:end),x_hat(:,1),'g');
+plot(t(modelOrder+1:end),E(:,1),'r');
+legend('X','x-hat','E');
+
+subplot(212);
+plot(t,X(:,2),'b'); hold on;
+plot(t(modelOrder+1:end),x_hat(:,2),'g');
+plot(t(modelOrder+1:end),E(:,2),'r');
+legend('X','x-hat','E');
+
+
 
