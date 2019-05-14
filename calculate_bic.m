@@ -14,6 +14,7 @@ function bic=calculate_bic(logL,modelOrder,N)
 %  See also: calculate_loglikelihood, estimate_residuals, estimate_ar_coefficients
 %
 
-bic = -2 * logL + modelOrder * log(N - modelOrder);
+% bic = -2 * logL + modelOrder * log(N - modelOrder);
+bic = 2*logL + 2*(modelOrder+1) / N / log(N);
 
 end

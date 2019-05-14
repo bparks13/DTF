@@ -92,13 +92,19 @@ elseif ~isempty(preset_value)
                     channels=[6,5;4,3];
                     labels={'Vim (1-0)','Cort (3-2)'};
                     conditions=1;
-                    cond_labels={'Rest','CueRight','CueLeft','MoveRight','MoveLeft'};
+                    cond_labels={'Rest'};
                     return
                 elseif preset_value == 2
                     channels=[8;7;6;5;4;3;2;1];
                     labels={'Vim 3','Vim 2','Vim 1','Vim 0','Cort 3','Cort 2','Cort 1','Cort 0'};
                     conditions=[1,2,3,4,5];
                     cond_labels={'Rest','CueRight','CueLeft','MoveRight','MoveLeft'};
+                    return
+                elseif preset_value == 3
+                    channels=[5;4];
+                    labels={'Vim 0','Cort 3'};
+                    conditions=1;
+                    cond_labels={'Rest'};
                     return
                 end
             else

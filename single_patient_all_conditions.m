@@ -13,9 +13,9 @@ PATIENT_ID='ET_CL_004';
 RECORDING_DATE='2018_06_20';
 MIDPATH='preproc';
 RUN_ID='run5';
-ADDON='__ALLCOND_ALLCOMB_MONO';
+ADDON='__ALLCOND_ALLCOMB_TESTINGYW';
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
-config=struct('default',false,'preset',2);
+config=struct('default',false,'preset',1);
 [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID,config);
 % [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID);
 
@@ -25,14 +25,15 @@ end
 
 fs=extract_sampling_frequency(FILE);
 
-order_notch=4;
-cutoff_notch=[54,66;114,126;176,184;236,244];
+% order_notch=4;
+% cutoff_notch=[54,66;114,126;176,184;236,244];
 
-filtering=struct('notch',[]);
+filtering=struct('NO_FILTERING',true);
+% [filtering.hpf.num,filtering.hpf.den]=CreateHPF_butter(fs,4,4);
 
-for i=1:length(cutoff_notch)
-    [filtering.notch(i).num,filtering.notch(i).den]=CreateBSF_butter(fs,order_notch,cutoff_notch(i,:));
-end
+% for i=1:length(cutoff_notch)
+%     [filtering.notch(i).num,filtering.notch(i).den]=CreateBSF_butter(fs,order_notch,cutoff_notch(i,:));
+% end
 
 numConditions=length(conditions);
 freqRange=2:50;
@@ -63,7 +64,7 @@ for j=1:numConditions
 
     for i=1:numTrials
         fprintf('%d/%d - ',i,numTrials);
-        [ar.(currCond)(i).estMdl,res.(currCond)(i).E,crit.(currCond)(i).BIC]=mvar(squeeze(x.(currCond)(:,:,i)));
+        [ar.(currCond)(i).mdl,res.(currCond)(i).E,crit.(currCond)(i).BIC]=mvar(squeeze(x.(currCond)(:,:,i)));
     end
 
     %% Test whiteness
@@ -88,7 +89,7 @@ for j=1:numConditions
     gamma.(currCond)=zeros(numChannels,numChannels,length(freqRange),numTrials);
 
     for i=1:numTrials
-        gamma.(currCond)(:,:,:,i)=dtf(ar.(currCond)(i).estMdl,freqRange,fs);
+        gamma.(currCond)(:,:,:,i)=dtf(ar.(currCond)(i).mdl,freqRange,fs);
     end
 
     %% Plot all connectivities and PSDs stacked
@@ -100,6 +101,9 @@ for j=1:numConditions
     for i=1:numTrials
         plot_connectivity(gamma.(currCond)(:,:,:,i),squeeze(x.(currCond)(:,:,i)),freqRange,labels,config);
     end
+    
+    % FOR plot_connectivity, ADD IN A CONFIG OPTION TO PLOT ALL, PLOT AVERAGES, AND PLOT
+    % SHADED ERROR BARS
 
     %% Calculate averages of connectivities and PSDs
 

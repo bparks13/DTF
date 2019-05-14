@@ -15,9 +15,11 @@ function logL=calculate_loglikelihood(E,C)
 %  See also: infer, estimate_residuals, estimate_ar_coefficients
 %
 
-[N,K]=size(E);  % N is number of samples, K is number of series
-R = chol(C);    % Upper triangular Cholesky factor
+% [N,K]=size(E);  % N is number of samples, K is number of series
+% R = chol(C);    % Upper triangular Cholesky factor
 
-logL = -0.5 * sum(sum((E / R).^2,2)) - 0.5 * N * (K * log(2*pi) + 2 * log(det(R)));
+% logL = -0.5 * sum(sum((E / R).^2,2)) - 0.5 * N * (K * log(2*pi) + 2 * log(det(R)));
+
+logL=log(det(C));
 
 end

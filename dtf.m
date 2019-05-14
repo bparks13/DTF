@@ -1,11 +1,15 @@
-function [connectivity]=dtf(estMdl,freqRange,fs,config)
-%% [connectivity]=dtf(estMdl,freqRange,fs,config)
+function [connectivity]=dtf(mdl,freqRange,fs,config)
+%% [connectivity]=dtf(mdl,freqRange,fs,config)
 %
 %  Using the estimated AR model, calculate the connectivity of the series in question. Can
 %  return either the raw connections or the normalized connections as specified in config
 %
 %   Inputs:
-%    - estMdl: Estimated AR model struct as returned by varm and estimate
+%    - mdl: Estimated AR model struct as returned by mvar
+%       AR: Autoregressive coefficients as found by estimate_ar_coefficients
+%       C: Covariance matrx as calculated by the Yule-Walker equations
+%       logL: Log-likelihood of the model fit, used for calculating information criterion
+%       order: Model order that is found to have the lowest information criterion
 %    - freqRange: Vector containing the specific frequencies to calculate the connectivity
 %       over
 %    - fs: Sampling frequency in Hz
@@ -16,7 +20,7 @@ function [connectivity]=dtf(estMdl,freqRange,fs,config)
 %    - connectivity: Directed transfer function values for all combinations of series and
 %       frequencies; either normalized [default] or not, depending on if config is set
 %
-%  See also: varm, estimate, mvar
+%  See also: mvar
 %
 
 normalize=true;
@@ -30,14 +34,16 @@ if nargin > 3 && isstruct(config)
 end
 
 nFreqs=length(freqRange);
-numSeries=estMdl.NumSeries;
-modelOrder=estMdl.P;
+numSeries=mdl.numSeries;
+modelOrder=mdl.order;
 I=eye(numSeries);
 
-AR=zeros([numSeries,numSeries,modelOrder]);  % Extract the coefficients from the model, [numseries x numseries x modelorder]
-for i=1:length(estMdl.AR)
-    AR(:,:,i)=estMdl.AR{i};
-end
+AR=mdl.AR;
+
+% AR=zeros([numSeries,numSeries,modelOrder]);  % Extract the coefficients from the model, [numseries x numseries x modelorder]
+% for i=1:length(mdl.AR)
+%     AR(:,:,i)=mdl.AR{i};
+% end
 
 tmp_pdc=zeros(numSeries,numSeries,nFreqs);
 

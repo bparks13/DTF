@@ -1,5 +1,5 @@
-function [E,x_hat]=estimate_residuals(X,AR)
-%% [E,x_hat]=estimate_residuals(X,AR)
+function [E,C,x_hat]=estimate_residuals(X,AR)
+%% [E,C,x_hat]=estimate_residuals(X,AR)
 %
 %  Calculate the residuals between the AR model and the data. Used for calculating the
 %  log-likelihood
@@ -14,6 +14,7 @@ function [E,x_hat]=estimate_residuals(X,AR)
 %    - E: Residuals between the data given (X) and the model (AR), size is [N - m x d],
 %       where the first m points of the data are used to begin the model
 %    - x_hat: Output of the model that estimates the signal
+%    - C: Covariance matrix defined by the residuals, size is [d x d]
 %
 %  See also: estimate_ar_coefficients, mvar, test_model
 %
@@ -47,5 +48,7 @@ else
     
     E=X(m+1:end,:)-x_hat;
 end
+
+C=(E' * E) / length(E);
 
 end

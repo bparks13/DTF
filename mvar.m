@@ -11,11 +11,12 @@ function [mdl,E,criterion]=mvar(x,config)
 %       orderRange: Vector containing the model orders to consider. Default [1:30]
 %       crit: String defining which information criterion to use, 'aic' or 'bic' [default]
 %       output: Int defining level of verbosity for output. 0 (none), 1 (model number)
-%       [default], 2 (model order and criterion tested)
+%           [default], 2 (model order and criterion tested)
+%       method: String defining which method to use; Matlab's varm ('varm') or Yule-Walker
+%           equations ('yule') [default].
 %
 %   Outputs:
-%    - mdl: Struct containing the AR model fit for the data given, from Yule-Walker
-%       equations
+%    - mdl: Struct containing the AR model fit for the data given
 %       AR: Autoregressive coefficients as found by estimate_ar_coefficients
 %       C: Covariance matrx as calculated by the Yule-Walker equations
 %       logL: Log-likelihood of the model fit, used for calculating information criterion
@@ -34,6 +35,7 @@ function [mdl,E,criterion]=mvar(x,config)
 orderRange=1:30;
 crit='bic';
 output=1;
+method='yule';
 
 if nargin > 1 && isstruct(config)
     if isfield(config,'orderRange')
@@ -46,6 +48,10 @@ if nargin > 1 && isstruct(config)
     
     if isfield(config,'output')
         output=config.crit;
+    end
+    
+    if isfield(config,'method')
+        method=config.method;
     end
 end
 
@@ -64,33 +70,50 @@ if output ~= 0
 end
 
 for i=1:numOrders
-%     mdl=varm(numSeries,i);
-%     [estMdl,~,~,~]=estimate(mdl,x);
-%     results=summarize(estMdl);
-    [AR,C]=estimate_ar_coefficients(x,orderRange(i));
-    E=estimate_residuals(x,AR);
-    logL=calculate_loglikelihood(E,C);
-    criterion(i)=calculate_bic(logL,orderRange(i),numSamples-orderRange(i));
-    
-    if strcmp(crit,'bic')
-        if criterion(i) < minCrit
-            minCrit=criterion(i);
-            mdl.AR=AR;
-            mdl.C=C;
-            mdl.logL=logL;
-            mdl.order=orderRange(i);
+    if strcmp(method,'varm')
+        mdl=varm(numSeries,i);
+        [estMdl,~,logL,E]=estimate(mdl,x);
+        results=summarize(estMdl);
+        
+        if strcmp(crit,'bic')
+            criterion(i)=results.BIC;
+            
+            if results.BIC < minCrit
+                minCrit=results.BIC;
+                mdl.AR=zeros(numSeries,numSeries,orderRange(i));
+                for j=1:orderRange(i)
+                    mdl.AR(:,:,j)=reshape(estMdl.AR{j});
+                end
+                mdl.C=estMdl.Covariance;
+                mdl.logL=logL;
+                mdl.order=orderRange(i);
+            end
+        elseif strcmp(crit,'aic')
+            criterion(i)=results.AIC;
+            
+            if results.AIC < minCrit
+                minCrit=results.AIC;
+            end
         end
-%         criterion(i)=results.BIC;
-%         if results.BIC < minCrit
-%             minCrit=results.BIC;
-%         end
-    elseif strcmp(crit,'aic')
-        disp('WARNING: No AIC calculation implemented. No criterion tested.');
-%         criterion(i)=results.AIC;
-%         if results.AIC < minCrit
-%             minCrit=results.AIC;
-%         end
+    elseif strcmp(method,'yule')
+        [AR,C]=estimate_ar_coefficients(x,orderRange(i));
+        E=estimate_residuals(x,AR);
+        logL=calculate_loglikelihood(E,C);
+        criterion(i)=calculate_bic(logL,orderRange(i),numSamples-orderRange(i));
+
+        if strcmp(crit,'bic')
+            if criterion(i) < minCrit
+                minCrit=criterion(i);
+                mdl.AR=AR;
+                mdl.C=C;
+                mdl.logL=logL;
+                mdl.order=orderRange(i);
+            end
+        elseif strcmp(crit,'aic')
+            disp('WARNING: No AIC calculation implemented. No criterion tested.');
+        end    
     end
+    
     
     if output == 1
         fprintf('%d,',i);
@@ -102,9 +125,6 @@ end
 if output ~= 0
     fprintf('\nDone: Minimum %s found at model order %d\n',crit,mdl.order);
 end
-
-% mdl=varm(numSeries,modelOrder);
-% [estMdl,~,~,E]=estimate(mdl,x);
 
 end
 

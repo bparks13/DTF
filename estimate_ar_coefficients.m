@@ -37,7 +37,7 @@ if isUnivariate
     end
 
     AR = R_n\r_n; % Predictor for AR coefficients
-    C = rxx(lags>=0)'*[1; -AR];
+    C = flip(rxx(lags<=0))'*[1; -AR];
 else
     R_all=zeros(m*2+1,numSeries^2);
 
@@ -74,10 +74,8 @@ else
     C=reshape(R_all(lags==0,:),numSeries,numSeries);
     
     for i=1:m
-        C=C+reshape(R_all(lags==i,:),numSeries,numSeries) * -AR(:,:,i);
+        C=C+reshape(R_all(lags==-i,:),numSeries,numSeries)' * -AR(:,:,i); 
     end
-    
-    C=C/m;
 end
 
 end
