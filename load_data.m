@@ -25,7 +25,12 @@ function [x,fs,x_all]=load_data(file,channels,condition,filtering)
 %       ma: If defined, should be an integer defining the number of samples to run
 %           through the moving average
 %       NO_FILTERING: If defined at all, skips all filtering steps except for high pass
-%           filtering, and returns the signal as is.
+%           filtering, and returns the signal as is
+%       normalize: Separate from all other filtering techniques, the signal can be
+%           normalized. String containing the method to normalize; 'none' performs no
+%           additional normalization, 'z-score' normalizes the signals by dividing by the
+%           standard deviation of the respective condition extracted (for x) or the
+%           standard deviation of the entire 
 %
 %   Outputs:
 %    - x: Matrix of values for all channels and all trials matching a particular
@@ -61,6 +66,8 @@ else
 end
 
 % Flexible filtering parameters from the filtering struct 
+
+bool_normalize=false;
 
 if nargin > 3 && isstruct(filtering)
     if isfield(filtering,'NO_FILTERING')
@@ -125,6 +132,12 @@ if nargin > 3 && isstruct(filtering)
             end
         end
     end
+    
+    if isfield(filtering,'normalize')
+        if ~strcmp(filtering.normalize,'none')
+            bool_normalize=true;
+        end
+    end
 end
 
 % If no condition is given (condition is empty), return the whole signal
@@ -173,6 +186,29 @@ for i=1:numTrials
     x(:,:,i)=x_all(ind_curr_start(i):ind_curr_start(i)+minLength-1,:);
 end
 
+% If filtering.normalize is defined, normalize the individual trials by the average std of
+% the conditions, and normalize the overall signal by the std of the entire signal
 
+if bool_normalize
+    if strcmp(filtering.normalize,'z-score')
+        for i=1:numChannels
+            x_all(:,i) = x_all(:,i) / std(x_all(:,i));
+        end
+
+        avgStd=zeros(numChannels,1);
+
+        for i=1:numTrials
+            for j=1:numChannels
+                avgStd(j)=avgStd(j)+std(x(:,j,i));
+            end
+        end
+
+        avgStd=avgStd / numTrials;
+
+        for i=1:numChannels
+            x(:,i,:)=x(:,i,:)/avgStd(i);
+        end
+    end
+end
 
 end

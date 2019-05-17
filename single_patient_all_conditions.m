@@ -3,6 +3,7 @@
 %  Collect all connectivity values for all conditions in one run of one patient
 %
 %  See also: mvar, plot_connectivity, dtf, load_data
+%
 
 CCC;
 
@@ -13,11 +14,11 @@ PATIENT_ID='ET_CL_004';
 RECORDING_DATE='2018_06_20';
 MIDPATH='preproc';
 RUN_ID='run5';
-ADDON='__ALLCOND_ALLCOMB_TESTINGYW';
+ADDON='__ALLCOND_ALLCOMB';
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
-config=struct('default',false,'preset',1);
-[channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID,config);
-% [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID);
+% config=struct('default',false,'preset',1);
+% [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID,config);
+[channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID);
 
 if isempty(channels) || isempty(labels) || isempty(conditions) || isempty(cond_labels)
     return
@@ -29,7 +30,8 @@ fs=extract_sampling_frequency(FILE);
 % cutoff_notch=[54,66;114,126;176,184;236,244];
 
 filtering=struct('NO_FILTERING',true);
-% [filtering.hpf.num,filtering.hpf.den]=CreateHPF_butter(fs,4,4);
+[filtering.hpf.num,filtering.hpf.den]=CreateHPF_butter(fs,3,4);
+% filtering.normalize='z-score';
 
 % for i=1:length(cutoff_notch)
 %     [filtering.notch(i).num,filtering.notch(i).den]=CreateBSF_butter(fs,order_notch,cutoff_notch(i,:));
@@ -41,7 +43,7 @@ freqRange=2:50;
 x=struct;
 x_all=struct;
 ar=struct;
-res=struct; % residuals (E from estimate)
+res=struct; 
 crit=struct;
 h=struct;
 pVal=struct;
@@ -49,6 +51,8 @@ gamma=struct;
 avg_psd=struct;
 avg_gamma=struct;
 pass=struct;
+
+%% Main Loop
 
 for j=1:numConditions
     currCond=cond_labels{j};
@@ -59,12 +63,16 @@ for j=1:numConditions
 
     numTrials=size(x.(currCond),3);
     numChannels=length(channels);
+    numSamples=length(x.Rest(:,1));
 
     %% Calculate all MVAR models
+    
+    config_crit=struct('orderSelection','diff');
+%     config=struct('method','varm');
 
     for i=1:numTrials
         fprintf('%d/%d - ',i,numTrials);
-        [ar.(currCond)(i).mdl,res.(currCond)(i).E,crit.(currCond)(i).BIC]=mvar(squeeze(x.(currCond)(:,:,i)));
+        [ar.(currCond)(i).mdl,res.(currCond)(i).E,crit.(currCond)(i).BIC]=mvar(squeeze(x.(currCond)(:,:,i)),config_crit);
     end
 
     %% Test whiteness
@@ -94,50 +102,64 @@ for j=1:numConditions
 
     %% Plot all connectivities and PSDs stacked
 
-    config=struct('hFig',[],'seriesType',1);
+    config=struct('hFig',[],'seriesType',1,'plotType','avgerr');
     config.hFig=figure;
     config.figTitle=sprintf('%s, %s, %s - %s: Individual',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
 
-    for i=1:numTrials
-        plot_connectivity(gamma.(currCond)(:,:,:,i),squeeze(x.(currCond)(:,:,i)),freqRange,labels,config);
-    end
+%     for i=1:numTrials
+    plot_connectivity(gamma.(currCond),x.(currCond),freqRange,labels,config);
+%     end
+%     
+%     % FOR plot_connectivity, ADD IN A CONFIG OPTION TO PLOT ALL, PLOT AVERAGES, AND PLOT
+%     % SHADED ERROR BARS
+% 
+%     %% Calculate averages of connectivities and PSDs
+% 
+%     avg_psd.(currCond)=zeros(length(freqRange),numChannels);
+%     avg_gamma.(currCond)=zeros(numChannels,numChannels,length(freqRange));
+% 
+%     window=round(fs);
+%     overlap=round(window/2);
+% 
+%     for i=1:numTrials
+%         avg_psd.(currCond)=avg_psd.(currCond)+pwelch(x.(currCond)(:,:,i),window,overlap,freqRange,fs);
+%         avg_gamma.(currCond)=avg_gamma.(currCond)+gamma.(currCond)(:,:,:,i);
+%     end
+% 
+%     avg_psd.(currCond)=avg_psd.(currCond)/numTrials;
+%     avg_gamma.(currCond)=avg_gamma.(currCond)/numTrials;
+% 
+%     %% Plot averages of connectivities and PSDs
+%     
+%     config.seriesType=3;
+%     config.hFig=figure;
+%     config.figTitle=sprintf('%s, %s, %s - %s: Average',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
+% 
+%     plot_connectivity(avg_gamma.(currCond),avg_psd.(currCond),freqRange,labels,config);
     
-    % FOR plot_connectivity, ADD IN A CONFIG OPTION TO PLOT ALL, PLOT AVERAGES, AND PLOT
-    % SHADED ERROR BARS
-
-    %% Calculate averages of connectivities and PSDs
-
-    avg_psd.(currCond)=zeros(length(freqRange),numChannels);
-    avg_gamma.(currCond)=zeros(numChannels,numChannels,length(freqRange));
-
-    window=round(fs);
-    overlap=round(window/2);
-
-    for i=1:numTrials
-        avg_psd.(currCond)=avg_psd.(currCond)+pwelch(x.(currCond)(:,:,i),window,overlap,freqRange,fs);
-        avg_gamma.(currCond)=avg_gamma.(currCond)+gamma.(currCond)(:,:,:,i);
-    end
-
-    avg_psd.(currCond)=avg_psd.(currCond)/numTrials;
-    avg_gamma.(currCond)=avg_gamma.(currCond)/numTrials;
-
-    %% Plot averages of connectivities and PSDs
+    %% test plotting connectivity
     
-    config.seriesType=3;
-    config.hFig=figure;
-    config.figTitle=sprintf('%s, %s, %s - %s: Average',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
-
-    plot_connectivity(avg_gamma.(currCond),avg_psd.(currCond),freqRange,labels,config);
+%     config=rmfield(config,'hFig');
+%     config.seriesType=1;
+%     config.plotType='ind';
+%     config.figTitle='TESTING IND';
+%     plot_connectivity(gamma.(currCond),x.(currCond),freqRange,labels,config);
+%     
+%     config.plotType='avg';
+%     config.figTitle='TESTING AVG';
+%     plot_connectivity(gamma.(currCond),x.(currCond),freqRange,labels,config);
+%     
+%     config.plotType='avgerr';
+%     config.figTitle='TESTING AVGERR';
+%     plot_connectivity(gamma.(currCond),x.(currCond),freqRange,labels,config);
     
     %% Plot the criterion of all the trials
     
-    config=struct;
-    
-    config.hFig=figure;
-    
-    for i=1:numTrials
-        plot_criterion(crit.(currCond)(i).BIC,config);
-    end
+%     config_crit.hFig=figure;
+%     
+%     for i=1:numTrials
+%         plot_criterion(crit.(currCond)(i).BIC,config_crit);
+%     end
 end
 
 %% Save relevant variables
@@ -151,8 +173,9 @@ while exist(newFile,'file')
     count=count+1;
 end
 
+config_crit.hFig=[];
 save(newFile,'ar','avg_gamma','avg_psd','channels','conditions','cond_labels','crit',...
-    'FILE','freqRange','filtering','fs','gamma','h','labels','res','x','x_all');
+    'FILE','freqRange','filtering','fs','gamma','h','labels','res','x','x_all','config_crit');
 
 
 

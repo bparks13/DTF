@@ -20,7 +20,7 @@ function [X,a]=create_data(N,m,stdZ,a)
 %    - a: AR coefficients that have been simulated, if no coefficients were initially
 %       given
 %
-%  See also: mvar, estimate_ar_coeffecients, dtf, estimate_residuals
+%  See also: mvar, estimate_ar_coefficients, dtf, estimate_residuals
 %
 
 isUnivariate=true;

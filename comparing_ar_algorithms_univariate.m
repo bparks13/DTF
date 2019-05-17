@@ -3,9 +3,9 @@ CCC;
 %% Create a univariate model
 
 % N=10000;
-% modelOrder=2;
+% modelOrder=30;
 % stdZ=2;
-% [X,a]=create_data(); % parameters are automatically: 100000, 2, 2, [0.5 0.2]'
+% [X,a]=create_data(N,modelOrder,stdZ); % parameters are automatically: 100000, 2, 2, [0.5 0.2]'
 
 FILE='\\gunduz-lab.bme.ufl.edu\Study_ET_Closed_Loop\ET_CL_004\2018_06_20\preproc\run5.mat';
 
@@ -32,7 +32,9 @@ filtering=struct('NO_FILTERING',true);
 X=load_data(FILE,[2,1],1,filtering);
 X=X(:,1,1);
 
-modelOrder=10;
+%%
+
+modelOrder=20;
 N=length(X);
 a=nan(modelOrder,1);
 
@@ -40,7 +42,7 @@ a=nan(modelOrder,1);
 
 tic_yule=tic;
 [AR,C]=estimate_ar_coefficients(X,modelOrder);
-[E,x_hat]=estimate_residuals(X,AR);
+[E,C_2]=estimate_residuals(X,AR);
 logL=calculate_loglikelihood(E,C);
 bic=calculate_bic(logL,modelOrder,N-modelOrder);
 
@@ -66,11 +68,15 @@ fprintf('varm: '); toc(tic_varm);
 
 fprintf('\nCoefficients comparison for m = %d:\n\ta\t\t\tYule\t\t(a-Y)\t\tvarm\t\t(a-v)\t\t(Y-v)\n',modelOrder);
 for i=1:length(a)
-    fprintf('\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\t\t%.6f\n',...
+    fprintf('\t%-5.3f\t\t%-5.3f\t\t%-5.3f\t\t%-5.3f\t\t%-5.3f\t\t%.6f\n',...
         a(i),AR(i),a(i)-AR(i),estMdl.AR{i},a(i)-estMdl.AR{i},AR(i)-estMdl.AR{i});
 end
 
 fprintf('\nResiduals comparison:\n\tAverage difference in residuals = %.5f\n',mean(E-E_varm));
+
+fprintf('\nCovariance matrix comparison:\n\tYule 1:\t\t\tYule 2:\t\t\tVarm:\t\t\tDiff 1:\t\t\tDiff 2\n');
+
+fprintf('\t%6.3f\t\t\t%6.3f\t\t\t%6.3f\t\t\t%.6f\t\t%.6f\n',C,C_2,estMdl.Covariance,C-estMdl.Covariance,C_2-estMdl.Covariance);
 
 fprintf('\nLog-Likelihood comparison:\n\tlogL_y\t\t\tlogL_v\t\t(logL_y-logL_v)\n\t%.2f\t\t%.2f\t\t%.5f\n',logL,logL_varm,logL-logL_varm);
 
