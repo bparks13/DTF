@@ -171,7 +171,14 @@ for i=1:numOrders
 end
 
 if isempty(mdl.order)
-    fprintf('\nWARNING: NO MODEL RETURNED\n');
+    fprintf('\nWARNING: NO MODEL FOUND WITH ORDER SELECTION ''%s''\nFINDING MINIMUM VALUE...\n',orderSelection);
+    
+    minCritInd=find(criterion==min(criterion));
+    
+    [mdl.AR]=estimate_ar_coefficients(x,minCritInd);
+    [E,mdl.C]=estimate_residuals(x,mdl.AR);
+    mdl.logL=calculate_loglikelihood(E,mdl.C);
+    mdl.order=minCritInd;
 end
 
 if output ~= 0
