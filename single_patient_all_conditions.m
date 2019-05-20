@@ -16,7 +16,7 @@ MIDPATH='preproc';
 RUN_ID='run5';
 ADDON='__ALLCOND_ALLCOMB';
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
-% config=struct('default',false,'preset',1);
+% config=struct('default',false,'preset',2);
 % [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID,config);
 [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID);
 
@@ -100,66 +100,13 @@ for j=1:numConditions
         gamma.(currCond)(:,:,:,i)=dtf(ar.(currCond)(i).mdl,freqRange,fs);
     end
 
-    %% Plot all connectivities and PSDs stacked
+    %% Plot all connectivities and PSDs
 
     config=struct('hFig',[],'seriesType',1,'plotType','avgerr');
     config.hFig=figure;
-    config.figTitle=sprintf('%s, %s, %s - %s: Individual',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
+    config.figTitle=sprintf('%s, %s, %s - %s: Connectivity',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
 
-%     for i=1:numTrials
     plot_connectivity(gamma.(currCond),x.(currCond),freqRange,labels,config);
-%     end
-%     
-%     % FOR plot_connectivity, ADD IN A CONFIG OPTION TO PLOT ALL, PLOT AVERAGES, AND PLOT
-%     % SHADED ERROR BARS
-% 
-%     %% Calculate averages of connectivities and PSDs
-% 
-%     avg_psd.(currCond)=zeros(length(freqRange),numChannels);
-%     avg_gamma.(currCond)=zeros(numChannels,numChannels,length(freqRange));
-% 
-%     window=round(fs);
-%     overlap=round(window/2);
-% 
-%     for i=1:numTrials
-%         avg_psd.(currCond)=avg_psd.(currCond)+pwelch(x.(currCond)(:,:,i),window,overlap,freqRange,fs);
-%         avg_gamma.(currCond)=avg_gamma.(currCond)+gamma.(currCond)(:,:,:,i);
-%     end
-% 
-%     avg_psd.(currCond)=avg_psd.(currCond)/numTrials;
-%     avg_gamma.(currCond)=avg_gamma.(currCond)/numTrials;
-% 
-%     %% Plot averages of connectivities and PSDs
-%     
-%     config.seriesType=3;
-%     config.hFig=figure;
-%     config.figTitle=sprintf('%s, %s, %s - %s: Average',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
-% 
-%     plot_connectivity(avg_gamma.(currCond),avg_psd.(currCond),freqRange,labels,config);
-    
-    %% test plotting connectivity
-    
-%     config=rmfield(config,'hFig');
-%     config.seriesType=1;
-%     config.plotType='ind';
-%     config.figTitle='TESTING IND';
-%     plot_connectivity(gamma.(currCond),x.(currCond),freqRange,labels,config);
-%     
-%     config.plotType='avg';
-%     config.figTitle='TESTING AVG';
-%     plot_connectivity(gamma.(currCond),x.(currCond),freqRange,labels,config);
-%     
-%     config.plotType='avgerr';
-%     config.figTitle='TESTING AVGERR';
-%     plot_connectivity(gamma.(currCond),x.(currCond),freqRange,labels,config);
-    
-    %% Plot the criterion of all the trials
-    
-%     config_crit.hFig=figure;
-%     
-%     for i=1:numTrials
-%         plot_criterion(crit.(currCond)(i).BIC,config_crit);
-%     end
 end
 
 %% Save relevant variables
@@ -175,7 +122,8 @@ end
 
 config_crit.hFig=[];
 save(newFile,'ar','avg_gamma','avg_psd','channels','conditions','cond_labels','crit',...
-    'FILE','freqRange','filtering','fs','gamma','h','labels','res','x','x_all','config_crit');
+    'FILE','freqRange','filtering','fs','gamma','h','labels','PATIENT_ID','RECORDING_DATE',...
+    'res','RUN_ID','x','x_all','config_crit');
 
 
 
