@@ -100,7 +100,8 @@ for i=1:numOrders
                 result = results.BIC < minCrit;
             elseif strcmp(orderSelection,'diff')
                 if i>1 && ~bool_minDiffFound
-                    result = abs(criterion(i) - criterion(i-1)) < epsilon;
+                    result = abs(criterion(i) - criterion(i-1)) < epsilon || ...
+                        criterion(i) - criterion(i-1) > 0;
                     bool_minDiffFound=true;
                 else
                     result=false;
