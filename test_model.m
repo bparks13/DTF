@@ -66,9 +66,62 @@ h=ones(numSeries,1);
 pVal=zeros(numSeries,1);
 
 for i=1:numSeries
-    [h(i),pVal(i)]=lbqtest(E(:,i),'lags',lags,'dof',dof);
+%     [h(i),pVal(i)]=lbqtest(E(:,i),'lags',lags,'dof',dof);
+    [h(i),pVal(i)]=portmanteau(E(:,i),lags,dof);
 end
 
 pass=~any(h);
+
+    function [h,p]=portmanteau(E,lags,dof)
+    %% [h,p]=portmanteau(E,lags,dof)
+    % 
+    %  Internal function to use the Ljung-Box Test to test if the residuals exhibit
+    %  autocorrelation or not, with the null hypothesis being that there is no
+    %  autocorrelation for the set number of lags given. All calculations are pulled from
+    %  function 'lbqtest', this is to work-around the licensing issue resulting from too
+    %  many people trying to use the Econometrics toolbox.
+    %
+    %   Inputs:
+    %    - E: Residuals of the model fit
+    %    - lags: Number of lags to test. Default is min(20,log(length(E)))
+    %    - dof: Degrees of freedom to use for the Chi-Square test. Default is lags, but is
+    %       recommended to be decreased by the number of parameters used to fit the model
+    %       (which is mostly impossible for my data, since the model order is typically
+    %       equal to or higher than the log length of the trial)
+    %
+    %   Outputs:
+    %    - h: Hypothesis value, either 0 (null hypothesis) or 1 (alternative hypothesis)
+    %    - p: P-value associated with the hypothesis value. Does not correct for multiple
+    %       comparisons, and uses a default value of alpha = 0.05
+    %
+    %  See also: lbqtest
+    %
+    
+    T=length(E);
+    lag=min(20,log(T));
+    df=lag;
+    
+    if nargin == 2
+        lag=lags;
+        df=lags;
+    end
+    
+    if nargin == 3
+        lag=lags;
+        df=dof;
+    end
+    
+%     ACF=autocorr(E,lag);
+    [ACF,lagInd]=xcorr(E,lag,'coeff');
+    ACF=ACF(lagInd>0);
+    idx=(T-(1:lag))';
+    stat=T*(T+2)*cumsum((ACF.^2)./idx);
+    stat=stat(end);
+    
+    p=1-chi2cdf(stat,df);
+    
+    h=0.05 >= p;
+        
+    end
 
 end
