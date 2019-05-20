@@ -14,6 +14,10 @@ function plot_criterion(criterion,config)
 %       epsilon: Can be specified if orderSelection is set to 'diff', where epsilon is the
 %           threshold for defining when differences have decreased to a small enough
 %           degree to select the model order
+%       modelOrder: The model that was picked no matter which method was used. If defined,
+%           overrides manual selection of the model order based on criterion and method
+%       figTitle: String containing a figure title, containing for example the condition
+%           being tested, or the patient/date/run combo, or all of the above
 %
 %   Outputs:
 %    Figure containing the plot of the criterion
@@ -21,6 +25,7 @@ function plot_criterion(criterion,config)
 
 bool_newFig=true;
 epsilon=0.01;
+figTitle='';
 
 if nargin > 1 
     if isstruct(config)
@@ -28,7 +33,9 @@ if nargin > 1
             bool_newFig=false;
         end
         
-        if isfield(config,'orderSelection')
+        if isfield(config,'modelOrder')
+            critInd=config.modelOrder;
+        elseif isfield(config,'orderSelection')
             if isfield(config,'epsilon')
                 epsilon=config.epsilon;
             end
@@ -40,6 +47,10 @@ if nargin > 1
             end
         else
             critInd=find(criterion==min(criterion));
+        end
+        
+        if isfield(config,'figTitle')
+            figTitle=config.figTitle;
         end
     end
 end
@@ -53,6 +64,11 @@ end
 plot(criterion,'k-o'); hold on;
 
 plot(critInd,criterion(critInd),'r*');
+
+if ~isempty(figTitle)
+    tmp_hFig=gcf;
+    tmp_hFig.Name=figTitle;
+end
 
 drawnow;
 
