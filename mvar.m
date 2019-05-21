@@ -20,7 +20,8 @@ function [mdl,E,criterion]=mvar(x,config)
 %           smaller than some epsilon, which is either 0.01 or user specified
 %       epsilon: Can be specified if orderSelection is set to 'diff', where epsilon is the
 %           threshold for defining when differences have decreased to a small enough
-%           degree to select the model order
+%           degree to select the model order, defined as a percentage (i.e. 0.01 == 1%).
+%           Default value is 0.01% (= 0.0001)
 %
 %   Outputs:
 %    - mdl: Struct containing the AR model fit for the data given
@@ -44,7 +45,7 @@ crit='bic';
 output=1;
 method='yule';
 orderSelection='min';
-epsilon=0.01;
+epsilon=0.0001;
 
 if nargin > 1 && isstruct(config)
     if isfield(config,'orderRange')
@@ -100,7 +101,7 @@ for i=1:numOrders
                 result = results.BIC < minCrit;
             elseif strcmp(orderSelection,'diff')
                 if i>1 && ~bool_minDiffFound
-                    result = abs(criterion(i) - criterion(i-1)) < epsilon || ...
+                    result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
                         criterion(i) - criterion(i-1) > 0;
                     bool_minDiffFound=true;
                 else
@@ -141,7 +142,8 @@ for i=1:numOrders
                 result = criterion(i) < minCrit;
             elseif strcmp(orderSelection,'diff')
                 if i>1 && ~bool_minDiffFound
-                    result = abs(criterion(i) - criterion(i-1)) < epsilon;
+                    result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
+                        criterion(i) - criterion(i-1) > 0;
                 else
                     result=false;
                 end
