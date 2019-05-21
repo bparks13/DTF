@@ -2,28 +2,26 @@
 
 %#ok<*UNRCH>
 
-% FILE='\\gunduz-lab.bme.ufl.edu\Study_ET_Closed_Loop\ET_CL_004\2018_06_20\preproc\run5.mat';
-% data=load(FILE);
-% 
-% fs=data.datastorage.src.LFP.Fs;
-% 
-% tmp_x=data.datastorage.src.LFP.data(1:end-1,:);
-% 
-% order_hp=4;
-% cutoff_hp=2;
-% [num_hp,den_hp]=CreateHPF_butter(fs,order_hp,cutoff_hp);
-% 
-% tmp_x=filtfilt(num_hp,den_hp,tmp_x);
-% 
-% f0=60;
-% w0=f0/(fs/2);
-% qFactor=35;
-% bw=w0/qFactor;
-% [num_comb,den_comb]=iircomb(fs/f0,bw,'notch');
-% 
-% tmp_x=filtfilt(num_comb,den_comb,tmp_x);
-% 
+FILE='\\gunduz-lab.bme.ufl.edu\Study_ET_Closed_Loop\ET_CL_004\2018_06_20\preproc\run5.mat';
+data=load(FILE);
 
+fs=data.datastorage.src.LFP.Fs;
+
+tmp_x=data.datastorage.src.LFP.data(1:end-1,:);
+
+order_hp=4;
+cutoff_hp=2;
+[num_hp,den_hp]=CreateHPF_butter(fs,order_hp,cutoff_hp);
+
+tmp_x=filtfilt(num_hp,den_hp,tmp_x);
+
+f0=60;
+w0=f0/(fs/2);
+qFactor=35;
+bw=w0/qFactor;
+[num_comb,den_comb]=iircomb(fs/f0,bw,'notch');
+
+tmp_x=filtfilt(num_comb,den_comb,tmp_x); %#ok<NASGU>
 
 %% Testing a moving average filter on the data
 
@@ -194,4 +192,24 @@ subplot(2,4,5); plot(t,squeeze(tmp_x_z(:,1,:))); title([labels(1),'Z-score Signa
 subplot(2,4,6); plot(t,squeeze(tmp_x_z(:,2,:))); title([labels(2),'Z-score Signal']); xlim([t(1) t(end)])
 subplot(2,4,7); plot(t,squeeze(tmp_x_z(:,3,:))); title([labels(3),'Z-score Signal']); xlim([t(1) t(end)])
 subplot(2,4,8); plot(t,squeeze(tmp_x_z(:,4,:))); title([labels(4),'Z-score Signal']); xlim([t(1) t(end)])
+
+%% Plotting the spectrogram of an entire run
+
+f=1:100;
+[~,F1,T1,P1]=spectrogram(x_all.Rest(:,1),fs,fs/2,f,fs);
+[~,F2,T2,P2]=spectrogram(x_all.Rest(:,2),fs,fs/2,f,fs);
+[~,F3,T3,P3]=spectrogram(x_all.Rest(:,3),fs,fs/2,f,fs);
+[~,F4,T4,P4]=spectrogram(x_all.Rest(:,4),fs,fs/2,f,fs);
+
+cBounds=[min([min(min(10*log10(P1))),min(min(10*log10(P2))),min(min(10*log10(P3))),min(min(10*log10(P4)))]),...
+    max([max(max(10*log10(P1))),max(max(10*log10(P2))),max(max(10*log10(P3))),max(max(10*log10(P4)))])];
+
+figure;
+subplot(411); surf(T1,F1,10*log10(P1)); view(2); colormap jet; shading interp; xlim([T1(1) T1(end)]); colorbar; caxis(cBounds); 
+subplot(412); surf(T2,F2,10*log10(P2)); view(2); colormap jet; shading interp; xlim([T2(1) T2(end)]); colorbar; caxis(cBounds); 
+subplot(413); surf(T3,F3,10*log10(P3)); view(2); colormap jet; shading interp; xlim([T3(1) T3(end)]); colorbar; caxis(cBounds); 
+subplot(414); surf(T4,F4,10*log10(P4)); view(2); colormap jet; shading interp; xlim([T4(1) T4(end)]); colorbar; caxis(cBounds); 
+
+
+
 
