@@ -2,7 +2,7 @@ function [pxx]=plot_psd(in,fs,config)
 %% [pxx]=plot_psd(in,fs,config)
 %
 %  Given either a real signal or the AR coefficients, plot the estimated Power Spectral
-%  Density
+%  Density. 
 %
 %   Inputs:
 %    - in: Either a vector of signals [n x 1] or a vector of AR coefficients [m x 1],
@@ -10,7 +10,9 @@ function [pxx]=plot_psd(in,fs,config)
 %    - fs: Sampling frequency in Hz
 %    - config: Optional struct that contains additional parameters
 %       inputType: String defining which type of input is given, either the signal itself
-%       'signal', or the AR coefficients 'coeff'. Default is 'signal'
+%           'signal', or the AR coefficients 'coeff'. Default is 'signal'
+%       hFig: Handle to a figure to plot the PSD in. Allows for plotting both the original
+%           signal and the AR coefficients PSD on top of each other
 %
 %   Outputs:
 %    - Figure containing the logarithmic PSD of the input
@@ -21,9 +23,9 @@ function [pxx]=plot_psd(in,fs,config)
 
 bool_isSignal=false;
 bool_isCoeff=false;
+bool_newFig=true;
 
 freqRange=1:(fs/2);
-nFreqs=length(freqRange);
 
 x=[];
 ar=[];
@@ -36,7 +38,15 @@ if isstruct(config)
         elseif strcmp(config.inputType,'coeff')
             bool_isCoeff=true;
             ar=in;
+            
+            if size(ar,1)==1
+                ar=squeeze(ar);
+            end
         end
+    end
+    
+    if isfield(config,'hFig')
+        bool_newFig=false;
     end
 end
 
@@ -45,15 +55,27 @@ if isempty(x) && isempty(ar)
     bool_isSignal=true;
 end
 
+if bool_newFig
+    figure;
+else
+    figure(config.hFig); hold on;
+end
+
 if bool_isSignal
     pxx=pwelch(x,fs,fs/2,1:(fs/2),fs); 
-    figure; plot(10*log10(pxx));
+    plot(10*log10(pxx));
 elseif bool_isCoeff
-    pxx=nan(nFreqs,1);
-    
-    for i=1:nFreqs
-        
-    end
+    pxx=calculate_ar_psd(ar,freqRange,fs);
+    plot(10*log10(pxx));
+%     pxx=nan(nFreqs,1);
+%     
+%     for i=1:nFreqs
+%         pxx(i)=abs(1-[1;ar]'*exp(-2*pi*1i*(i/fs)*(0:modelOrder)'));
+%     end
+end
+
+if nargout==0
+    clear pxx
 end
 
 end
