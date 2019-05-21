@@ -28,6 +28,10 @@ function [avgPSD,avgConnectivity,stdPSD,stdConnectivity]=plot_connectivity(conne
 %           is to plot individual traces. If plotType is 'avg' or 'avgerr', returns the
 %           average PSDs and the average gamma values if there are output variables to
 %           give them to 
+%       h: Only applicable for plotType = 'ind'; denotes whether the null hypothesis of no
+%           autocorrelation among the residuals is kept (h = 0) or rejected (h = 1). Plots
+%           individual traces where the null hypothesis is rejected in red. Size is 
+%           [t x s], where t is the number of trials, and s is the number of series
 %
 %   Outputs:
 %    - Figure containing subplots with PSD on the diagonal, and DTF connectivity
@@ -48,6 +52,7 @@ bool_calcARPSD=false;
 bool_newFig=true;
 plotType='ind';
 figTitle='';
+bool_showRejectedNull=false; % whether or not to plot the rejected null hypothesis trials in red
 
 numSeries=size(connectivity,1);
 numTrials=size(series,3);
@@ -82,6 +87,11 @@ if nargin > 4 && isstruct(config)
     if isfield(config,'plotType')
         plotType=config.plotType;
     end
+    
+    if isfield(config,'h') && strcmp(plotType,'ind')
+        bool_showRejectedNull=true;
+        h=config.h;
+    end
 end
 
 % Calculate the PSD from the original signal 
@@ -113,17 +123,9 @@ end
 % If averages need to be calculated
 
 if strcmp(plotType,'avg')
-%     avgPSD=zeros(length(freqRange),numSeries);
-%     avgConnectivity=zeros(numSeries,numSeries,length(freqRange));
-    
     avgPSD=mean(pxx,3);
     avgConnectivity=mean(connectivity,4);
 elseif strcmp(plotType,'avgerr')
-%     avgPSD=zeros(length(freqRange),numSeries);
-%     avgConnectivity=zeros(numSeries,numSeries,length(freqRange));
-%     stdPSD=zeros(length(freqRange),numSeries);
-%     stdConnectivity=zeros(numSeries,numSeries,length(freqRange));
-    
     avgPSD=mean(pxx,3);
     avgConnectivity=mean(connectivity,4);
     stdPSD=std(10*log10(pxx),0,3);  
@@ -136,12 +138,16 @@ end
 
 if strcmp(plotType,'ind')
     for i=1:numTrials
-        plotting(pxx(:,:,i),connectivity(:,:,:,i));
+        [ax_diag,ax_offdiag]=plotting(pxx(:,:,i),connectivity(:,:,:,i),[],[],h(i,:));
     end
+    yLimits=[min(min(10*log10(pxx)))-5,max(max(10*log10(pxx)))+5];
+    set_figure(ax_diag,ax_offdiag,yLimits);
 elseif strcmp(plotType,'avg')
-    plotting(avgPSD,avgConnectivity);
+    [ax_diag,ax_offdiag]=plotting(avgPSD,avgConnectivity);
+    set_figure(ax_diag,ax_offdiag,[min(min(10*log10(avgPSD)))-5,max(max(10*log10(avgPSD)))+5]);
 elseif strcmp(plotType,'avgerr')
-    plotting(avgPSD,avgConnectivity,stdPSD,stdConnectivity);
+    [ax_diag,ax_offdiag]=plotting(avgPSD,avgConnectivity,stdPSD,stdConnectivity);
+    set_figure(ax_diag,ax_offdiag,[min(min(10*log10(avgPSD)))-5,max(max(10*log10(avgPSD)))+5]);
 end
 
 if ~isempty(figTitle)
@@ -151,11 +157,11 @@ end
 
 drawnow;
 
-%% Sub plotting function to deal with a single trials worth of signals
+%% Internal plotting function to deal with a single trials worth of signals
 
-    function plotting(pxx,conn,pxx_std,conn_std)
+    function [ax_diag,ax_offdiag]=plotting(pxx,conn,pxx_std,conn_std,h)
         
-        if nargin > 2
+        if nargin == 4
             bool_plotErrorBars=true;
         else
             bool_plotErrorBars=false;
@@ -174,7 +180,11 @@ drawnow;
                     if bool_plotErrorBars
                         shadedErrorBar(freqRange,10*log10(pxx(:,k)),pxx_std(:,k));
                     else
-                        plot(freqRange,10*log10(pxx(:,k)),'k'); 
+                        if bool_showRejectedNull && (h(k) || h(l))
+                            plot(freqRange,10*log10(pxx(:,k)),'r'); 
+                        else
+                            plot(freqRange,10*log10(pxx(:,k)),'k'); 
+                        end
                     end
                     
                     title(labels{k}); hold on;
@@ -184,7 +194,11 @@ drawnow;
                     if bool_plotErrorBars
                         shadedErrorBar(freqRange,conn(k,l,:),conn_std(k,l,:));
                     else
-                        plot(freqRange,squeeze(conn(k,l,:)),'b'); 
+                        if bool_showRejectedNull && (h(k) || h(l))
+                            plot(freqRange,squeeze(conn(k,l,:)),'r'); 
+                        else
+                            plot(freqRange,squeeze(conn(k,l,:)),'b'); 
+                        end
                     end
                     
                     hold on;
@@ -192,12 +206,19 @@ drawnow;
                 end
             end
         end
-
-        linkaxes(ax_diag); xlim([freqRange(1) freqRange(end)]); ylim([min(min(10*log10(pxx)))-5,max(max(10*log10(pxx)))+5])
-        subplot(numSeries,numSeries,numSeries); linkaxes(ax_offdiag); 
-        xlim([freqRange(1) freqRange(end)]); ylim([0 1]);
-
     end
 
+%% Internal function to linkaxes and set limits for the subplots
+    function set_figure(ax_diag,ax_offdiag,yLimits)
+       
+        linkaxes(ax_diag); 
+        xlim([freqRange(1) freqRange(end)]); 
+        ylim([yLimits(1),yLimits(2)])
+        subplot(numSeries,numSeries,numSeries); 
+        
+        linkaxes(ax_offdiag); 
+        xlim([freqRange(1) freqRange(end)]); 
+        ylim([0 1]);
 
+    end
 end
