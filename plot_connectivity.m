@@ -11,8 +11,14 @@ function [avgPSD,avgConnectivity,stdPSD,stdConnectivity]=plot_connectivity(conne
 %    - series: Either the original signal used, AR coefficients that are estimated, or a PSD;
 %       these will then be used to calculate the PSD and plotted on the diagonals. Which
 %       input is used is defined in config, or the original signal is assumed to be given.
-%       Size is [n x s x t], where n is the number of samples, s is the number of series,
-%       and t is the number of trials.
+%       For the signal, size is [n x s x t], where n is the number of samples, s is the
+%       number of series, and t is the number of trials. 
+%       For the AR coefficients, should be a struct that contains the mdl field, from
+%       which the coefficients can be extracted. Base struct should have length equal to
+%       the number of trials, and each AR subfield should be [s x s x m], where s is the
+%       number of series, and m is the model order
+%       For the PSD, size is [f x s x t], where f is the number of frequencies being
+%       analyzed, s is the number of series, and t is the number of trials
 %    - freqRange: Vector of the range of frequencies over which the connectivity is measured
 %    - labels: Labels of the series, used for the titles to indicate the directionality of
 %       the connections. Should bea cell array of strings corresponding to the signals used.
@@ -55,7 +61,7 @@ figTitle='';
 bool_showRejectedNull=false; % whether or not to plot the rejected null hypothesis trials in red
 
 numSeries=size(connectivity,1);
-numTrials=size(series,3);
+numTrials=size(connectivity,4);
 
 if nargin > 4 && isstruct(config)
     if isfield(config,'fs')
@@ -100,7 +106,7 @@ if bool_calcOrigPSD
     window=round(fs);
     overlap=round(window/2);
     
-    pxx=zeros(length(freqRange),numSeries,numTrials);
+    pxx=nan(length(freqRange),numSeries,numTrials);
     
     for i=1:numSeries
         for j=1:numTrials
@@ -108,8 +114,13 @@ if bool_calcOrigPSD
         end
     end
 elseif bool_calcARPSD
-    disp('Unable to calculate PSD from AR coefficients currently');
-    pxx=[];
+    pxx=nan(length(freqRange),numSeries,numTrials);
+    
+    for i=1:numSeries
+        for j=1:numTrials
+            pxx(:,i,j)=calculate_ar_psd(series(j).mdl.AR(i,i,:),freqRange,fs);
+        end
+    end
 end
 
 % Create a new figure, or focus on an existing one
