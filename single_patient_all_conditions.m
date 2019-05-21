@@ -29,9 +29,10 @@ fs=extract_sampling_frequency(FILE);
 % order_notch=4;
 % cutoff_notch=[54,66;114,126;176,184;236,244];
 
-filtering=struct('NO_FILTERING',true);
+filtering=struct;
+filtering.NO_FILTERING=true;
 [filtering.hpf.num,filtering.hpf.den]=CreateHPF_butter(fs,3,4);
-% filtering.normalize='z-score';
+filtering.normalize='z-score';
 
 % for i=1:length(cutoff_notch)
 %     [filtering.notch(i).num,filtering.notch(i).den]=CreateBSF_butter(fs,order_notch,cutoff_notch(i,:));
@@ -77,20 +78,15 @@ for j=1:numConditions
 
     %% Test whiteness
 
-    h.(currCond)=ones(numTrials,numChannels);
-    pVal.(currCond)=zeros(numTrials,numChannels);
-    pass.(currCond)=0;
+    h.(currCond)=nan(numTrials,numChannels);
+    pVal.(currCond)=nan(numTrials,numChannels);
+    pass.(currCond)=nan(numTrials,1);
 
     for i=1:numTrials
-        [pass.(currCond),h.(currCond)(i,:),pVal.(currCond)(i,:)]=test_model(res.(currCond)(i).E,length(x.(currCond)(:,:,i)));
-
-        if ~pass.(currCond)
-            fprintf('WARNING: Null hypothesis of uncorrelated errors rejected for trial %d\n',i);
-            for k=1:numChannels
-                fprintf('\t%s: h = %d with p = %.4f\n',labels{k},h.(currCond)(i,k),pVal.(currCond)(i,k));
-            end
-        end
+        [pass.(currCond)(i),h.(currCond)(i,:),pVal.(currCond)(i,:)]=test_model(res.(currCond)(i).E,length(x.(currCond)(:,:,i)));
     end
+    
+    print_whiteness(h.(currCond),pVal.(currCond),labels);
 
     %% Calculate DTF
 
@@ -122,8 +118,8 @@ end
 
 config_crit.hFig=[];
 save(newFile,'ar','avg_gamma','avg_psd','channels','conditions','cond_labels','crit',...
-    'FILE','freqRange','filtering','fs','gamma','h','labels','PATIENT_ID','RECORDING_DATE',...
-    'res','RUN_ID','x','x_all','config_crit');
+    'FILE','freqRange','filtering','fs','gamma','h','labels','PATIENT_ID','pVal',...
+    'RECORDING_DATE','res','RUN_ID','x','x_all','config_crit');
 
 
 
