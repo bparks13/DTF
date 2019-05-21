@@ -40,11 +40,6 @@ I=eye(numSeries);
 
 AR=mdl.AR;
 
-% AR=zeros([numSeries,numSeries,modelOrder]);  % Extract the coefficients from the model, [numseries x numseries x modelorder]
-% for i=1:length(mdl.AR)
-%     AR(:,:,i)=mdl.AR{i};
-% end
-
 tmp_pdc=zeros(numSeries,numSeries,nFreqs);
 
 % Calculate PDC
