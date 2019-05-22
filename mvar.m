@@ -9,7 +9,8 @@ function [mdl,E,criterion]=mvar(x,config)
 %       the number of series to model
 %    - config: Struct containing optional parameters
 %       orderRange: Vector containing the model orders to consider. Default [1:30]
-%       crit: String defining which information criterion to use, 'aic' or 'bic' [default]
+%       crit: String defining which information criterion to use, 'aic', 'bic' [default],
+%           or 'psd'
 %       output: Int defining level of verbosity for output. 0 (none), 1 (model number)
 %           [default], 2 (model order and criterion tested)
 %       method: String defining which method to use; Matlab's varm ('varm') or Yule-Walker
@@ -21,7 +22,11 @@ function [mdl,E,criterion]=mvar(x,config)
 %       epsilon: Can be specified if orderSelection is set to 'diff', where epsilon is the
 %           threshold for defining when differences have decreased to a small enough
 %           degree to select the model order, defined as a percentage (i.e. 0.01 == 1%).
-%           Default value is 0.01% (= 0.0001)
+%           Default value is 0.1% (= 0.001)
+%       fs: If crit is defined as 'psd', the sampling frequency is required
+%       freqRange: If crit is defined as 'psd', the PSD will be calculated up to half the
+%           sampling frequency. freqRange can be defined to restrict the analysis of the
+%           PSD to a smaller range
 %
 %   Outputs:
 %    - mdl: Struct containing the AR model fit for the data given
@@ -30,6 +35,8 @@ function [mdl,E,criterion]=mvar(x,config)
 %       logL: Log-likelihood of the model fit, used for calculating information criterion
 %       order: Model order that is found to have the lowest information criterion
 %       numSeries: Number of series in the model
+%       x_hat: Estimated data from the AR model
+%       pxx: Estimated Power Spectral Density of the x_hat, if crit is defined as 'psd'
 %    - E: Residuals of the model fit, used for testing the whiteness of the model. Size is
 %       [(n - o) x s], where n is the number of samples, o is the model order, and s is
 %       the number of series
@@ -45,7 +52,9 @@ crit='bic';
 output=1;
 method='yule';
 orderSelection='min';
-epsilon=0.0001;
+epsilon=0.001;
+pxx_sig=[];
+pxx_ar=[];
 
 if nargin > 1 && isstruct(config)
     if isfield(config,'orderRange')
@@ -54,6 +63,20 @@ if nargin > 1 && isstruct(config)
     
     if isfield(config,'crit')
         crit=config.crit;
+        
+        if strcmp(crit,'psd')
+            fs=config.fs;
+            window=round(fs);
+            overlap=round(fs/2);
+            freqRange=1:round(fs/2);
+            pxx_sig=pwelch(x,window,overlap,freqRange,fs);
+            
+            if isfield(config,'freqRange')
+                freqForAnalysis=config.freqRange;
+            else
+                freqForAnalysis=freqRange;
+            end
+        end 
     end
     
     if isfield(config,'output')
@@ -133,11 +156,12 @@ for i=1:numOrders
         end
     elseif strcmp(method,'yule')
         [AR]=estimate_ar_coefficients(x,orderRange(i));
-        [tmp_E,C]=estimate_residuals(x,AR);
+        [tmp_E,C,x_hat]=estimate_residuals(x,AR);
         logL=calculate_loglikelihood(tmp_E,C);
-        criterion(i)=calculate_bic(logL,orderRange(i),numSamples-orderRange(i));
 
         if strcmp(crit,'bic')
+            criterion(i)=calculate_bic(logL,orderRange(i),numSamples-orderRange(i));
+            
             if strcmp(orderSelection,'min')
                 result = criterion(i) < minCrit;
             elseif strcmp(orderSelection,'diff')
@@ -148,22 +172,39 @@ for i=1:numOrders
                     result=false;
                 end
             end
-            
-            if result
-                minCrit=criterion(i);
-                mdl.AR=AR;
-                mdl.C=C;
-                mdl.logL=logL;
-                mdl.order=orderRange(i);
-                E=tmp_E;
-                
-                if strcmp(orderSelection,'diff')
-                    bool_minDiffFound=true;
-                end
-            end
         elseif strcmp(crit,'aic')
             disp('WARNING: No AIC calculation implemented. No criterion tested.');
-        end    
+            result=false;
+        elseif strcmp(crit,'psd')
+            pxx_ar=pwelch(x_hat,window,overlap,freqRange,fs);
+            criterion(i)=mean(mean(abs(10*log10(pxx_sig(freqForAnalysis,:)) - 10*log10(pxx_ar(freqForAnalysis,:)))));
+            
+            if strcmp(orderSelection,'min')
+                result = criterion(i) < minCrit;
+            elseif strcmp(orderSelection,'diff')
+                if i>1 && ~bool_minDiffFound
+                    result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
+                        criterion(i) - criterion(i-1) > 0;
+                else
+                    result=false;
+                end
+            end
+        end
+        
+        if result
+            minCrit=criterion(i);
+            mdl.AR=AR;
+            mdl.C=C;
+            mdl.logL=logL;
+            mdl.order=orderRange(i);
+            mdl.x_hat=x_hat;
+            mdl.pxx=pxx_ar;
+            E=tmp_E;
+
+            if strcmp(orderSelection,'diff')
+                bool_minDiffFound=true;
+            end
+        end
     end
     
     if output == 1
@@ -174,7 +215,7 @@ for i=1:numOrders
 end
 
 if isempty(mdl.order)
-    fprintf('\nWARNING: NO MODEL FOUND WITH ORDER SELECTION ''%s''\nFINDING MINIMUM VALUE...\n',orderSelection);
+    fprintf('\nWARNING: NO MODEL FOUND WITH ''%s'' AND ''%s''\nFINDING MINIMUM VALUE...\n',orderSelection,crit);
     
     minCritInd=find(criterion==min(criterion));
     
