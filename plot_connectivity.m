@@ -38,6 +38,9 @@ function [avgPSD,avgConnectivity,stdPSD,stdConnectivity]=plot_connectivity(conne
 %           autocorrelation among the residuals is kept (h = 0) or rejected (h = 1). Plots
 %           individual traces where the null hypothesis is rejected in red. Size is 
 %           [t x s], where t is the number of trials, and s is the number of series
+%       freqLims: If defined, changes the limits of the plots to only show the frequency
+%           range specified. Can be a vector of the entire range, or just the min and max
+%           values to be used
 %
 %   Outputs:
 %    - Figure containing subplots with PSD on the diagonal, and DTF connectivity
@@ -56,12 +59,16 @@ fs=2400;
 bool_calcOrigPSD=true;
 bool_calcARPSD=false;
 bool_newFig=true;
+bool_changeFreqRange=false;
 plotType='ind';
 figTitle='';
+
 bool_showRejectedNull=false; % whether or not to plot the rejected null hypothesis trials in red
 
 numSeries=size(connectivity,1);
 numTrials=size(connectivity,4);
+
+freqLims=[];
 
 if nargin > 4 && isstruct(config)
     if isfield(config,'fs')
@@ -97,6 +104,11 @@ if nargin > 4 && isstruct(config)
     if isfield(config,'h') && strcmp(plotType,'ind')
         bool_showRejectedNull=true;
         h=config.h;
+    end
+    
+    if isfield(config,'freqLims')
+        bool_changeFreqRange=true;
+        freqLims=[config.freqLims(1),config.freqLims(end)];
     end
 end
 
@@ -152,13 +164,28 @@ if strcmp(plotType,'ind')
         [ax_diag,ax_offdiag]=plotting(pxx(:,:,i),connectivity(:,:,:,i),[],[],h(i,:));
     end
     yLimits=[min(min(10*log10(pxx)))-5,max(max(10*log10(pxx)))+5];
-    set_figure(ax_diag,ax_offdiag,yLimits);
+    
+    if bool_changeFreqRange
+        set_figure(ax_diag,ax_offdiag,yLimits,freqLims);
+    else
+        set_figure(ax_diag,ax_offdiag,yLimits);
+    end
 elseif strcmp(plotType,'avg')
     [ax_diag,ax_offdiag]=plotting(avgPSD,avgConnectivity);
-    set_figure(ax_diag,ax_offdiag,[min(min(10*log10(avgPSD)))-5,max(max(10*log10(avgPSD)))+5]);
+    
+    if bool_changeFreqRange
+        set_figure(ax_diag,ax_offdiag,[min(min(10*log10(avgPSD)))-5,max(max(10*log10(avgPSD)))+5],freqLims);
+    else
+        set_figure(ax_diag,ax_offdiag,[min(min(10*log10(avgPSD)))-5,max(max(10*log10(avgPSD)))+5]);
+    end
 elseif strcmp(plotType,'avgerr')
     [ax_diag,ax_offdiag]=plotting(avgPSD,avgConnectivity,stdPSD,stdConnectivity);
-    set_figure(ax_diag,ax_offdiag,[min(min(10*log10(avgPSD)))-5,max(max(10*log10(avgPSD)))+5]);
+    
+    if bool_changeFreqRange
+        set_figure(ax_diag,ax_offdiag,[min(min(10*log10(avgPSD)))-5,max(max(10*log10(avgPSD)))+5],freqLims);
+    else
+        set_figure(ax_diag,ax_offdiag,[min(min(10*log10(avgPSD)))-5,max(max(10*log10(avgPSD)))+5]);
+    end
 end
 
 if ~isempty(figTitle)
@@ -220,15 +247,19 @@ drawnow;
     end
 
 %% Internal function to linkaxes and set limits for the subplots
-    function set_figure(ax_diag,ax_offdiag,yLimits)
-       
+    function set_figure(ax_diag,ax_offdiag,yLimits,xLimits)
+        
+        if nargin==3
+            xLimits=[freqRange(1) freqRange(end)];
+        end
+        
         linkaxes(ax_diag); 
-        xlim([freqRange(1) freqRange(end)]); 
+        xlim([xLimits(1), xLimits(2)]); 
         ylim([yLimits(1),yLimits(2)])
         subplot(numSeries,numSeries,numSeries); 
-        
+
         linkaxes(ax_offdiag); 
-        xlim([freqRange(1) freqRange(end)]); 
+        xlim([xLimits(1), xLimits(2)]); 
         ylim([0 1]);
 
     end
