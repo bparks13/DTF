@@ -14,9 +14,9 @@ PATIENT_ID='ET_CL_004';
 RECORDING_DATE='2018_06_20';
 MIDPATH='preproc';
 RUN_ID='run5';
-ADDON='__ALLCOND_ALLCOMB';
+ADDON='__PSD_MIN_OLDALGORITHM';
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
-% config=struct('default',false,'preset',2);
+% config=struct('default',false,'preset',1);
 % [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID,config);
 [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID);
 
@@ -26,20 +26,22 @@ end
 
 fs=extract_sampling_frequency(FILE);
 
-% order_notch=4;
-% cutoff_notch=[54,66;114,126;176,184;236,244];
-
 filtering=struct;
 filtering.NO_FILTERING=true;
 [filtering.hpf.num,filtering.hpf.den]=CreateHPF_butter(fs,3,4);
-filtering.normalize='z-score';
+% filtering.normalize='z-score';
 
+% order_notch=4;
+% cutoff_notch=[58,62;118,122];
+% 
 % for i=1:length(cutoff_notch)
 %     [filtering.notch(i).num,filtering.notch(i).den]=CreateBSF_butter(fs,order_notch,cutoff_notch(i,:));
 % end
 
+% [filtering.lpf.num,filtering.lpf.den]=CreateLPF_butter(fs,8,600);
+
 numConditions=length(conditions);
-freqRange=2:50;
+freqRange=1:1200;
 
 x=struct;
 x_all=struct;
@@ -52,6 +54,11 @@ gamma=struct;
 avg_psd=struct;
 avg_gamma=struct;
 pass=struct;
+
+freqForAnalysis=4:100;
+config_crit=struct('orderSelection','min','crit','psd','orderRange',1:30,'fs',fs,...
+    'freqRange',freqForAnalysis);
+config_plot=struct('hFig',[],'seriesType',1,'plotType','avgerr','freqLims',freqForAnalysis);
 
 %% Main Loop
 
@@ -67,13 +74,10 @@ for j=1:numConditions
     numSamples=length(x.Rest(:,1));
 
     %% Calculate all MVAR models
-    
-    config_crit=struct('orderSelection','diff');
-%     config=struct('method','varm');
 
     for i=1:numTrials
         fprintf('%d/%d - ',i,numTrials);
-        [ar.(currCond)(i).mdl,res.(currCond)(i).E,crit.(currCond)(i).BIC]=mvar(squeeze(x.(currCond)(:,:,i)),config_crit);
+        [ar.(currCond)(i).mdl,res.(currCond)(i).E,crit.(currCond)(i).(config_crit.crit)]=mvar(squeeze(x.(currCond)(:,:,i)),config_crit);
     end
 
     %% Test whiteness
@@ -98,11 +102,10 @@ for j=1:numConditions
 
     %% Plot all connectivities and PSDs
 
-    config=struct('hFig',[],'seriesType',1,'plotType','avgerr');
-    config.hFig=figure;
-    config.figTitle=sprintf('%s, %s, %s - %s: Connectivity',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
-
-    plot_connectivity(gamma.(currCond),x.(currCond),freqRange,labels,config);
+    config_plot.hFig=figure;
+    config_plot.figTitle=sprintf('%s, %s, %s - %s: Connectivity',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
+    
+    plot_connectivity(gamma.(currCond),x.(currCond),freqRange,labels,config_plot);
 end
 
 %% Save relevant variables
@@ -117,9 +120,10 @@ while exist(newFile,'file')
 end
 
 config_crit.hFig=[];
+config_plot.hFig=[];
 save(newFile,'ar','avg_gamma','avg_psd','channels','conditions','cond_labels','crit',...
     'FILE','freqRange','filtering','fs','gamma','h','labels','PATIENT_ID','pVal',...
-    'RECORDING_DATE','res','RUN_ID','x','x_all','config_crit');
+    'RECORDING_DATE','res','RUN_ID','x','x_all','config_crit','config_plot');
 
 
 

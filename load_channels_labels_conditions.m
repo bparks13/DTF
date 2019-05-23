@@ -89,8 +89,8 @@ elseif ~isempty(preset_value)
         if strcmp(record_date,'2018_06_20')
             if strcmp(run_id,'run5')
                 if preset_value == 1
-                    channels=[6,5;4,3];
-                    labels={'Vim (1-0)','Cort (3-2)'};
+                    channels=[8,7;6,5;4,3;2,1];
+                    labels={'Vim (3-2)','Vim (1-0)','Cort (3-2)','Cort (1-0)'};
                     conditions=1;
                     cond_labels={'Rest'};
                     return

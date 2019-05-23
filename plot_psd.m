@@ -30,23 +30,25 @@ freqRange=1:(fs/2);
 x=[];
 ar=[];
 
-if isstruct(config)
-    if isfield(config,'inputType')
-        if strcmp(config.inputType,'signal')
-            bool_isSignal=true;
-            x=in;
-        elseif strcmp(config.inputType,'coeff')
-            bool_isCoeff=true;
-            ar=in;
-            
-            if size(ar,1)==1
-                ar=squeeze(ar);
+if nargin > 2
+    if isstruct(config)
+        if isfield(config,'inputType')
+            if strcmp(config.inputType,'signal')
+                bool_isSignal=true;
+                x=in;
+            elseif strcmp(config.inputType,'coeff')
+                bool_isCoeff=true;
+                ar=in;
+
+                if size(ar,1)==1
+                    ar=squeeze(ar);
+                end
             end
         end
-    end
-    
-    if isfield(config,'hFig')
-        bool_newFig=false;
+
+        if isfield(config,'hFig')
+            bool_newFig=false;
+        end
     end
 end
 
@@ -67,11 +69,6 @@ if bool_isSignal
 elseif bool_isCoeff
     pxx=calculate_ar_psd(ar,freqRange,fs);
     plot(10*log10(pxx));
-%     pxx=nan(nFreqs,1);
-%     
-%     for i=1:nFreqs
-%         pxx(i)=abs(1-[1;ar]'*exp(-2*pi*1i*(i/fs)*(0:modelOrder)'));
-%     end
 end
 
 if nargout==0

@@ -33,6 +33,6 @@ for i=1:numChannels
     fprintf('\t%4d/%-6d',numTrialsRejected(i),numTrials);
 end
 
-fprintf('\n')
+fprintf('\n\n')
     
 end
