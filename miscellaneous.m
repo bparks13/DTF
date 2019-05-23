@@ -104,20 +104,35 @@ return
 
 %% Code for visualizing multivariate data
 
-t=(0:length(X)-1)/2400;
+t=(0:length(tmp_x)-1)/2400;
 
 figure;
-subplot(211);
-plot(t,X(:,1),'b'); hold on;
-plot(t(modelOrder+1:end),x_hat(:,1),'g');
-plot(t(modelOrder+1:end),E(:,1),'r');
-legend('X','x-hat','E');
 
-subplot(212);
-plot(t,X(:,2),'b'); hold on;
-plot(t(modelOrder+1:end),x_hat(:,2),'g');
-plot(t(modelOrder+1:end),E(:,2),'r');
-legend('X','x-hat','E');
+for i=1:4
+    subplot(4,1,i);
+    plot(t,tmp_x(:,i),'b'); hold on;
+    plot(t(modelOrder+1:end),tmp_x_hat(:,i),'g');
+    plot(t(modelOrder+1:end),tmp_E(:,i),'r');
+    legend('X','x-hat','E');
+end
+% 
+% subplot(412);
+% plot(t,X(:,2),'b'); hold on;
+% plot(t(modelOrder+1:end),x_hat(:,2),'g');
+% plot(t(modelOrder+1:end),E(:,2),'r');
+% legend('X','x-hat','E');
+% 
+% subplot(413);
+% plot(t,X(:,3),'b'); hold on;
+% plot(t(modelOrder+1:end),x_hat(:,3),'g');
+% plot(t(modelOrder+1:end),E(:,3),'r');
+% legend('X','x-hat','E');
+% 
+% subplot(414);
+% plot(t,X(:,4),'b'); hold on;
+% plot(t(modelOrder+1:end),x_hat(:,4),'g');
+% plot(t(modelOrder+1:end),E(:,4),'r');
+% legend('X','x-hat','E');
 
 return
 
