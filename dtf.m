@@ -44,10 +44,10 @@ tmp_pdc=zeros(numSeries,numSeries,nFreqs);
 
 % Calculate PDC
 for i=1:nFreqs
-    tmp_pdc(:,:,i)=I-reshape(sum(bsxfun(@times,[ones(numSeries^2,1),reshape(AR,numSeries^2,modelOrder)],...
-        exp(-(2*pi*1i/fs)*(0:modelOrder)*freqRange(i))),2),numSeries,numSeries);
-%     tmp_pdc(:,:,i)=I-reshape(sum(bsxfun(@times,reshape(AR,numSeries^2,modelOrder),...
-%         exp(-(2*pi*1i/fs)*(1:modelOrder)*freqRange(i))),2),numSeries,numSeries);
+%     tmp_pdc(:,:,i)=I-reshape(sum(bsxfun(@times,reshape(cat(3,eye(numSeries),AR),numSeries^2,modelOrder+1),...
+%         exp(-(2*pi*1i/fs)*(0:modelOrder)*freqRange(i))),2),numSeries,numSeries);
+    tmp_pdc(:,:,i)=I-reshape(sum(bsxfun(@times,reshape(AR,numSeries^2,modelOrder),...
+        exp(-(2*pi*1i/fs)*(1:modelOrder)*freqRange(i))),2),numSeries,numSeries);
     % This is the matrix calculation from SIFT
 end
 
