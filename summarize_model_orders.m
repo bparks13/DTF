@@ -23,7 +23,7 @@ for i=1:numOrders
     orders(i)=cond(i).mdl.order;
 end
 
-fprintf('Range - [%d, %d], average model order - (%.2f ± %.2f)\n',...
+fprintf('Range - [%2d, %2d], average model order - (%5.2f ± %-5.2f)\n',...
     min(orders),max(orders),mean(orders),std(orders));
 
 end
