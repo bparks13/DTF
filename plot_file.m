@@ -11,17 +11,15 @@ CCC;
 
 FILE='ET_CL_004__2018_06_20__run5__PSD_MIN_NOFILTERS.mat';
 
-data=load(FILE);
+load(FILE);
 
 %% Plot connectivity figure
 
-config=data.config_plot;
-
-for i=1:length(data.cond_labels)
-    currCond=data.cond_labels{i};
+for i=1:length(cond_labels)
+    currCond=cond_labels{i};
 %     config.h=data.h.(currCond);
-    config.figTitle=sprintf('%s, %s, %s - %s: Connectivity',data.PATIENT_ID,data.RECORDING_DATE,data.RUN_ID,currCond);
-    plot_connectivity(data.gamma.(currCond),data.x.(currCond),data.freqRange,data.labels,config);
+    config_plot.figTitle=sprintf('%s, %s, %s - %s: Connectivity',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
+    plot_connectivity(gamma.(currCond),x.(currCond),freqRange,labels,config_plot);
 end
 
 return
@@ -32,15 +30,33 @@ return
 
 config=struct; 
 
-for i=1:length(data.cond_labels)
-    currCond=data.cond_labels{i};
+for i=1:length(cond_labels)
+    currCond=cond_labels{i};
     config.hFig=figure;
     
-    for j=1:length(data.crit.(currCond))
-        config.modelOrder=data.ar.(currCond)(j).mdl.order;
-        config.figTitle=sprintf('%s, %s, %s - %s: Criterion',data.PATIENT_ID,data.RECORDING_DATE,data.RUN_ID,currCond);
-        plot_criterion(data.crit.(currCond)(j).(data.config_crit.crit),config);
+    for j=1:length(crit.(currCond))
+        config.modelOrder=ar.(currCond)(j).mdl.order;
+        config.figTitle=sprintf('%s, %s, %s - %s: Criterion',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
+        plot_criterion(crit.(currCond)(j).(config_crit.crit),config);
     end
 end 
 
+%% Plot original, estimated, and residuals
+
+figure;
+numChannels=size(x_all,2);
+currCond='Rest';
+trialNum=2;
+t=(0:(length(x.(currCond))-1))/fs;
+colors=linspecer(3);
+modelOrder=ar.(currCond)(trialNum).mdl.order;
+
+for i=1:numChannels
+    subplot(numChannels,1,i);
+    plot(t,x.(currCond)(:,i,trialNum),'Color',colors(1,:)); hold on;
+    plot(t(modelOrder+1:end),ar.(currCond)(trialNum).mdl.x_hat(:,i),'Color',colors(2,:));
+    plot(t(modelOrder+1:end),res.(currCond)(trialNum).E(:,i),'Color',colors(3,:));
+    xlim([t(1) t(end)])
+    legend('x','x\_hat','error');
+end
 

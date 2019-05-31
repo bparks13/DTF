@@ -67,8 +67,9 @@ else
 
     for i = m+1:N+m
         for j = 1:m
-            X(i,:) = X(i,:) + X(i-j,:) * a(:,:,j) + stdZ*randn(1,numSeries);
+            X(i,:) = X(i,:) + X(i-j,:) * a(:,:,j);
         end
+        X(i,:) = X(i,:) + stdZ*randn(1,numSeries);
     end
     
     X=X(m+1:end,:);

@@ -17,6 +17,10 @@ function plot_acf(x,lag,numSD)
 %   See also: autocorr
 %
 
+if size(x,1) == 1
+    x=squeeze(x);
+end
+
 maxLag=20;
 numSTD=2;
 numMA=0;
