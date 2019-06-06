@@ -71,10 +71,12 @@ else
 
     AR = reshape(r_n / R_n,numSeries,numSeries,m); 
     
-    C=reshape(R_all(lags==0,:),numSeries,numSeries);
-    
-    for i=1:m
-        C=C+reshape(R_all(lags==-i,:),numSeries,numSeries)' * -AR(:,:,i); 
+    if nargout > 1 
+        C=reshape(R_all(lags==0,:),numSeries,numSeries);
+
+        for i=1:m
+            C=C+reshape(R_all(lags==-i,:),numSeries,numSeries)' * -AR(:,:,i); 
+        end
     end
 end
 

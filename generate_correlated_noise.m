@@ -20,13 +20,13 @@ function noise=generate_correlated_noise(N,m,rho,stdZ)
 %    - noise: Correlated noise for the given channels
 %
 
-if length(rho) ~= m
+if size(rho,3) ~= m
     disp('ERROR: Number of coefficients does not match model order');
     noise=nan;
     return;
 end
 
-if size(rho,1) < size(rho,2)
+if (size(rho,1) < size(rho,2)) && size(rho,3) ~= 1
     rho=rho';
 end
 
@@ -50,7 +50,7 @@ else
         for j=1:m
             noise(i,:)=noise(i,:) + noise(i-j,:) * rho(:,:,j);
         end
-        noise(i,:)=noise(i,:) + stdZ*randn(1);
+        noise(i,:)=noise(i,:) + stdZ*randn(1,numChannels);
     end
 end
 
