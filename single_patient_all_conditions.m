@@ -14,9 +14,9 @@ PATIENT_ID='ET_CL_004';
 RECORDING_DATE='2018_06_20';
 MIDPATH='preproc';
 RUN_ID='run5';
-ADDON='__PSD_MIN_OLDALGORITHM';
+ADDON='__DOWNSAMPLE_600Hz';
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
-% config=struct('default',false,'preset',1);
+% config=struct('default',false,'preset',2);
 % [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID,config);
 [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID);
 
@@ -24,11 +24,12 @@ if isempty(channels) || isempty(labels) || isempty(conditions) || isempty(cond_l
     return
 end
 
-fs=extract_sampling_frequency(FILE);
+fs_init=extract_sampling_frequency(FILE);
 
 filtering=struct;
 filtering.NO_FILTERING=true;
-[filtering.hpf.num,filtering.hpf.den]=CreateHPF_butter(fs,3,4);
+[filtering.hpf.num,filtering.hpf.den]=CreateHPF_butter(fs_init,3,2);
+filtering.downsample=400;
 % filtering.normalize='z-score';
 
 % order_notch=4;
@@ -40,11 +41,12 @@ filtering.NO_FILTERING=true;
 
 % [filtering.lpf.num,filtering.lpf.den]=CreateLPF_butter(fs,8,600);
 
+[x_all,fs]=load_data(FILE,channels,[],filtering);
+
 numConditions=length(conditions);
-freqRange=1:1200;
+freqRange=1:(fs/2);
 
 x=struct;
-x_all=struct;
 ar=struct;
 res=struct; 
 crit=struct;
@@ -56,9 +58,10 @@ avg_gamma=struct;
 pass=struct;
 
 freqForAnalysis=4:100;
-config_crit=struct('orderSelection','min','crit','psd','orderRange',1:30,'fs',fs,...
+config_crit=struct('orderSelection','min','crit','bic','orderRange',1:50,'fs',fs,...
     'freqRange',freqForAnalysis);
-config_plot=struct('hFig',[],'seriesType',1,'plotType','avgerr','freqLims',freqForAnalysis);
+config_plot=struct('hFig',[],'seriesType',1,'plotType','avgerr','freqLims',freqForAnalysis,...
+    'fs',fs);
 
 %% Main Loop
 
@@ -67,7 +70,7 @@ for j=1:numConditions
     
     fprintf('Beginning condition ''%s''\n',currCond);
     
-    [x.(currCond),fs,x_all.(currCond)]=load_data(FILE,channels,conditions(j),filtering);
+    [x.(currCond),fs]=load_data(FILE,channels,conditions(j),filtering);
 
     numTrials=size(x.(currCond),3);
     numChannels=length(channels);
@@ -122,7 +125,7 @@ end
 config_crit.hFig=[];
 config_plot.hFig=[];
 save(newFile,'ar','avg_gamma','avg_psd','channels','conditions','cond_labels','crit',...
-    'FILE','freqRange','filtering','fs','gamma','h','labels','PATIENT_ID','pVal',...
+    'FILE','freqRange','filtering','fs','fs_init','gamma','h','labels','PATIENT_ID','pVal',...
     'RECORDING_DATE','res','RUN_ID','x','x_all','config_crit','config_plot');
 
 
