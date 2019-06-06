@@ -59,7 +59,8 @@ hold('on')
 plot([numMA+0.5 numMA+0.5; numLags numLags],[bounds([1 1]) bounds([2 2])],'-b');
 plot([0 numLags],[0 0],'-k');
 hold('off')
-a = axis;
-axis([a(1:3) 1]);
+% a = axis;
+% axis([a(1:3) 1]);
+xlim([0 numLags]);
 
 end
