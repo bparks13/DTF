@@ -30,7 +30,12 @@ function [x,fs,x_all]=load_data(file,channels,condition,filtering)
 %           normalized. String containing the method to normalize; 'none' performs no
 %           additional normalization, 'z-score' normalizes the signals by dividing by the
 %           standard deviation of the respective condition extracted (for x) or the
-%           standard deviation of the entire 
+%           standard deviation of the entire signal
+%       downsample: Separate from everything else, if defined, the signal will be
+%           downsampled to match the sampling frequency given in this field. Note that
+%           this value should be an even multiple of the original sampling frequency.
+%           Additionally, it is recommended that this step is only performed if there is
+%           no low-pass filtering done
 %
 %   Outputs:
 %    - x: Matrix of values for all channels and all trials matching a particular
@@ -145,6 +150,13 @@ end
 if isempty(condition) || ~any(condition)
     x=x_all;
     x_all=[];
+    
+    if isfield(filtering,'downsample')
+        indToSkip=round(fs/filtering.downsample);
+        x=downsample(x,indToSkip);
+        fs=filtering.downsample;
+    end
+    
     return
 end
 
@@ -209,6 +221,22 @@ if bool_normalize
             x(:,i,:)=x(:,i,:)/avgStd(i);
         end
     end
+end
+    
+if isfield(filtering,'downsample')
+    indToSkip=round(fs/filtering.downsample);
+    x_all=downsample(x_all,indToSkip);
+    tmp_x=zeros(round(size(x,1)/indToSkip),size(x,2),size(x,3));
+    
+    for i=1:size(x,2)
+        for j=1:size(x,3)
+            tmp_x(:,i,j)=downsample(x(:,i,j),indToSkip);
+        end
+    end
+    
+    x=tmp_x;
+    
+    fs=filtering.downsample;
 end
 
 end
