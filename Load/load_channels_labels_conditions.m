@@ -138,6 +138,20 @@ if bool_default
         else
             disp('WARNING: Invalid recording date given. Please set channels/labels for this combination');
         end
+    elseif strcmp(patient,'ET_OR_STIM_018')
+        if strcmp(record_date,'2018_11_28')
+            if strcmp(run_id,'run12')
+                channels=[14,13;12,11;10,9;8,7;6,5;4,3;2,1];
+                labels={'VO (3-2)','VO (1-0)','Vim (3-2)','Vim (1-0)','Cort (5-4)','Cort (3-2)','Cort (1-0)'};
+                conditions=[1,2,3,4];
+                cond_labels={'Rest','MoveRight','MoveLeft','Caress'};
+                return
+            else
+                disp('WARNING: Invalid run number given. Please set channels/labels for this combination');
+            end
+        else
+            disp('WARNING: Invalid recording date given. Please set channels/labels for this combination');
+        end
     else
         disp('WARNING: Invalid patient ID given. Please set channels/labels for this combination');
     end
