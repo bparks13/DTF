@@ -1,7 +1,6 @@
 CCC;
 
-currPath=mfilename('fullpath');
-rootPath=fileparts(currPath);
+rootPath=get_root_path();
 
 addpath(fullfile(rootPath,'Calculate'),...
     fullfile(rootPath,'Compare'),...

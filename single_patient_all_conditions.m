@@ -6,17 +6,20 @@
 %
 
 CCC;
+dtf_startup;
 
 %% Load all data
 
-PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
-PATIENT_ID='ET_CL_004';
+PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET\\OR\\with_DBS';
+PATIENT_ID='ET_OR_STIM_018';
+% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
+% PATIENT_ID='ET_CL_004';
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_Tourette';
 % PATIENT_ID='TS04 Double DBS Implantation';
-RECORDING_DATE='2018_06_20';
+RECORDING_DATE='2018_11_28';
 MIDPATH='preproc';
-RUN_ID='run5';
-ADDON='__PSD__Z_SCORE';
+RUN_ID='run12';
+ADDON='__FIRST_TRY__PSD__Z_SCORE';
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
 % config=struct('default',false,'preset',2);
 % [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID,config);
@@ -117,7 +120,7 @@ end
 
 count=1;
 
-newFile=fullfile(pwd,sprintf('%s__%s__%s%s.mat',PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON));
+newFile=fullfile(pwd,'Files',sprintf('%s__%s__%s%s.mat',PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON));
 
 while exist(newFile,'file')
     newFile=fullfile(pwd,sprintf('%s__%s__%s%s_(%d).mat',PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON,count));
