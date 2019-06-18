@@ -9,7 +9,7 @@ CCC;
 
 %% Load data
 
-FILE='ET_CL_004__2018_06_20__run5__PSD_MIN_NOFILTERS.mat';
+FILE='ET_CL_004__2018_06_20__run5__DOWNSAMPLE_600Hz.mat';
 
 load(FILE);
 
@@ -46,7 +46,7 @@ end
 figure;
 numChannels=size(x_all,2);
 currCond='Rest';
-trialNum=2;
+trialNum=1;
 t=(0:(length(x.(currCond))-1))/fs;
 colors=linspecer(3);
 modelOrder=ar.(currCond)(trialNum).mdl.order;
@@ -59,4 +59,19 @@ for i=1:numChannels
     xlim([t(1) t(end)])
     legend('x','x\_hat','error');
 end
+
+%% Comparing the PSD of the original signal and the estimated signal
+
+figure;
+currCond='Rest';
+trialNum=5;
+numChannels=size(x_all,2);
+
+for i=1:numChannels
+    subplot(numChannels,1,i);
+    pxx_sig=pwelch(x.(currCond)(:,i,trialNum),fs,fs/2,1:(fs/2),fs); 
+    plot(freqRange,10*log10(pxx_sig(freqRange))); hold on;
+    plot(freqRange,10*log10(ar.(currCond)(trialNum).mdl.pxx(freqRange,i)));
+end
+
 

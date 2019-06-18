@@ -29,6 +29,8 @@ function [X,noise,a,rho]=create_data_correlated_noise(N,m,a,rho,stdZ)
 %   comparing_ar_algorithms_correlated_noise
 %
 
+rng('shuffle');
+
 numSamples=N(1);
 numChannels=1;
 bool_isUnivariate=true;

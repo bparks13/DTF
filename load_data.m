@@ -198,6 +198,12 @@ for i=1:numTrials
     x(:,:,i)=x_all(ind_curr_start(i):ind_curr_start(i)+minLength-1,:);
 end
 
+% Manually drop certain trials based on artifacts
+
+trialsToDrop=drop_trials(file,condition);
+x(:,:,trialsToDrop)=[];
+numTrials=numTrials-length(trialsToDrop);
+
 % If filtering.normalize is defined, normalize the individual trials by the average std of
 % the conditions, and normalize the overall signal by the std of the entire signal
 

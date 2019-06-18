@@ -79,6 +79,16 @@ figure; plot(10*log10(pxx))
 
 return
 
+%% Comparing the PSD of the original signal and the estimated signal
+
+figure;
+
+for i=1:numChannels
+    subplot(numChannels,1,i);
+    plot(freqRange,pxx_sig(freqRange,i)); hold on;
+    plot(freqRange,pxx_ar(freqRange,i));
+end
+
 %% Testing using no filtering except for high pass filtering
 
 CCC;
@@ -104,15 +114,16 @@ return
 
 %% Code for visualizing multivariate data
 
-t=(0:length(tmp_x)-1)/2400;
+t=(0:length(x.Rest)-1)/2400;
+modelOrder=ar.Rest.mdl.order;
 
 figure;
 
-for i=1:4
-    subplot(4,1,i);
+for i=1:numChannels
+    subplot(numChannels,1,i);
     plot(t,tmp_x(:,i),'b'); hold on;
-    plot(t(modelOrder+1:end),tmp_x_hat(:,i),'g');
-    plot(t(modelOrder+1:end),tmp_E(:,i),'r');
+    plot(t(modelOrder+1:end),ar.Rest.mdl.x_hat(:,i),'g');
+    plot(t(modelOrder+1:end),res.Rest.E(:,i),'r');
     legend('X','x-hat','E');
 end
 % 
@@ -224,6 +235,7 @@ subplot(411); surf(T1,F1,10*log10(P1)); view(2); colormap jet; shading interp; x
 subplot(412); surf(T2,F2,10*log10(P2)); view(2); colormap jet; shading interp; xlim([T2(1) T2(end)]); colorbar; caxis(cBounds); 
 subplot(413); surf(T3,F3,10*log10(P3)); view(2); colormap jet; shading interp; xlim([T3(1) T3(end)]); colorbar; caxis(cBounds); 
 subplot(414); surf(T4,F4,10*log10(P4)); view(2); colormap jet; shading interp; xlim([T4(1) T4(end)]); colorbar; caxis(cBounds); 
+
 
 
 

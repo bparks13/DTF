@@ -20,6 +20,8 @@ function noise=generate_correlated_noise(N,m,rho,stdZ)
 %    - noise: Correlated noise for the given channels
 %
 
+rng('shuffle');
+
 if size(rho,3) ~= m
     disp('ERROR: Number of coefficients does not match model order');
     noise=nan;
@@ -41,6 +43,9 @@ end
 
 noise=zeros(numSamples+m,numChannels);
 
+mu=zeros(numChannels,1);
+sigma=eye(numChannels);
+
 if bool_isUnivariate
     for i=m+1:numSamples+m
         noise(i,:)=sum(noise(i-1:-1:i-m).*rho) + stdZ*randn(1);
@@ -50,7 +55,7 @@ else
         for j=1:m
             noise(i,:)=noise(i,:) + noise(i-j,:) * rho(:,:,j);
         end
-        noise(i,:)=noise(i,:) + stdZ*randn(1,numChannels);
+        noise(i,:)=noise(i,:) + stdZ*mvnrnd(mu,sigma);
     end
 end
 

@@ -177,7 +177,8 @@ for i=1:numOrders
             result=false;
         elseif strcmp(crit,'psd')
             pxx_ar=pwelch(x_hat,window,overlap,freqRange,fs);
-            criterion(i)=mean(mean(abs(10*log10(pxx_sig(freqForAnalysis,:)) - 10*log10(pxx_ar(freqForAnalysis,:)))));
+%             criterion(i)=mean(mean(abs(10*log10(pxx_sig(freqForAnalysis,:)) - 10*log10(pxx_ar(freqForAnalysis,:)))));
+            criterion(i)=mean(mean(abs(pxx_sig(freqForAnalysis,:) - pxx_ar(freqForAnalysis,:))));
             
             if strcmp(orderSelection,'min')
                 result = criterion(i) < minCrit;

@@ -279,38 +279,6 @@ else
     end
 end
 
-% Plotting
-
-% if strcmp(plotType,'ind')
-%     for i=1:numTrials
-%         [ax_diag,ax_offdiag]=plotting(pxx_sig(:,:,i),conn(:,:,:,i),[],[],h(i,:));
-%     end
-%     
-%     yLimits=[min(min(10*log10(pxx_sig)))-5,max(max(10*log10(pxx_sig)))+5];
-%     
-%     if bool_changeFreqRange
-%         set_figure(ax_diag,ax_offdiag,yLimits,freqLims);
-%     else
-%         set_figure(ax_diag,ax_offdiag,yLimits);
-%     end
-% elseif strcmp(plotType,'avg')
-%     [ax_diag,ax_offdiag]=plotting(avgPSD,avgConn);
-%     
-%     if bool_changeFreqRange
-%         set_figure(ax_diag,ax_offdiag,[min(min(10*log10(avgPSD)))-5,max(max(10*log10(avgPSD)))+5],freqLims);
-%     else
-%         set_figure(ax_diag,ax_offdiag,[min(min(10*log10(avgPSD)))-5,max(max(10*log10(avgPSD)))+5]);
-%     end
-% elseif strcmp(plotType,'avgerr')
-%     [ax_diag,ax_offdiag]=plotting(avgPSD,avgConn,stdPSD,stdConn);
-%     
-%     if bool_changeFreqRange
-%         set_figure(ax_diag,ax_offdiag,[min(min(10*log10(avgPSD)))-5,max(max(10*log10(avgPSD)))+5],freqLims);
-%     else
-%         set_figure(ax_diag,ax_offdiag,[min(min(10*log10(avgPSD)))-5,max(max(10*log10(avgPSD)))+5]);
-%     end
-% end
-
 if ~isempty(figTitle)
     tmp_hFig=gcf;
     tmp_hFig.Name=figTitle;

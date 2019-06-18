@@ -7,7 +7,7 @@ colors=linspecer(6);
 numSamples=10000;
 numSeries=2;
 N=[numSamples,numSeries];
-modelOrder=[12,6];
+modelOrder=[12,30];
 stdZ=2;
 % a=0.4;
 % rho=0.2;
@@ -117,7 +117,7 @@ for i=1:numSeries
     plot(t(modelOrder(1)+modelOrder(2)+1:end),x_hat_noise(:,i),'Color',colors(5,:));
     plot(t(modelOrder(1)+modelOrder(2)+1:end),E_noise(:,i),'Color',colors(6,:));
 
-    legend('X','X-hat','E','E-hat','X-hat-noise','E-noise'); drawnow;
+    legend('Given X','X-hat','Given Noise','E-hat','X-hat-noise','E-noise'); drawnow;
 end
 
 %% Plot original signal, estimated signal, original noise, and estimated noise for varm

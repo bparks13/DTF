@@ -69,7 +69,11 @@ else
         for j = 1:m
             X(i,:) = X(i,:) + X(i-j,:) * a(:,:,j);
         end
-        X(i,:) = X(i,:) + stdZ*randn(1,numSeries);
+        
+        mu=zeros(numSeries,1);
+        sigma=eye(numSeries);
+
+        X(i,:) = X(i,:) + stdZ*mvnrnd(mu,sigma);
     end
     
     X=X(m+1:end,:);

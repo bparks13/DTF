@@ -11,10 +11,12 @@ CCC;
 
 PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
 PATIENT_ID='ET_CL_004';
+% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_Tourette';
+% PATIENT_ID='TS04 Double DBS Implantation';
 RECORDING_DATE='2018_06_20';
 MIDPATH='preproc';
 RUN_ID='run5';
-ADDON='__DOWNSAMPLE_600Hz';
+ADDON='__PSD__Z_SCORE';
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
 % config=struct('default',false,'preset',2);
 % [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID,config);
@@ -29,8 +31,8 @@ fs_init=extract_sampling_frequency(FILE);
 filtering=struct;
 filtering.NO_FILTERING=true;
 [filtering.hpf.num,filtering.hpf.den]=CreateHPF_butter(fs_init,3,2);
-filtering.downsample=400;
-% filtering.normalize='z-score';
+% filtering.downsample=400;
+filtering.normalize='z-score';
 
 % order_notch=4;
 % cutoff_notch=[58,62;118,122];
@@ -57,8 +59,8 @@ avg_psd=struct;
 avg_gamma=struct;
 pass=struct;
 
-freqForAnalysis=4:100;
-config_crit=struct('orderSelection','min','crit','bic','orderRange',1:50,'fs',fs,...
+freqForAnalysis=4:200;
+config_crit=struct('orderSelection','min','crit','psd','orderRange',1:100,'fs',fs,...
     'freqRange',freqForAnalysis);
 config_plot=struct('hFig',[],'seriesType',1,'plotType','avgerr','freqLims',freqForAnalysis,...
     'fs',fs);
