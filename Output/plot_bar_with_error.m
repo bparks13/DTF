@@ -14,26 +14,37 @@ function plot_bar_with_error(freqBand,gamma,labels,config)
 %       struct
 %    - gamma: Matrix containing all of the connectivity values calculated for this
 %       condition. Size is [d x d x f x t], where d is the number of channels, f is the
-%       frequencies, and t is the number of trials
+%       frequencies, and t is the number of trials. A single combination of channels can
+%       be given and will be plotted. This can be combined with a subplot axis handle for
+%       plotting multiple channel combinations in a figure with multiple subplots.
 %       Can also be a struct containing multiple conditions, which follows the same format
 %       as the matrix above, just with multiple fields pertaining to each condition. If
 %       defined as a struct, freqBand cannot be a cell array
-%    - labels: Cell array containing the channel labels
+%    - labels: Cell array containing the channel labels. If only one combination of
+%       channels is given, this should only contain one entry, which is the already
+%       formatted string containing the combination (i.e. Ch1 ? Ch2)
 %    - config: Optional struct containing additional parameters
 %       yLim: Limits of the y-axis. Default is [0 1]
-%       figTitle: String containing the figure title
+%       title: String containing the title of the axis
+%       figTitle: String containing the title of the figure window
 %       legend: If the frequency band input is a cell array, this can be used to delineate
 %           which values belong to which frequency bands
+%       figHandle: Figure handle to an existing figure to plot on
+%       axHandle: Axis handle to an existing subplot to plot on
 %
 %   Outputs:
 %    Figure containing the bar plot, with error bars, and the channel labels on the x-axis
 %
 
 yLim=[0 1];
-figTitle='Connectivity Values';
+axTitle='Connectivity Values';
+figTitle='';
 bool_showLegend=false;
 bool_multipleBands=false;
 bool_multipleConds=false;
+bool_singleChannel=false;
+bool_newFigure=true;
+bool_newAxis=true;
 
 if iscell(freqBand)
     bool_multipleBands=true;
@@ -62,6 +73,10 @@ if nargin == 4
             yLim=config.yLim;
         end
         
+        if isfield(config,'title')
+            axTitle=config.title;
+        end
+        
         if isfield(config,'figTitle')
             figTitle=config.figTitle;
         end
@@ -69,16 +84,39 @@ if nargin == 4
         if isfield(config,'legend')
             bool_showLegend=true;
         end
+        
+        if isfield(config,'figHandle')
+            bool_newFigure=false;
+        end
+        
+        if isfield(config,'axHandle')
+            bool_newAxis=false;
+        end
     end
 end
 
 % Extract individual band
 
-combinations=[nchoosek(1:numChannels,2);nchoosek(numChannels:-1:1,2)];
-numCombinations=size(combinations,1);
+if numChannels~=1
+    combinations=[nchoosek(1:numChannels,2);nchoosek(numChannels:-1:1,2)];
+    numCombinations=size(combinations,1);
+else
+    combinations=[1,1];
+    numCombinations=size(combinations,1);
+    bool_singleChannel=true;
+end
 
-figure;
-
+if bool_newFigure
+    figure('Name',figTitle);
+else
+    figure(config.figHandle);
+    tmp_fig=gcf;
+    
+    if isempty(tmp_fig.Name)
+        tmp_fig.Name=figTitle;
+    end
+end
+    
 if bool_multipleBands
     numBands=length(freqBand) ;
     avgGamma_band=zeros(numCombinations,numBands);
@@ -137,14 +175,36 @@ end
     function internal_plot(avgGamma_band,stdGamma_band)
         % Plot bar graph
 
-        pos=1:numCombinations;
-        bar(pos,avgGamma_band);
+        if bool_newAxis
+            if bool_singleChannel
+                pos=1:length(avgGamma_band);
+                
+                for k=1:length(pos)
+                    bar(pos(k),avgGamma_band(k)); hold on;
+                end
+            else
+                pos=1:numCombinations;
+                bar(pos,avgGamma_band);
+            end
+        else
+            if bool_singleChannel
+                pos=1:length(avgGamma_band);
+                
+                for k=1:length(pos)   
+                    bar(config.axHandle,pos(k),avgGamma_band(k)); hold on;  
+                end
+            else
+                pos=1:numCombinations;
+                bar(config.axHandle,pos,avgGamma_band);
+            end
+        end
+        
         hold on;
         internal_errorbar(avgGamma_band,stdGamma_band,pos);
         
         ylim(yLim);
 
-        title(figTitle); ylabel('Normalized Connectivity');
+        title(axTitle); ylabel('Normalized Connectivity');
 
         tmp_labels=cell(numCombinations,1);
 
@@ -152,8 +212,16 @@ end
             tmp_labels{k}=sprintf('%s %c %s',labels{combinations(k,1)},8594,labels{combinations(k,2)});
         end
 
+        xticks(pos);
         ax=gca;
-        ax.XTickLabel=tmp_labels;
+        
+        if bool_singleChannel
+            ax.XTick=[];
+            title(labels);
+        else
+            ax.XTickLabel=tmp_labels;
+        end
+        
         ax.XTickLabelRotation=45;
 
         if bool_showLegend
@@ -171,8 +239,18 @@ end
             ax=gca;
             
             for k = 1:numConds
-                x = pos - groupwidth/2 + (2*k-1) * groupwidth / (2*numConds);
-                errorbar(x,avgGamma_band(:,k), stdGamma_band(:,k), '.k');
+                if bool_singleChannel
+                    x=pos;
+                else
+                    x = pos - groupwidth/2 + (2*k-1) * groupwidth / (2*numConds);
+                end
+                
+                if bool_newAxis
+                    errorbar(x,avgGamma_band(:,k),stdGamma_band(:,k),'.k');
+                else
+                    errorbar(config.axHandle,x,avgGamma_band(:,k),stdGamma_band(:,k),'.k');                    
+                end
+                
                 ax.Children(end-k+1).FaceColor=colors(k,:);
             end
         elseif bool_multipleBands
@@ -180,14 +258,39 @@ end
             colors=linspecer(numBands);
             ax=gca;
             
-            for k = 1:numBands
-                x = pos - groupwidth/2 + (2*k-1) * groupwidth / (2*numBands);
-                errorbar(x,avgGamma_band(:,k), stdGamma_band(:,k), '.k');
-                ax.Children(end-k+1).FaceColor=colors(k,:);
+            if bool_singleChannel
+                x=pos;
+                
+                for k = 1:numBands
+                    if bool_newAxis
+                        errorbar(x(k),avgGamma_band(k),stdGamma_band(k),'.k');
+                    else
+                        errorbar(config.axHandle,x(k),avgGamma_band(k),stdGamma_band(k),'.k');                    
+                    end
+
+                    ax.Children(end-k+1).FaceColor=colors(k,:);
+                end
+            else
+                for k = 1:numBands
+                    x = pos - groupwidth/2 + (2*k-1) * groupwidth / (2*numBands);
+
+                    if bool_newAxis
+                        errorbar(x,avgGamma_band(:,k),stdGamma_band(:,k),'.k');
+                    else
+                        errorbar(config.axHandle,x,avgGamma_band(:,k),stdGamma_band(:,k),'.k');                    
+                    end
+
+                    ax.Children(end-k+1).FaceColor=colors(k,:);
+                end
             end
         else
-            errorbar(pos,avgGamma_band,avgGamma_band-stdGamma_band,avgGamma_band-stdGamma_band,...
-                'k','LineStyle','None');
+            if bool_newAxis
+                errorbar(pos,avgGamma_band,avgGamma_band-stdGamma_band,avgGamma_band-stdGamma_band,...
+                    'k','LineStyle','None');
+            else
+                errorbar(config.axHandle,pos,avgGamma_band,avgGamma_band-stdGamma_band,avgGamma_band-stdGamma_band,...
+                    'k','LineStyle','None');
+            end
         end
     end
 
