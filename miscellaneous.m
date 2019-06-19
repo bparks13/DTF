@@ -75,7 +75,7 @@ return;
 %% Code for plotting the periodogram of the signal
 
 pxx=pwelch(X,fs,fs/2,1:(fs/2),fs); 
-figure; plot(10*log10(pxx))
+figure; plot(10*log10(pxx));
 
 return
 

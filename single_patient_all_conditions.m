@@ -19,7 +19,7 @@ PATIENT_ID='ET_OR_STIM_018';
 RECORDING_DATE='2018_11_28';
 MIDPATH='preproc';
 RUN_ID='run12';
-ADDON='__FIRST_TRY__PSD__Z_SCORE';
+ADDON='__COMB__PSD__Z_SCORE';
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
 % config=struct('default',false,'preset',2);
 % [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID,config);
@@ -32,17 +32,16 @@ end
 fs_init=extract_sampling_frequency(FILE);
 
 filtering=struct;
-filtering.NO_FILTERING=true;
 [filtering.hpf.num,filtering.hpf.den]=CreateHPF_butter(fs_init,3,2);
 % filtering.downsample=400;
 filtering.normalize='z-score';
 
-% order_notch=4;
-% cutoff_notch=[58,62;118,122];
-% 
-% for i=1:length(cutoff_notch)
-%     [filtering.notch(i).num,filtering.notch(i).den]=CreateBSF_butter(fs,order_notch,cutoff_notch(i,:));
-% end
+order_notch=4;
+cutoff_notch=[58,62;118,122];
+
+for i=1:length(cutoff_notch)
+    [filtering.notch(i).num,filtering.notch(i).den]=CreateBSF_butter(fs_init,order_notch,cutoff_notch(i,:));
+end
 
 % [filtering.lpf.num,filtering.lpf.den]=CreateLPF_butter(fs,8,600);
 
@@ -75,7 +74,7 @@ for j=1:numConditions
     
     fprintf('Beginning condition ''%s''\n',currCond);
     
-    [x.(currCond),fs]=load_data(FILE,channels,conditions(j),filtering);
+    [x.(currCond),~]=load_data(FILE,channels,conditions(j),filtering);
 
     numTrials=size(x.(currCond),3);
     numChannels=length(channels);
