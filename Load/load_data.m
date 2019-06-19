@@ -17,15 +17,14 @@ function [x,fs,x_all]=load_data(file,channels,condition,filtering)
 %       hpf: If defined, should be a struct containing num and den for a high pass filter. 
 %           Default is to use a 4th order butterworth filter, with a cutoff of 1 Hz
 %       comb: If defined, should be a struct containing num and den for a comb filter. 
-%           Default is to use a 60 Hz comb filter, with a qFactor of 35
+%           Default is to use a 60 Hz comb filter, with a qFactor of 35. If this field is
+%           empty, the default comb is used
 %       lpf: If defined, should be a struct containing num and den for a low pass filter. 
 %           No default
 %       notch: If defined, should be a struct containing num and den for a notch filter. 
 %           No default. Can contain more than one set of num and den for multiple notches
 %       ma: If defined, should be an integer defining the number of samples to run
 %           through the moving average
-%       NO_FILTERING: If defined at all, skips all filtering steps except for high pass
-%           filtering, and returns the signal as is
 %       normalize: Separate from all other filtering techniques, the signal can be
 %           normalized. String containing the method to normalize; 'none' performs no
 %           additional normalization, 'z-score' normalizes the signals by dividing by the
@@ -75,66 +74,61 @@ end
 bool_normalize=false;
 
 if nargin > 3 && isstruct(filtering)
-    if isfield(filtering,'NO_FILTERING')
-         if isfield(filtering,'hpf')
-            for i=1:numChannels
-                x_all(:,i)=filtfilt(filtering.hpf.num,filtering.hpf.den,x_all(:,i));
-            end
-        else
-            order_hp=4;
-            cutoff_hp=1;
-            [num_hp,den_hp]=CreateHPF_butter(fs,order_hp,cutoff_hp);
-
-            for i=1:numChannels
-                x_all(:,i)=filtfilt(num_hp,den_hp,x_all(:,i));
-            end
+    if isfield(filtering,'hpf')
+        for i=1:numChannels
+            x_all(:,i)=filtfilt(filtering.hpf.num,filtering.hpf.den,x_all(:,i));
         end
     else
-        if isfield(filtering,'hpf')
-            for i=1:numChannels
-                x_all(:,i)=filtfilt(filtering.hpf.num,filtering.hpf.den,x_all(:,i));
-            end
-        else
-            order_hp=4;
-            cutoff_hp=1;
-            [num_hp,den_hp]=CreateHPF_butter(fs,order_hp,cutoff_hp);
-
-            for i=1:numChannels
-                x_all(:,i)=filtfilt(num_hp,den_hp,x_all(:,i));
-            end
-        end
-        
-        f0=60;
-        w0=f0/(fs/2);
-        qFactor=35;
-        bw=w0/qFactor;
-        [num_comb,den_comb]=iircomb(fs/f0,bw,'notch');
+        order_hp=4;
+        cutoff_hp=1;
+        [num_hp,den_hp]=CreateHPF_butter(fs,order_hp,cutoff_hp);
 
         for i=1:numChannels
-            x_all(:,i)=filtfilt(num_comb,den_comb,x_all(:,i));
+            x_all(:,i)=filtfilt(num_hp,den_hp,x_all(:,i));
         end
+    end
+    
+    if isfield(filtering,'comb')
+        if isempty(filtering.comb)
+            f0=60;
+            w0=f0/(fs/2);
+            qFactor=35;
+            bw=w0/qFactor;
+            [num_comb,den_comb]=iircomb(fs/f0,bw,'notch');
 
-        if isfield(filtering,'lpf')
             for i=1:numChannels
-                x_all(:,i)=filtfilt(filtering.lpf.num,filtering.lpf.den,x_all(:,i));
+                x_all(:,i)=filtfilt(num_comb,den_comb,x_all(:,i));
             end
+        else
+            num_comb=filtering.comb.num;
+            den_comb=filtering.comb.den;
+
+            for i=1:numChannels
+                x_all(:,i)=filtfilt(num_comb,den_comb,x_all(:,i));
+            end            
         end
+    end
 
-        if isfield(filtering,'notch')
-            for i=1:length(filtering.notch)
-                for j=1:numChannels
-                    x_all(:,j)=filtfilt(filtering.notch(i).num,filtering.notch(i).den,x_all(:,j));
-                end
-            end
+    if isfield(filtering,'lpf')
+        for i=1:numChannels
+            x_all(:,i)=filtfilt(filtering.lpf.num,filtering.lpf.den,x_all(:,i));
         end
+    end
 
-        if isfield(filtering,'ma')
-            a=1;
-            b=ones(filtering.ma,1)/filtering.ma;
-
+    if isfield(filtering,'notch')
+        for i=1:length(filtering.notch)
             for j=1:numChannels
-                x_all(:,j)=filter(b,a,x_all(:,j));
+                x_all(:,j)=filtfilt(filtering.notch(i).num,filtering.notch(i).den,x_all(:,j));
             end
+        end
+    end
+
+    if isfield(filtering,'ma')
+        a=1;
+        b=ones(filtering.ma,1)/filtering.ma;
+
+        for j=1:numChannels
+            x_all(:,j)=filter(b,a,x_all(:,j));
         end
     end
     
