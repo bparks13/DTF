@@ -1,17 +1,20 @@
-function summarize_model_orders(ar)
-%% summarize_model_orders(ar)
+function [meanOrder]=summarize_model_orders(ar)
+%% [meanOrder]=summarize_model_orders(ar)
 %
-%  Given the mdl output for all trials in a particular condition, print out the range
+%  Given the ar output for all trials in a particular condition, print out the range
 %  (min-max), and mean ± std for model orders
 %
 %   Inputs:
 %    - ar: Struct containing the output from mvar, for all the trials in a particular
 %       condition
-%       order: This is the only necessary field from the mdl output, should be an integer
-%           denoting the model order that was used for the AR model
+%       mdl: Model struct, containing relevant fields
+%           order: This is the only necessary field from the mdl output, should be an integer
+%               denoting the model order that was used for the AR model
 %
 %   Outputs:
-%    Prints the output to the command window
+%    - meanOrder: Optional output. If an output variable is defined, the mean value of the
+%       model orders is returned
+%    Prints the output to the command window if there are no outputs defined
 %
 %  See also: mvar, dtf, estimate_ar_coefficients
 %
@@ -23,7 +26,12 @@ for i=1:numOrders
     orders(i)=ar(i).mdl.order;
 end
 
-fprintf('Range - [%2d, %2d], average model order - (%5.2f ± %-5.2f)\n',...
-    min(orders),max(orders),mean(orders),std(orders));
+if nargout~=0
+    meanOrder=mean(orders);
+else
+    fprintf('Range - [%2d, %2d], average model order - (%5.2f ± %-5.2f)\n',...
+        min(orders),max(orders),mean(orders),std(orders));
+end
+
 
 end
