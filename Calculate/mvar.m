@@ -80,7 +80,7 @@ if nargin > 1 && isstruct(config)
     end
     
     if isfield(config,'output')
-        output=config.crit;
+        output=config.output;
     end
     
     if isfield(config,'method')

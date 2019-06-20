@@ -129,8 +129,8 @@ end
 config_crit.hFig=[];
 config_plot.hFig=[];
 save(newFile,'ar','avg_gamma','avg_psd','channels','conditions','cond_labels','crit',...
-    'FILE','freqRange','filtering','fs','fs_init','gamma','h','labels','PATIENT_ID','pVal',...
-    'RECORDING_DATE','res','RUN_ID','x','x_all','config_crit','config_plot');
+    'FILE','freqRange','freqForAnalysis','filtering','fs','fs_init','gamma','h','labels',...
+    'PATIENT_ID','pVal','RECORDING_DATE','res','RUN_ID','x','x_all','config_crit','config_plot');
 
 
 
