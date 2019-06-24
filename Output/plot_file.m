@@ -60,6 +60,33 @@ for i=1:numChannels
     legend('x','x\_hat','error');
 end
 
+return
+
+%% Plot the ACF of the residuals
+
+margins=0.04;
+
+for i=1:numConditions
+    currCond=cond_labels{i};
+    figure('Name',sprintf('ACF - %s',currCond));
+    numTrials=size(x.(currCond),3);
+    
+    for j=1:numTrials
+        for k=1:numChannels
+            currSubPlot=(j-1)*numChannels+k;
+            ax=subplot_tight(numTrials,numChannels,currSubPlot,margins);
+            plot_acf(res.(currCond)(j).E(:,k),[],[],ax); ylabel(''); xlabel(''); title(''); 
+            ylim([-0.2 0.2]); xlim([1 10]); 
+            
+            if h.(currCond)(j,k)
+                ax.Color=[.6 .6 .6];
+            end
+        end
+    end
+    
+    drawnow;
+end
+
 %% Comparing the PSD of the original signal and the estimated signal
 
 figure;
@@ -70,8 +97,10 @@ numChannels=size(x_all,2);
 for i=1:numChannels
     subplot(numChannels,1,i);
     pxx_sig=pwelch(x.(currCond)(:,i,trialNum),fs,fs/2,1:(fs/2),fs); 
-    plot(freqRange,10*log10(pxx_sig(freqRange))); hold on;
-    plot(freqRange,10*log10(ar.(currCond)(trialNum).mdl.pxx(freqRange,i)));
+    plot(freqRange,10*log10(pxx_sig(freqRange)),'b'); hold on;
+    plot(freqRange,10*log10(ar.(currCond)(trialNum).mdl.pxx(freqRange,i)),'r');
 end
+
+
 
 
