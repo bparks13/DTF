@@ -43,7 +43,7 @@ function [mdl,E,criterion]=mvar(x,config)
 %    - criterion: Optional output, contains the information criterion chosen in config
 %
 % See also: estimate_ar_coefficients, estimate_residuals, calculate_loglikelihood,
-% calculate_bic
+%   calculate_bic
 %
 
 % Defaults
@@ -178,7 +178,12 @@ for i=1:numOrders
         elseif strcmp(crit,'psd')
             pxx_ar=pwelch(x_hat,window,overlap,freqRange,fs);
 %             criterion(i)=mean(mean(abs(10*log10(pxx_sig(freqForAnalysis,:)) - 10*log10(pxx_ar(freqForAnalysis,:)))));
-            criterion(i)=mean(mean(abs(pxx_sig(freqForAnalysis,:) - pxx_ar(freqForAnalysis,:))));
+            
+            if numSeries == 1
+                criterion(i)=mean(mean(abs(pxx_sig(freqForAnalysis) - pxx_ar(freqForAnalysis))));
+            else
+                criterion(i)=mean(mean(abs(pxx_sig(freqForAnalysis,:) - pxx_ar(freqForAnalysis,:))));
+            end
             
             if strcmp(orderSelection,'min')
                 result = criterion(i) < minCrit;
