@@ -2,66 +2,83 @@ function [avgPSD,avgConn,stdPSD,stdConn]=plot_connectivity(conn,series,freqRange
 %% [avgPSD,avgConn,stdPSD,stdConn]=plot_connectivity(conn,series,freqRange,labels,config)
 %
 %  Given the DTF values of connectivity, plot the connectivities across all frequencies in
-%  the off-diagonal subplots, and the individual power spectra of the series on the diagonal.
+%  the off-diagonal subplots, and the individual power spectra of the channels on the
+%  diagonal. 
 %
 %   Inputs:
 %    - conn: DTF values of connectivity (either gamma (normalized) or theta) for
-%       all series. Size is [s x s x f x t], where s is the number of series, f is the
+%       all series. Size is [c x c x f x t], where c is the number of channels, f is the
 %       number of frequencies being analyzed, and t is the number of trials
-%    - series: Either the original signal used, AR coefficients that are estimated, or a PSD;
-%       these will then be used to calculate the PSD and plotted on the diagonals. Which
-%       input is used is defined in config, or the original signal is assumed to be given.
-%         For the signal, size is [n x s x t], where n is the number of samples, s is the
-%           number of series, and t is the number of trials. 
-%         For the AR coefficients, should be a struct that contains the mdl field, from
-%           which the coefficients can be extracted. Base struct should have length equal to
-%           the number of trials, and each AR subfield should be [s x s x m], where s is the
-%           number of series, and m is the model order
-%         For the PSD, size is [f x s x t], where f is the number of frequencies being
-%           analyzed, s is the number of series, and t is the number of trials
-%       To plot both the PSD of the original signal and the estimated signal, series can
-%       be given as a struct, with the following fields;
-%           signal: A matrix that follows the format of the signal as above
-%           estimated: A struct that contains the subfield 'mdl', with t trials worth of
-%               this field. Within 'mdl', there should be both a matrix 'x_hat' and a
-%               matrix 'pxx', corresponding to the estimated signal and estimated power of
-%               the estimated signal, respectively. Based on options chosen in config, the
-%               pre-calculated values can be used, or will be recalculated based on
-%               additional parameters given
-%    - freqRange: Vector of the range of frequencies over which the connectivity is measured
+%    - series: This input can be a number of things, and is therefore dependent on being
+%       defined in config. The following are the possible inputs; 
+%           1) Original signal [default]: Matrix assumed to be [n x c x t], where n is the
+%              number of samples, c is the number of channels, and t is the number of
+%              trials
+%           2) Estimated signal: Matrix assumed to be [n x c x t], where n is the
+%              number of samples, c is the number of channels, and t is the number of
+%              trials 
+%           3) PSD of the original signal: Matrix assumed to be [f x c x t], where f is
+%              the number of frequencies being analyzed, c is the number of channels, and
+%              t is the number of trials  
+%           4) PSD of the estimated signal: Matrix assumed to be [f x c x t], where f is
+%              the number of frequencies being analyzed, c is the number of channels, and
+%              t is the number of trials  
+%           5) Surrogate analysis values: Matrix containing all of the surrogate analysis
+%              values for a particular condition. Size should be [c x c x f x t], where c
+%              is the number of channels, f is the number of frequencies being analyzed,
+%              and t is the number of iterations the surrogate analysis was run for
+%           6) Struct containing any combination of the inputs above. The possible
+%              subfields are given below;
+%               'original' is a matrix similar to 1)
+%               'estimated' is a matrix similar to 2)
+%               'original_psd' is a matrix similar to 3)
+%               'estimated_psd' is a matrix similar to 4)
+%               'surrogate' is a matrix similar to 5)
+%    - freqRange: Vector of the range of frequencies over which the connectivity is
+%       measured 
 %    - labels: Labels of the series, used for the titles to indicate the directionality of
-%       the connections. Should be a cell array of strings corresponding to the signals used.
-%    - config: Optional struct containing additional parameters
-%       seriesType: Int defining which type of series is given. 1 (signal [default]), 2
-%           (AR coefficients), 3 (pre-calculated PSD). If series is given as a struct
-%           containing both the original and estimated signal, then both will be treated
-%           the same way; either both will use the signal given to calculate pxx, or the
-%           given pxx will be used for plotting
-%       fs: Sampling frequency in Hz. If not defined, assumed to be 2400 Hz
-%       hFig: Handle to an existing figure, does not create a new figure anymore
-%       figTitle: String containing a figure title, containing for example the condition
-%           being tested, or the patient/date/run combo, or all of the above
-%       plotType: String denoting what to plot. 'ind' plot all individual traces, 'avg'
-%           plot averages, 'avgerr' plot averages with shaded error bars. Default behavior
-%           is to plot individual traces. If plotType is 'avg' or 'avgerr', returns the
-%           average PSDs and the average gamma values if there are output variables to
-%           give them to 
-%       h: Only applicable for plotType = 'ind'; denotes whether the null hypothesis of no
-%           autocorrelation among the residuals is kept (h = 0) or rejected (h = 1). Plots
-%           individual traces where the null hypothesis is rejected in red. Size is 
-%           [t x s], where t is the number of trials, and s is the number of series
-%       freqLims: If defined, changes the limits of the plots to only show the frequency
-%           range specified. Can be a vector of the entire range, or just the min and max
-%           values to be used
+%       the connections. Should be a cell array of strings corresponding to the signals
+%       used. 
+%    - config: Optional struct containing additional parameters. Not all of them need to
+%       be defined
+%           seriesType: Int defining which type of series is given. Number corresponds
+%             with the series given above. 
+%               NOTE: If series is a struct, '4' does not need to be defined. Rather,
+%               seriesType should define how the values inside the struct are to be
+%               treated 
+%           fs: Sampling frequency in Hz. If not defined, assumed to be 2400 Hz
+%           hFig: Handle to an existing figure, does not create a new figure anymore
+%           figTitle: String containing a figure title, containing for example the
+%             condition being tested, or the patient/date/run combo, or all of the above
+%           plotType: String denoting what to plot. 
+%             'ind' plot all individual traces [Default]
+%             'avg' plot averages
+%             'avgerr' plot averages with shaded error bars
+%           NOTE: If plotType is 'avg' or 'avgerr', can return the average PSDs and the
+%             average gamma values
+%           h: Only applicable for plotType = 'ind'; denotes whether the null hypothesis
+%             of no autocorrelation among the residuals is kept (h = 0) or rejected
+%             (h = 1). Plots individual traces where the null hypothesis is rejected in
+%             red. Size is [t x c], where t is the number of trials, and c is the number
+%             of channels 
+%           freqLims: If defined, changes the limits of the plots to only show the
+%             frequency range specified. Can be a vector of the entire range, or just the
+%             min and max values to be used
+%           surr_params: Additional struct that can be defined to modify how the surrogate
+%             data is shown. However, this is not a necessary field, as all defaults are
+%             defined
+%               threshold: Float defining what percentage of the distribution is
+%                 considered to be a significant amount of connection. Default is 0.01, or
+%                 1%
 %
 %   Outputs:
 %    - Figure containing subplots with PSD on the diagonal, and DTF connectivity
 %       measurements in the off-diagonal plots
-%    - avgPSD: If plotType is 'avg' or 'avgerr', returns the average PSD calculated
-%    - avgConn: If plotType is 'avg' or 'avgerr', returns the average gamma values
+%    - avgPSD: If plotType is 'avg' or 'avgerr', can return the average PSD calculated
+%    - avgConn: If plotType is 'avg' or 'avgerr', can return the average gamma values
 %       calculated 
-%    - stdPSD: If plotType is 'avgerr', returns the standard deviation of the PSDs
-%    - stdConn: If plotType is 'avgerr', returns the standard deviation of the
+%    - stdPSD: If plotType is 'avgerr', can return the standard deviation of the PSDs
+%    - stdConn: If plotType is 'avgerr', can return the standard deviation of the
 %       connectivities
 %
 %  See also: varm, estimate, mvar, dtf, estimate_ar_coefficients, estimate_residuals
@@ -82,10 +99,10 @@ seriesType=1;
 
 bool_showRejectedNull=false; % whether or not to plot the rejected null hypothesis trials in red
 
-numSeries=size(conn,1);
+numChannels=size(conn,1);
 numTrials=size(conn,4);
 
-h=zeros(numTrials,numSeries);
+h=zeros(numTrials,numChannels);
 
 freqLims=[];
 
@@ -138,20 +155,20 @@ overlap=round(window/2);
     
 if isstruct(series)
     if seriesType == 1
-        pxx_sig=nan(length(freqRange),numSeries,numTrials);
-        pxx_est=nan(length(freqRange),numSeries,numTrials);
+        pxx_sig=nan(length(freqRange),numChannels,numTrials);
+        pxx_est=nan(length(freqRange),numChannels,numTrials);
     
-        for i=1:numSeries
+        for i=1:numChannels
             for j=1:numTrials
                 pxx_sig(:,i,j)=pwelch(series.signal(:,i,j),window,overlap,freqRange,fs);
                 pxx_est(:,i,j)=pwelch(series.estimated(j).mdl.x_hat(:,i),window,overlap,freqRange,fs);
             end
         end
     elseif seriesType == 2
-        pxx_sig=nan(length(freqRange),numSeries,numTrials);
-        pxx_est=nan(length(freqRange),numSeries,numTrials);
+        pxx_sig=nan(length(freqRange),numChannels,numTrials);
+        pxx_est=nan(length(freqRange),numChannels,numTrials);
     
-        for i=1:numSeries
+        for i=1:numChannels
             for j=1:numTrials
                 pxx_sig(:,i,j)=pwelch(series.signal(:,i,j),window,overlap,freqRange,fs);
                 pxx_est(:,i,j)=calculate_ar_psd(series.estimated(j).mdl.AR(i,i,:),freqRange,fs);
@@ -159,9 +176,9 @@ if isstruct(series)
         end
     elseif seriesType == 3
         pxx_sig=series.signal;
-        pxx_est=nan(length(freqRange),numSeries,numTrials);
+        pxx_est=nan(length(freqRange),numChannels,numTrials);
         
-        for i=1:numSeries
+        for i=1:numChannels
             for j=1:numTrials
                 if ~isempty(series.esimated(j).mdl.pxx)
                     pxx_est(:,i,j)=series.esimated(j).mdl.pxx(:,i);
@@ -223,17 +240,25 @@ if isstruct(series)
     end
 else
     if seriesType == 1 && ~isempty(series)
-        pxx_sig=nan(length(freqRange),numSeries,numTrials);
+        pxx_sig=nan(length(freqRange),numChannels,numTrials);
         
-        for i=1:numSeries
+        for i=1:numChannels
             for j=1:numTrials
                 pxx_sig(:,i,j)=pwelch(series(:,i,j),window,overlap,freqRange,fs);
+            end
+        end
+    elseif seriesType == 2 && ~isempty(series)
+        pxx_sig=nan(length(freqRange),numChannels,numTrials); % This is the estimated PSD from the AR coefficients. 
+    
+        for i=1:numChannels
+            for j=1:numTrials
+                pxx_sig(:,i,j)=calculate_ar_psd(series(j).mdl.AR(i,i,:),freqRange,fs);
             end
         end
     elseif seriesType == 3 && ~isempty(series)
         pxx_sig=series;
     else
-        pxx_sig=nan(length(freqRange),numSeries,numTrials);
+        pxx_sig=nan(length(freqRange),numChannels,numTrials);
     end
     
     % Calculate averages and standard deviations if needed, then plot everything
@@ -313,22 +338,22 @@ end
         end
         
         if isempty(conn)
-            conn=nan(numSeries,numSeries,length(freqRange));
+            conn=nan(numChannels,numChannels,length(freqRange));
             
             if isempty(conn_std)
                 conn_std=conn;
             end
         end
         
-        ax_diag=zeros(numSeries);
-        ax_offdiag=zeros(numSeries * numSeries - numSeries);
+        ax_diag=zeros(numChannels);
+        ax_offdiag=zeros(numChannels * numChannels - numChannels);
 
-        for k=1:numSeries
-            for l=1:numSeries
-                currSubPlot=(k-1)*numSeries+l;
+        for k=1:numChannels
+            for l=1:numChannels
+                currSubPlot=(k-1)*numChannels+l;
 
                 if k == l
-                    ax_diag(currSubPlot)=subplot(numSeries,numSeries,currSubPlot);
+                    ax_diag(currSubPlot)=subplot(numChannels,numChannels,currSubPlot);
                     
                     if bool_plotErrorBars
                         shadedErrorBar(freqRange,10*log10(pxx(:,k)),pxx_std(:,k),'lineProps',lineProps);
@@ -344,7 +369,7 @@ end
                     
                     title(labels{k}); hold on;
                 elseif k ~= l 
-                    ax_offdiag(currSubPlot)=subplot(numSeries,numSeries,currSubPlot);
+                    ax_offdiag(currSubPlot)=subplot(numChannels,numChannels,currSubPlot);
                     
                     if bool_plotErrorBars
                         shadedErrorBar(freqRange,conn(k,l,:),conn_std(k,l,:),'lineProps',lineProps);
@@ -373,7 +398,7 @@ end
         linkaxes(ax_diag); 
         xlim([xLimits(1),xLimits(2)]); 
         ylim([yLimits(1),yLimits(2)])
-        subplot(numSeries,numSeries,numSeries); 
+        subplot(numChannels,numChannels,numChannels); 
 
         linkaxes(ax_offdiag); 
         xlim([xLimits(1), xLimits(2)]); 
