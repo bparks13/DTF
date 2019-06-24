@@ -1,14 +1,16 @@
-function plot_acf(x,lag,numSD)
-%% plot_acf(x,lag,numSD)
+function plot_acf(x,lag,numSD,hAx)
+%% plot_acf(x,lag,numSD,hAx)
 %
 %  Function to plot the autocorrelation up to the lag given. Based on the 'autocorr'
 %  function in Matlab, reiterated here to bypass the licensing issue.
 %
 %   Inputs:
 %    - x: Signal to autocorrelate. Should be a vector of values.
-%    - lag: Max lag to plot the ACF up to. Default is 20
+%    - lag: Max lag to plot the ACF up to. Default is 20. Can be empty to use default
 %    - numSD: Number of standard deviations to plot for the confidence interval. Default
-%       is 2
+%       is 2. Can be empty to use default
+%    - hAx: Optional input containing the handle to an axis to plot in, instead of
+%       creating a new figure
 %
 %   Outputs:
 %    Figure containing the autocorrelation values at lags up to lag, with confidence
@@ -24,12 +26,25 @@ end
 maxLag=20;
 numSTD=2;
 numMA=0;
+bool_newAxis=true;
 
 if nargin==2
     maxLag=lag;
 elseif nargin==3
     maxLag=lag;
     numSTD=numSD;
+elseif nargin==4
+    if ~isempty(lag)
+        maxLag=lag;
+    end
+    
+    if ~isempty(numSD)
+        numSTD=numSD;
+    end
+    
+    if ~isempty(hAx)
+        bool_newAxis=false;
+    end
 end
 
 N=length(x);
@@ -47,20 +62,22 @@ acf = real(acf);
 sigmaNMA = sqrt((1+2*(acf(2:numMA+1)'*acf(2:numMA+1)))/N);  
 bounds = sigmaNMA*[numSTD;-numSTD];
 
-figure;
+if bool_newAxis
+    figure;
+    lineHandles = stem(lags,acf,'filled','r-o'); hold on;
+    plot([numMA+0.5 numMA+0.5; numLags numLags],[bounds([1 1]) bounds([2 2])],'-b');
+    plot([0 numLags],[0 0],'-k');
+else
+    lineHandles = stem(hAx,lags,acf,'filled','r-o'); hold on;
+    plot(hAx,[numMA+0.5 numMA+0.5; numLags numLags],[bounds([1 1]) bounds([2 2])],'-b');
+    plot(hAx,[0 numLags],[0 0],'-k');
+end
 
-lineHandles = stem(lags,acf,'filled','r-o');
 set(lineHandles(1),'MarkerSize',4)
 grid('on')
 xlabel('Lag')
 ylabel('Sample Autocorrelation')
 title('Sample Autocorrelation Function')
-hold('on')
-plot([numMA+0.5 numMA+0.5; numLags numLags],[bounds([1 1]) bounds([2 2])],'-b');
-plot([0 numLags],[0 0],'-k');
-hold('off')
-% a = axis;
-% axis([a(1:3) 1]);
 xlim([0 numLags]);
 
 end
