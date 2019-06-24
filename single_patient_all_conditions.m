@@ -10,16 +10,16 @@ dtf_startup;
 
 %% Load all data
 
-PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET\\OR\\with_DBS';
-PATIENT_ID='ET_OR_STIM_018';
-% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
-% PATIENT_ID='ET_CL_004';
+% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET\\OR\\with_DBS';
+% PATIENT_ID='ET_OR_STIM_018';
+PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
+PATIENT_ID='ET_CL_004';
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_Tourette';
 % PATIENT_ID='TS04 Double DBS Implantation';
-RECORDING_DATE='2018_11_28';
+RECORDING_DATE='2018_06_20';
 MIDPATH='preproc';
-RUN_ID='run12';
-ADDON='__COMB__PSD__Z_SCORE';
+RUN_ID='run5';
+ADDON='__200Hz__Z_SCORE__BIC';
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
 % config=struct('default',false,'preset',2);
 % [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID,config);
@@ -33,17 +33,20 @@ fs_init=extract_sampling_frequency(FILE);
 
 filtering=struct;
 [filtering.hpf.num,filtering.hpf.den]=CreateHPF_butter(fs_init,3,2);
-% filtering.downsample=400;
+filtering.downsample=200;
 filtering.normalize='z-score';
 
 order_notch=4;
-cutoff_notch=[58,62;118,122];
+cutoff_notch=[58,62];
+[filtering.notch.num,filtering.notch.den]=CreateBSF_butter(fs_init,order_notch,cutoff_notch);
+% cutoff_notch=[58,62;118,122];
+% 
+% for i=1:length(cutoff_notch)
+%     [filtering.notch(i).num,filtering.notch(i).den]=CreateBSF_butter(fs_init,order_notch,cutoff_notch(i,:));
+% end
 
-for i=1:length(cutoff_notch)
-    [filtering.notch(i).num,filtering.notch(i).den]=CreateBSF_butter(fs_init,order_notch,cutoff_notch(i,:));
-end
-
-% [filtering.lpf.num,filtering.lpf.den]=CreateLPF_butter(fs,8,600);
+% [filtering.lpf.num,filtering.lpf.den]=CreateLPF_butter(fs_init,8,600);
+[filtering.lpf.num,filtering.lpf.den]=CreateLPF_butter(fs_init,8,round(filtering.downsample/2));
 
 [x_all,fs]=load_data(FILE,channels,[],filtering);
 
@@ -61,8 +64,8 @@ avg_psd=struct;
 avg_gamma=struct;
 pass=struct;
 
-freqForAnalysis=4:200;
-config_crit=struct('orderSelection','min','crit','psd','orderRange',1:100,'fs',fs,...
+freqForAnalysis=4:100;
+config_crit=struct('orderSelection','min','crit','bic','orderRange',1:50,'fs',fs,...
     'freqRange',freqForAnalysis);
 config_plot=struct('hFig',[],'seriesType',1,'plotType','avgerr','freqLims',freqForAnalysis,...
     'fs',fs);
@@ -109,27 +112,27 @@ for j=1:numConditions
 
     %% Plot all connectivities and PSDs
 
-    config_plot.hFig=figure;
-    config_plot.figTitle=sprintf('%s, %s, %s - %s: Connectivity',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
-    
-    plot_connectivity(gamma.(currCond),x.(currCond),freqRange,labels,config_plot);
+%     config_plot.hFig=figure;
+%     config_plot.figTitle=sprintf('%s, %s, %s - %s: Connectivity',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
+%     
+%     plot_connectivity(gamma.(currCond),x.(currCond),freqRange,labels,config_plot);
 end
 
 %% Save relevant variables
 
 count=1;
 
-newFile=fullfile(pwd,'Files',sprintf('%s__%s__%s%s.mat',PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON));
+newFile=fullfile(get_root_path,'Files',sprintf('%s__%s__%s%s.mat',PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON));
 
-while exist(newFile,'file')
+while exist(newFile,'file') == 2
     newFile=fullfile(pwd,sprintf('%s__%s__%s%s_(%d).mat',PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON,count));
     count=count+1;
 end
 
 config_crit.hFig=[];
 config_plot.hFig=[];
-save(newFile,'ar','avg_gamma','avg_psd','channels','conditions','cond_labels','crit',...
-    'FILE','freqRange','freqForAnalysis','filtering','fs','fs_init','gamma','h','labels',...
+save(newFile,'ADDON','ar','avg_gamma','avg_psd','channels','conditions','cond_labels','crit',...
+    'FILE','freqRange','freqForAnalysis','filtering','fs','fs_init','gamma','h','labels','newFile',...
     'PATIENT_ID','pVal','RECORDING_DATE','res','RUN_ID','x','x_all','config_crit','config_plot');
 
 

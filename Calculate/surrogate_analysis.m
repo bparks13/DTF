@@ -19,8 +19,6 @@ function [surrogate]=surrogate_analysis(file)
 
 %% Load file
 
-% FILE='ET_CL_004__2018_06_20__run5__PSD__Z_SCORE.mat';
-
 if nargin==0
     file=uigetfile(fullfile(get_root_path(),'Files','*.mat'));
 end
@@ -70,9 +68,8 @@ end
 surrogate.Rest=gamma_dist;
 
 if nargout==0
-    save(fullfile(get_root_path(),'Files',file),'surrogate')
-else
-    clear results
+    save(fullfile(get_root_path,'Files',file),'surrogate')
+    clear surrogate
 end
 
 end

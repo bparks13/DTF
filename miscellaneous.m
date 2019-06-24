@@ -236,6 +236,23 @@ subplot(412); surf(T2,F2,10*log10(P2)); view(2); colormap jet; shading interp; x
 subplot(413); surf(T3,F3,10*log10(P3)); view(2); colormap jet; shading interp; xlim([T3(1) T3(end)]); colorbar; caxis(cBounds); 
 subplot(414); surf(T4,F4,10*log10(P4)); view(2); colormap jet; shading interp; xlim([T4(1) T4(end)]); colorbar; caxis(cBounds); 
 
+%% Plot the original signal to look for artifacts
+
+currCond='Rest';
+numTrials=size(x.(currCond),3);
+numChannels=size(x.(currCond),2);
+numSamples=size(x.(currCond),1);
+
+t=(0:numSamples-1)/fs;
+
+for i=1:numTrials
+    figure;
+    for j=1:numChannels
+        subplot(numChannels,1,j);
+        plot(t,x.(currCond)(:,j,i));
+    end
+    waitforbuttonpress
+end
 
 
 
