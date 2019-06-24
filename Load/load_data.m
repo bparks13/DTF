@@ -150,6 +150,14 @@ if isempty(condition) || ~any(condition)
         x=downsample(x,indToSkip);
         fs=filtering.downsample;
     end
+
+    if bool_normalize
+        if strcmp(filtering.normalize,'z-score')
+            for i=1:numChannels
+                x(:,i) = x(:,i) / std(x(:,i));
+            end
+        end
+    end
     
     return
 end
