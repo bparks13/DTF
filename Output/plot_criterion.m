@@ -8,6 +8,7 @@ function plot_criterion(criterion,config)
 %    - criterion: The information criterion used (AIC/BIC/etc.) in a vector
 %    - config: Optional struct containing additional plotting parameters
 %       hFig: Handle to a figure to plot multiple criterion on the same plot
+%       hAx: Handle to an existing axis, typically a subplot
 %       orderSelection: String defining which method was used to calculate the model
 %           order; 'min' uses the minimum [default], and 'diff' uses the first time the
 %           absolute difference is smaller than some epsilon, either 0.001 or user defined.
@@ -24,6 +25,7 @@ function plot_criterion(criterion,config)
 %
 
 bool_newFig=true;
+bool_newAx=true;
 bool_plotModelOrder=false;
 epsilon=0.001;
 figTitle='';
@@ -32,6 +34,10 @@ if nargin > 1
     if isstruct(config)
         if isfield(config,'hFig')
             bool_newFig=false;
+        end
+        
+        if isfield(config,'hAx')
+            bool_newAx=false;
         end
         
         if isfield(config,'modelOrder')
@@ -66,10 +72,18 @@ else
     figure(config.hFig);
 end
 
-plot(criterion,'k-o'); hold on;
+if bool_newAx
+    plot(criterion,'k-o'); hold on;
 
-if bool_plotModelOrder
-    plot(critInd,criterion(critInd),'r*');
+    if bool_plotModelOrder
+        plot(critInd,criterion(critInd),'r*');
+    end
+else
+    plot(config.hAx,criterion,'k-o'); hold on;
+
+    if bool_plotModelOrder
+        plot(config.hAx,critInd,criterion(critInd),'r*');
+    end
 end
 
 if ~isempty(figTitle)

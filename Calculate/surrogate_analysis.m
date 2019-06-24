@@ -1,5 +1,5 @@
-function [surrogate]=surrogate_analysis(file)
-%% [results]=surrogate_analysis(file)
+function [surrogate]=surrogate_analysis(file,config)
+%% [results]=surrogate_analysis(file,config)
 %
 %  Performs surrogate analysis on a pre-existing file, creating an empirical distribution
 %  of samples and then calculating if the values found for connectivity are significant
@@ -8,6 +8,12 @@ function [surrogate]=surrogate_analysis(file)
 %   Inputs:
 %    - file: String containing the filename to be opened. If this is empty, uigetfile is
 %       called so the user can pick the file to open
+%    - config: Optional struct containing additional parameters
+%       cond: A cell array containing one or more conditions to focus on, running
+%           surrogate on each individual trial with no combining of trials
+%       method: String indicating which method to use. All surrogate analysis uses
+%           trial-shuffling, but this can be constrained to a single condition ['single']
+%           (default) or can shuffle trials from all conditions together ['combine']
 %
 %   Outputs:
 %    - surrogate: Struct containing all of the values created by the surrogate analysis
@@ -20,18 +26,19 @@ function [surrogate]=surrogate_analysis(file)
 %% Load file
 
 if nargin==0
-    file=uigetfile(fullfile(get_root_path(),'Files','*.mat'));
+    file=uigetfile(fullfile(get_root_path,'Files','*.mat'));
 end
 
 if file~=0
-    data=load(fullfile(get_root_path(),'Files',file));
+    data=load(fullfile(get_root_path,'Files',file));
 end
 
 fs=data.fs;
 freqForAnalysis=data.config_plot.freqLims;
 freqRange=data.freqRange;
 
-config_crit=struct('orderSelection',data.config_crit.orderSelection,...
+config_crit=struct(...
+    'orderSelection',data.config_crit.orderSelection,...
     'crit',data.config_crit.crit,...
     'orderRange',[],...
     'fs',fs,...
@@ -62,13 +69,16 @@ for i=1:numIterations
     
     [tmp_mdl,~,~]=mvar(tmp_x,config_crit);
     gamma_dist(:,:,:,i)=dtf(tmp_mdl,freqRange,fs);
-    disp(i)
+    
+    if mod(i,floor(numIterations/10)) == 0
+        fprintf('%d%%\n',floor(i/numIterations*100));
+    end
 end
 
 surrogate.Rest=gamma_dist;
 
 if nargout==0
-    save(fullfile(get_root_path,'Files',file),'surrogate')
+    save(fullfile(get_root_path,'Files',regexprep(file,'.mat','__SURROGATE.mat')),'surrogate')
     clear surrogate
 end
 

@@ -17,14 +17,9 @@ load(fullfile(get_root_path(),'Files',FILE));
 
 for i=1:length(cond_labels)
     currCond=cond_labels{i};
-%     config.h=data.h.(currCond);
     config_plot.figTitle=sprintf('%s, %s, %s - %s: Connectivity',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
     plot_connectivity(gamma.(currCond),x.(currCond),freqRange,labels,config_plot);
 end
-
-return
-
-%#ok<*UNRCH>
 
 %% Plot criterion
 
@@ -59,8 +54,6 @@ for i=1:numChannels
     xlim([t(1) t(end)])
     legend('x','x\_hat','error');
 end
-
-return
 
 %% Plot the ACF of the residuals
 
