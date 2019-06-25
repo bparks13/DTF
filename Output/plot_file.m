@@ -11,7 +11,7 @@ CCC;
 
 FILE='ET_CL_004__2018_06_20__run5__PSD__Z_SCORE.mat';
 
-load(fullfile(get_root_path(),'Files',FILE));
+load(fullfile(get_root_path,'Files',FILE));
 
 %% Plot connectivity figure
 

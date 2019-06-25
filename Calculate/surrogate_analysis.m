@@ -18,7 +18,6 @@ function [surrogate]=surrogate_analysis(file,config)
 %   Outputs:
 %    - surrogate: Struct containing all of the values created by the surrogate analysis
 %       
-%
 %  Based on the trial-shuffling procedure for surrogate found in
 %  10.1016/j.neuroimage.2004.09.036 
 %
@@ -46,6 +45,8 @@ config_crit=struct(...
     'output',0);
 
 surrogate=struct;
+
+fields=fieldnames(data.x);
 
 %% Surrogate on a single condition
 
@@ -78,7 +79,7 @@ end
 surrogate.Rest=gamma_dist;
 
 if nargout==0
-    save(fullfile(get_root_path,'Files',regexprep(file,'.mat','__SURROGATE.mat')),'surrogate')
+    save(fullfile(get_root_path,'Files',file),'-append','surrogate')
     clear surrogate
 end
 
