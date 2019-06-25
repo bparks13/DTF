@@ -18,7 +18,12 @@ load(fullfile(get_root_path,'Files',FILE));
 for i=1:length(cond_labels)
     currCond=cond_labels{i};
     config_plot.figTitle=sprintf('%s, %s, %s - %s: Connectivity',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
-    plot_connectivity(gamma.(currCond),x.(currCond),freqRange,labels,config_plot);
+    if exist('surrogate','var') == 1
+        series=struct('original',x.(currCond),'surrogate',surrogate.(currCond));
+        plot_connectivity(gamma.(currCond),series,freqRange,labels,config_plot);
+    else
+        plot_connectivity(gamma.(currCond),x.(currCond),freqRange,labels,config_plot);
+    end
 end
 
 %% Plot criterion
