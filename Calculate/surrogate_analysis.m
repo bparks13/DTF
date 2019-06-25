@@ -35,6 +35,9 @@ end
 fs=data.fs;
 freqForAnalysis=data.config_plot.freqLims;
 freqRange=data.freqRange;
+fields=fieldnames(data.x);
+
+numIterations=1000;
 
 config_crit=struct(...
     'orderSelection',data.config_crit.orderSelection,...
@@ -46,37 +49,48 @@ config_crit=struct(...
 
 surrogate=struct;
 
-fields=fieldnames(data.x);
-
-%% Surrogate on a single condition
-
-x=data.x.Rest;
-config_crit.orderRange=round(summarize_model_orders(data.ar.Rest));
-numSamples=size(x,1);
-numChannels=size(x,2);
-numTrials=size(x,3);
-
-numIterations=1000;
-
-tmp_x=zeros(numSamples,numChannels);
-gamma_dist=zeros(numChannels,numChannels,length(freqRange),numIterations);
-
-for i=1:numIterations
-    randomTrials=randperm(numTrials,numChannels);
-    
-    for j=1:numChannels
-        tmp_x(:,j)=x(:,j,randomTrials(j));
-    end
-    
-    [tmp_mdl,~,~]=mvar(tmp_x,config_crit);
-    gamma_dist(:,:,:,i)=dtf(tmp_mdl,freqRange,fs);
-    
-    if mod(i,floor(numIterations/10)) == 0
-        fprintf('%d%%\n',floor(i/numIterations*100));
+if nargin == 2 && isstruct(config)
+    if isfield(config,'cond')
+        fields=config.cond;
     end
 end
 
-surrogate.Rest=gamma_dist;
+%% Surrogate on a single condition
+
+numFields=length(fields);
+totalOperations=numFields*numIterations;
+
+for k=1:numFields
+    currCond=fields{k};
+    
+    x=data.x.(currCond);
+    config_crit.orderRange=round(summarize_model_orders(data.ar.(currCond)));
+    numSamples=size(x,1);
+    numChannels=size(x,2);
+    numTrials=size(x,3);
+
+    tmp_x=zeros(numSamples,numChannels);
+    gamma_dist=zeros(numChannels,numChannels,length(freqRange),numIterations);
+
+    for i=1:numIterations
+        randomTrials=randperm(numTrials,numChannels);
+
+        for j=1:numChannels
+            tmp_x(:,j)=x(:,j,randomTrials(j));
+        end
+
+        [tmp_mdl,~,~]=mvar(tmp_x,config_crit);
+        gamma_dist(:,:,:,i)=dtf(tmp_mdl,freqRange,fs);
+
+        if mod((k-1)*numIterations+i,floor(totalOperations/20)) == 0
+            fprintf('%d%%\n',floor(((k-1)*numIterations+i)/totalOperations*100));
+        end
+    end
+    
+    surrogate.(currCond)=gamma_dist;
+end
+
+%% Either save the file, or return the struct
 
 if nargout==0
     save(fullfile(get_root_path,'Files',file),'-append','surrogate')
