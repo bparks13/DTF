@@ -23,11 +23,35 @@ function plot_trial(currCond,trial,file,plots)
 %
 
 bool_plotCrit=false;
+bool_plotConn=false;
+bool_plotAcf=false;
+bool_plotTime=false;
 
 if nargin==2 || isempty(plots)
     bool_plotAll=true;
 else
     bool_plotAll=false;
+    
+    if iscell(plots)
+        for i=1:length(plots)
+            switch plots{i}
+                case 'conn'
+                    bool_plotConn=true;
+                    break
+                    
+                case 'acf'
+                    bool_plotAcf=true;
+                    break
+                    
+                case 'crit'
+                    bool_plotCrit=true;
+                    break
+                    
+                case 'time'
+                    bool_plotTime=true;
+            end
+        end
+    end
 end
 
 if nargin == 2
@@ -36,6 +60,8 @@ end
 
 if file ~= 0
     data=load(fullfile(get_root_path,'Files',file));
+else
+    return
 end
 
 conds=fieldnames(data.x);
@@ -46,7 +72,7 @@ end
 
 %% Plot connectivity
 
-if bool_plotAll
+if bool_plotAll || bool_plotConn
     c_plot=data.config_plot;
     g=data.gamma.(currCond);
     x=data.x.(currCond);
@@ -62,7 +88,7 @@ end
 
 %% Plot ACF
 
-if bool_plotAll
+if bool_plotAll || bool_plotAcf
     r=data.res.(currCond)(trial).E;
 
     numChannels=size(data.x.(currCond),2);
@@ -71,7 +97,8 @@ if bool_plotAll
 
     for i=1:numChannels
         ax=subplot(numChannels,1,i);
-        plot_acf(r(:,i),[],[],ax); ylabel(''); xlabel(''); title(''); 
+        maxLag=round(log(size(data.res.(currCond)(trial).E,1)));
+        plot_acf(r(:,i),maxLag,[],ax); ylabel(''); xlabel(''); title(''); 
 
         if data.h.(currCond)(trial,i)
             ax.Color=[.6 .6 .6];
@@ -93,7 +120,7 @@ end
 
 %% Plot Time
 
-if bool_plotAll
+if bool_plotAll || bool_plotTime
     numChannels=size(data.x.(currCond),2);
     fs=data.fs;
     t=(0:(length(x)-1))/fs;
