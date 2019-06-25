@@ -13,23 +13,24 @@ function sig_filt=filter_signal(sig,phi)
 %
 %   Outputs:
 %    - sig_filt: Filtered signal obtained by convolving the coefficients of phi with the
-%       given signal. Same size as sig.
+%       given signal. size is [(n-p) x c], where p is the number of lags
 %   
 
 numChannels=size(sig,2);
 numCoeff=size(phi,1);
 
-sig_filt=zeros(size(sig));
+sig_filt=zeros(size(sig,1)-numCoeff,numChannels);
 
 for i=1:numChannels
     f=zeros(1,numCoeff+1);
     f(1)=1;
     
     for j=1:numCoeff
-        f(j+1)=phi(j,i);
+        f(j+1)=-phi(j,i);
     end
     
-    sig_filt(:,i)=filter(f,1,sig(:,i));
+    tmp_sig=filter(f,1,sig(:,i));
+    sig_filt(:,i)=tmp_sig(1+numCoeff:end);
 end
 
 % sig_filt=conv2(-phi,sig);
