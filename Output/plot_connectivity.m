@@ -540,7 +540,7 @@ end
     function [ax_diag,ax_offdiag,yLim]=plot_surrogate(surrogate,threshold,lineprops_offdiag)
         
         if nargin == 2 || isempty(lineprops_offdiag)
-            lineprops_offdiag='-k';
+            lineprops_offdiag='--k';
         end
         
         numFrequencies=size(surrogate,3);
@@ -624,7 +624,7 @@ end
                         if bool_showRejectedNull && (h(k) || h(l))
                             plot(freqRange,squeeze(conn(k,l,:)),'r'); 
                         elseif bool_plotThreshold
-                            plot(freqRange,squeeze(conn(k,l,:)),'-k','LineWidth',3);
+                            plot(freqRange,squeeze(conn(k,l,:)),':k','LineWidth',3);
                         else
                             plot(freqRange,squeeze(conn(k,l,:)),lineprops_offdiag); 
                         end
