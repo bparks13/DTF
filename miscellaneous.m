@@ -106,8 +106,8 @@ bic=calculate_bic(logL,modelOrder,N-modelOrder);
 
 %% Code for visualizing multivariate data
 
-t=(0:length(x.Rest)-1)/2400;
-modelOrder=ar.Rest.mdl.order;
+t=(0:length(x.Rest)-1)/fs;
+modelOrder=ar.Rest(1).mdl.order;
 
 figure;
 
@@ -118,7 +118,6 @@ for i=1:numChannels
     plot(t(modelOrder+1:end),res.Rest.E(:,i),'r');
     legend('X','x-hat','E');
 end
-
 
 %% Testing getting the estimated values without actual data
 
@@ -142,7 +141,7 @@ noise=randn(numSamples,1);
 tmp_xhat=zeros(1,numSamples+m);
 
 for i=1+m:numSamples+m
-    tmp_xhat(i)=tmp_xhat(i-1:-1:i-m)*AR+randn(1)*mdl.C;
+    tmp_xhat(i)=tmp_xhat(i-1:-1:i-m)*AR+randn(1)*sqrt(mdl.C);
 end
 
 tmp_xhat=tmp_xhat(1+m:end);

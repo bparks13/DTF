@@ -13,12 +13,12 @@ dtf_startup;
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET\\OR\\with_DBS';
 % PATIENT_ID='ET_OR_STIM_018';
 PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
-PATIENT_ID='ET_CL_004';
+PATIENT_ID='ET_CL_001';
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_Tourette';
 % PATIENT_ID='TS04 Double DBS Implantation';
-RECORDING_DATE='2018_06_20';
+RECORDING_DATE='2017_05_17';
 MIDPATH='preproc';
-RUN_ID='run5';
+RUN_ID='run12';
 ADDON='__200Hz__Z_SCORE__BIC';
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
 % config=struct('default',false,'preset',2);
@@ -65,6 +65,7 @@ avg_gamma=struct;
 pass=struct;
 
 freqForAnalysis=4:100;
+
 config_crit=struct(...
     'orderSelection','min',...
     'crit','bic',...
