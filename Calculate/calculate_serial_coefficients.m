@@ -7,16 +7,16 @@ function phi_hat=calculate_serial_coefficients(E,order)
 %    - order: Model order (number of lags) to calculate the coefficients for
 %
 %   Outputs:
-%    - phi_hat: Serial correlated coefficients of the residuals. Matrix of size [o x c],
+%    - phi_hat: Serial correlated coefficients of the residuals. Matrix of size [c x c x o]
 %       where o is the model order, and c is the number of channels
 %
 
 numChannels=size(E,2);
 
-phi_hat=zeros(order,numChannels);
+phi_hat=zeros(numChannels,numChannels,order);
 
 for i=1:order
-    phi_hat(i,:) = diag((E((1+i):end,:)'*E(1:(end-i),:)) ./ (E((1+i):end,:)'*E((1+i):end,:)));
+    phi_hat(:,:,i) = (E((1+i):end,:)'*E(1:(end-i),:)) / (E(1:(end-i),:)'*E(1:(end-i),:));
 end
 
 end
