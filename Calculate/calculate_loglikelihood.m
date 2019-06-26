@@ -15,6 +15,10 @@ function logL=calculate_loglikelihood(E,C)
 %  See also: infer, estimate_residuals, estimate_ar_coefficients
 %
 
+if nargin==1
+    C=(E' * E) / length(E);
+end
+
 [N,K]=size(E);  % N is number of samples, K is number of series
 R = chol(C);    % Upper triangular Cholesky factor
 
