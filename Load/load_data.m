@@ -234,7 +234,7 @@ end
 if isfield(filtering,'downsample')
     indToSkip=round(fs/filtering.downsample);
     x_all=downsample(x_all,indToSkip);
-    tmp_x=zeros(round(size(x,1)/indToSkip),size(x,2),size(x,3));
+    tmp_x=zeros(ceil(size(x,1)/indToSkip),size(x,2),size(x,3));
     
     for i=1:size(x,2)
         for j=1:size(x,3)
