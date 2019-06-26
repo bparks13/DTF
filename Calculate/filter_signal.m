@@ -8,31 +8,47 @@ function sig_filt=filter_signal(sig,phi)
 %   Inputs:
 %    - sig: Signal contained in a matrix of size [n x c], where n is the number of samples
 %       and c is the number of channels
-%    - phi: Coefficients of the serially correlated errors, in a [o x c] matrix, where o
-%       is the number of lags (model order) and c is the number of channels
+%    - phi: Coefficients of the serially correlated errors, in a [c x c x m] matrix, where
+%       c is the number of channels, and m is the model order. If there is only one
+%       channel, this becomes a [m x 1] vector
 %
 %   Outputs:
 %    - sig_filt: Filtered signal obtained by convolving the coefficients of phi with the
 %       given signal. size is [(n-p) x c], where p is the number of lags
 %   
 
+numSamples=size(sig,1);
 numChannels=size(sig,2);
-numCoeff=size(phi,1);
+bool_isUnivariate=false;
 
-sig_filt=zeros(size(sig,1)-numCoeff,numChannels);
-
-for i=1:numChannels
-    f=zeros(1,numCoeff+1);
-    f(1)=1;
-    
-    for j=1:numCoeff
-        f(j+1)=-phi(j,i);
-    end
-    
-    tmp_sig=filter(f,1,sig(:,i));
-    sig_filt(:,i)=tmp_sig(1+numCoeff:end);
+if size(phi,3) == 1 && numChannels == 1
+    order=size(phi,1);
+    bool_isUnivariate=true;    
+else
+    order=size(phi,3);
 end
 
-% sig_filt=conv2(-phi,sig);
+if bool_isUnivariate
+    f=zeros(1,order+1);
+    f(1)=1;
+
+    for j=1:order
+        f(j+1)=-phi(j);
+    end
+
+    tmp_sig=filter(f,1,sig);
+    sig_filt=tmp_sig(1+order:end);
+else
+    sig_filt=zeros(numSamples-order,numChannels);
+
+    for i=1+order:numSamples
+        sig_filt(i-order,:)=sig(i,:);
+        
+        for j=1:order
+            sig_filt(i-order,:)=sig_filt(i-order,:)-sig(i-j,:)*phi(:,:,j);
+%             sig_filt(i-order,:)=sig_filt(i-order,:)+sig(i-j,:)*phi(:,:,j);
+        end
+    end
+end
 
 end
