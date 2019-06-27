@@ -12,7 +12,7 @@ CCC;
 
 FILE='ET_CL_004__2018_06_20__run5__200Hz__Z_SCORE__BIC_(1).mat';
 load(fullfile(get_root_path,'Files',FILE));
-currTrial=1;
+currTrial=4;
 numChannels=size(x.Rest,2);
 
 %% Testing different model orders for estimating AR coefficients for serially correlated errors
@@ -98,30 +98,45 @@ hFig4=figure('Name','Ch. 4');
 
 E=E_orig;
 tmp_x=x_sig_orig;
+[~,tmp_E,~]=mvar(tmp_x,config_crit);
+[tmp_pass,tmp_h,~]=test_model(tmp_E,length(tmp_E));
 offset=0;
 
 for k=1:maxIterations
+    
+    if tmp_pass
+        disp('Finished. Errors are uncorrelated');
+        break
+    end
+    
     bic=nan(maxOrder,1);
 
-    for i=1:maxOrder
-        e_E=zeros(length(E)-i,numChannels);
-
-        phi=zeros(numChannels,numChannels,i);
-
-        for j=1:numChannels
-            phi(j,j,:)=calculate_serial_coefficients(E(:,j),i);
-            e_E(:,j)=filter_signal(E(:,j),phi(j,j,:));
-        end
-
-        logL=calculate_loglikelihood(e_E);
-        bic(i)=calculate_bic(logL,i,length(e_E));
-    end
-
-    minInd=find(min(bic)==bic);
+%     for i=1:maxOrder
+%         e_E=zeros(length(E)-i,numChannels);
+% 
+%         phi=zeros(numChannels,numChannels,i);
+% 
+%         for j=1:numChannels
+%             if tmp_h(j) == 1
+%                 phi(j,j,:)=calculate_serial_coefficients(E(:,j),i);
+%                 e_E(:,j)=filter_signal(E(:,j),phi(j,j,:));
+%             else
+%                 e_E(:,j)=E(1+i:end,j);
+%             end
+%         end
+% 
+%         logL=calculate_loglikelihood(e_E);
+%         bic(i)=calculate_bic(logL,i,length(e_E));
+%     end
+% 
+%     minInd=find(min(bic)==bic);
+    minInd=10; % Force the signal to filter at a lag of 10; TESTING
     phi_hat=zeros(numChannels,numChannels,minInd);
 
     for i=1:numChannels
-        phi_hat(i,i,:)=calculate_serial_coefficients(E(:,i),minInd);
+        if tmp_h(i) == 1
+            phi_hat(i,i,:)=calculate_serial_coefficients(E(:,i),minInd);
+        end
     end
 
     x_sig=zeros(length(tmp_x)-minInd,numChannels);
@@ -170,10 +185,6 @@ for k=1:maxIterations
     ax=subplot(313); cla;
     plot_acf(tmp_E(:,4),[],[],ax); 
     waitforbuttonpress;
-    
-    if tmp_pass
-        break
-    end
     
     E=tmp_E;
     tmp_x=x_sig;
