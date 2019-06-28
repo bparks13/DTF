@@ -17,7 +17,9 @@ phi_hat=zeros(numChannels,numChannels,order);
 
 for i=1:order
 %     phi_hat(:,:,i) = (E((1+i):end,:)'*E(1:(end-i),:)) / (E(1:(end-i),:)'*E(1:(end-i),:));
-    phi_hat(:,:,i) = (E((1+i):end,:)'*E(1:(end-i),:)) ./ (E(1:(end-i),:)'*E(1:(end-i),:));
+    phi_hat(:,:,i) = diag(diag((E((1+i):end,:)'*E(1:(end-i),:)) ./ (E(1:(end-i),:)'*E(1:(end-i),:))));
+    % Errors should not be estimated across channels due to the supposed randomness of
+    % channels
 end
 
 end
