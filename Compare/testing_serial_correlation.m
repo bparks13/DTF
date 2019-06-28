@@ -12,8 +12,9 @@ CCC;
 
 FILE='ET_CL_004__2018_06_20__run5__200Hz__Z_SCORE__BIC_(1).mat';
 load(fullfile(get_root_path,'Files',FILE));
-currTrial=4;
-numChannels=size(x.Rest,2);
+currTrial=1;
+currCond='CueLeft';
+numChannels=size(x.(currCond),2);
 
 %% Testing different model orders for estimating AR coefficients for serially correlated errors
 
@@ -26,9 +27,9 @@ config_e.output=0;
 % config_e.orderRange=1:maxOrder;
 
 e_crit=zeros(maxOrder,numChannels);
-x_sig_orig=x.Rest(:,:,currTrial);
-tmp_mdl_orig=ar.Rest(currTrial).mdl;
-E_orig=res.Rest(currTrial).E;
+x_sig_orig=x.(currCond)(:,:,currTrial);
+tmp_mdl_orig=ar.(currCond)(currTrial).mdl;
+E_orig=res.(currCond)(currTrial).E;
 
 t=(0:size(x_sig_orig,1)-1)/fs;
 m=tmp_mdl_orig.order;
@@ -50,55 +51,92 @@ hFig2=figure('Name','Ch. 2');
 hFig3=figure('Name','Ch. 3');
 hFig4=figure('Name','Ch. 4');
 
-%% Iteratively search through all model orders, and choose the lowest BIC for the calculations
-
-% x_sig=x_sig_orig;
-% prevAR=tmp_mdl_orig.AR;
-% tmp_E=E_orig;
+% %% Iteratively search through all model orders, and choose the lowest BIC for the calculations. Multivariate 
 % 
-% for i=1:maxIterations
-%     fprintf('Starting error estimation...\n');
+% E=E_orig;
+% tmp_x=x_sig_orig;
+% [tmp_mdl,tmp_E,~]=mvar(tmp_x,config_crit);
+% [tmp_pass,tmp_h,~]=test_model(tmp_E,length(tmp_E));
+% offset=0;
+% 
+% for k=1:maxIterations
+%     if tmp_pass
+%         disp('Finished. Errors are uncorrelated');
+%         break
+%     end
 %     
 %     bic=nan(maxOrder,1);
-%     
-%     for j=1:maxOrder
-%         phi=calculate_serial_coefficients(tmp_E,j);
-%         E_filtered=filter_signal(tmp_E,phi);
-%         logL=calculate_loglikelihood(E_filtered);
-%         bic(j)=calculate_bic(logL,j,length(tmp_E));
-%         
-% %         config_e.orderRange=j;
-% %         [e_mdl,e_E,e_crit]=mvar(tmp_E,config_e);
-% %         [e_pass,e_h,e_pval]=test_model(e_E,length(e_E));
-%         
-% %         if e_pass
-% %             break
-% %         end
+% 
+%     for i=1:maxOrder
+%         phi=calculate_serial_coefficients(E,i);
+%         e_E=filter_signal(E,phi);
+% 
+%         logL=calculate_loglikelihood(e_E);
+%         bic(i)=calculate_bic(logL,i,length(e_E));
 %     end
-%     
-%     phi_min=calculate_serial_coefficients(tmp_E,find(bic==min(bic)));
-%     
-% %     x_sig=filter_signal(x_sig,e_mdl.AR);
-%     x_sig=filter_signal(x_sig,phi_min);
-%     
-%     fprintf('Starting signal estimation...\n');
+% 
+%     minInd=find(min(bic)==bic);
+% %     minInd=6; % Force the signal to filter at a lag of 10; TESTING
+% %     minInd=tmp_mdl.order;
+% 
+%     phi_hat=calculate_serial_coefficients(E,minInd);
+% 
+%     x_sig=filter_signal(tmp_x,phi_hat);
+% 
 %     [tmp_mdl,tmp_E,tmp_crit]=mvar(x_sig,config_crit);
+%     [tmp_pass,tmp_h,tmp_pVal]=test_model(tmp_E,length(tmp_E));
+%     fprintf('%d, Overall: Pass = %d\n',k,tmp_pass);
+%     fprintf('%d, Ch. 1: h = %d, p = %.2f\n',minInd,tmp_h(1),tmp_pVal(1));
+%     fprintf('%d, Ch. 2: h = %d, p = %.2f\n',minInd,tmp_h(2),tmp_pVal(2));
+%     fprintf('%d, Ch. 3: h = %d, p = %.2f\n',minInd,tmp_h(3),tmp_pVal(3));
+%     fprintf('%d, Ch. 4: h = %d, p = %.2f\n',minInd,tmp_h(4),tmp_pVal(4));
+% 
+%     figure(hFig1);
+%     subplot(311);
+%     plot(t,x_sig_orig(:,1),'b',t(1+minInd+offset:end),x_sig(:,1),'r'); title('Signal'); xlim([0 t(end)])
+%     subplot(312);
+%     plot(t(1+m:end),E_orig(:,1),'b',t(1+minInd+tmp_mdl.order+offset:end),tmp_E(:,1),'r'); title('Residuals'); xlim([0 t(end)])
+%     ax=subplot(313); cla;
+%     plot_acf(tmp_E(:,1),[],[],ax); 
+% 
+%     figure(hFig2);
+%     subplot(311);
+%     plot(t,x_sig_orig(:,2),'b',t(1+minInd+offset:end),x_sig(:,2),'r'); title('Signal'); xlim([0 t(end)])
+%     subplot(312);
+%     plot(t(1+m:end),E_orig(:,2),'b',t(1+minInd+tmp_mdl.order+offset:end),tmp_E(:,2),'r'); title('Residuals'); xlim([0 t(end)])
+%     ax=subplot(313); cla;
+%     plot_acf(tmp_E(:,2),[],[],ax); 
+% 
+%     figure(hFig3);
+%     subplot(311);
+%     plot(t,x_sig_orig(:,3),'b',t(1+minInd+offset:end),x_sig(:,3),'r'); title('Signal'); xlim([0 t(end)])
+%     subplot(312);
+%     plot(t(1+m:end),E_orig(:,3),'b',t(1+minInd+tmp_mdl.order+offset:end),tmp_E(:,3),'r'); title('Residuals'); xlim([0 t(end)])
+%     ax=subplot(313); cla;
+%     plot_acf(tmp_E(:,3),[],[],ax); 
+% 
+%     figure(hFig4);
+%     subplot(311);
+%     plot(t,x_sig_orig(:,4),'b',t(1+minInd+offset:end),x_sig(:,4),'r'); title('Signal'); xlim([0 t(end)])
+%     subplot(312);
+%     plot(t(1+m:end),E_orig(:,4),'b',t(1+minInd+tmp_mdl.order+offset:end),tmp_E(:,4),'r'); title('Residuals'); xlim([0 t(end)])
+%     ax=subplot(313); cla;
+%     plot_acf(tmp_E(:,4),[],[],ax); 
+%     waitforbuttonpress;
 %     
-%     if size(prevAR,3) == size(tmp_mdl.AR,3)
-%         if all(all(all(prevAR-tmp_mdl.AR < epsilon)))
-%             fprintf('Convergence.\n')
-%             break;
-%         else
-%             prevAR=tmp_mdl.AR;
-%         end
-%     else
-%         prevAR=tmp_mdl.AR;        
-%     end
+%     E=tmp_E;
+%     tmp_x=x_sig;
+%     offset=offset+minInd;
 % end
+
+
+%% Iteratively search through all model orders, and choose the lowest BIC for the calculations. Single channels
+
+config_e.orderRange=2:maxOrder;
 
 E=E_orig;
 tmp_x=x_sig_orig;
-[~,tmp_E,~]=mvar(tmp_x,config_crit);
+[tmp_mdl,tmp_E,~]=mvar(tmp_x,config_crit);
 [tmp_pass,tmp_h,~]=test_model(tmp_E,length(tmp_E));
 offset=0;
 
@@ -117,73 +155,98 @@ for k=1:maxIterations
 %         phi=zeros(numChannels,numChannels,i);
 % 
 %         for j=1:numChannels
-%             if tmp_h(j) == 1
+% %             if tmp_h(j) == 1
 %                 phi(j,j,:)=calculate_serial_coefficients(E(:,j),i);
-%                 e_E(:,j)=filter_signal(E(:,j),phi(j,j,:));
-%             else
-%                 e_E(:,j)=E(1+i:end,j);
-%             end
+%                 e_E(:,j)=filter_signal(E(:,j),squeeze(phi(j,j,:)));
+% %             else
+% %                 e_E(:,j)=E(1+i:end,j);
+% %             end
 %         end
 % 
 %         logL=calculate_loglikelihood(e_E);
 %         bic(i)=calculate_bic(logL,i,length(e_E));
 %     end
-% 
+    [e_mdl,e_E,e_crit]=mvar(E,config_e);
+    [tmp_pass,tmp_h,tmp_pVal]=test_model(e_E,length(e_E));
+    minInd=e_mdl.order;
+    fprintf('%d, Residual Modeling: Pass = %d\n',k,tmp_pass);
+    fprintf('%d, Ch. 1: h = %d, p = %.2f\n',minInd,tmp_h(1),tmp_pVal(1));
+    fprintf('%d, Ch. 2: h = %d, p = %.2f\n',minInd,tmp_h(2),tmp_pVal(2));
+    fprintf('%d, Ch. 3: h = %d, p = %.2f\n',minInd,tmp_h(3),tmp_pVal(3));
+    fprintf('%d, Ch. 4: h = %d, p = %.2f\n',minInd,tmp_h(4),tmp_pVal(4));
+    
+    for i=1:minInd
+        e_mdl.AR(:,:,i)=diag(diag(e_mdl.AR(:,:,i)));
+    end
+
 %     minInd=find(min(bic)==bic);
-    minInd=10; % Force the signal to filter at a lag of 10; TESTING
-    phi_hat=zeros(numChannels,numChannels,minInd);
+% %     minInd=10; % Force the signal to filter at a lag of 10; TESTING
+% %     minInd=tmp_mdl.order;
+% %%
+%     phi_hat=zeros(numChannels,numChannels,minInd);
+% 
+%     for i=1:numChannels
+% %         if tmp_h(i) == 1
+%             phi_hat(i,i,:)=calculate_serial_coefficients(E(:,i),minInd);
+% %         end
+%     end
 
-    for i=1:numChannels
-        if tmp_h(i) == 1
-            phi_hat(i,i,:)=calculate_serial_coefficients(E(:,i),minInd);
-        end
-    end
-
-    x_sig=zeros(length(tmp_x)-minInd,numChannels);
-
-    for j=1:numChannels
-        x_sig(:,j)=filter_signal(tmp_x(:,j),squeeze(phi_hat(j,j,:)));
-    end
+%     x_sig=zeros(length(tmp_x)-minInd,numChannels);
+% 
+%     for j=1:numChannels
+%     x_sig=filter_signal(tmp_x,phi_hat);
+    x_sig=filter_signal(tmp_x,e_mdl.AR);
+%     end
 
     [tmp_mdl,tmp_E,tmp_crit]=mvar(x_sig,config_crit);
     [tmp_pass,tmp_h,tmp_pVal]=test_model(tmp_E,length(tmp_E));
-    fprintf('%d, Overall: Pass = %d\n',k,tmp_pass);
+    fprintf('%d, Filtered Signal Modeling: Pass = %d\n',k,tmp_pass);
     fprintf('%d, Ch. 1: h = %d, p = %.2f\n',minInd,tmp_h(1),tmp_pVal(1));
     fprintf('%d, Ch. 2: h = %d, p = %.2f\n',minInd,tmp_h(2),tmp_pVal(2));
     fprintf('%d, Ch. 3: h = %d, p = %.2f\n',minInd,tmp_h(3),tmp_pVal(3));
     fprintf('%d, Ch. 4: h = %d, p = %.2f\n',minInd,tmp_h(4),tmp_pVal(4));
 
+    %%
     figure(hFig1);
     subplot(311);
     plot(t,x_sig_orig(:,1),'b',t(1+minInd+offset:end),x_sig(:,1),'r'); title('Signal'); xlim([0 t(end)])
     subplot(312);
     plot(t(1+m:end),E_orig(:,1),'b',t(1+minInd+tmp_mdl.order+offset:end),tmp_E(:,1),'r'); title('Residuals'); xlim([0 t(end)])
-    ax=subplot(313); cla;
-    plot_acf(tmp_E(:,1),[],[],ax); 
+    ax=subplot(325); cla;
+    plot_acf(e_E(:,1),[],[],ax); ylim([-.4 .4]); title('Filtered Residuals Autocorrelation'); 
+    ax=subplot(326); cla;
+    plot_acf(tmp_E(:,1),[],[],ax); ylim([-.4 .4]); title('Signal Residuals Autocorrelation'); 
 
     figure(hFig2);
     subplot(311);
     plot(t,x_sig_orig(:,2),'b',t(1+minInd+offset:end),x_sig(:,2),'r'); title('Signal'); xlim([0 t(end)])
     subplot(312);
     plot(t(1+m:end),E_orig(:,2),'b',t(1+minInd+tmp_mdl.order+offset:end),tmp_E(:,2),'r'); title('Residuals'); xlim([0 t(end)])
-    ax=subplot(313); cla;
-    plot_acf(tmp_E(:,2),[],[],ax); 
+    ax=subplot(325); cla;
+    plot_acf(e_E(:,2),[],[],ax); ylim([-.4 .4]); title('Filtered Residuals Autocorrelation'); 
+    ax=subplot(326); cla;
+    plot_acf(tmp_E(:,2),[],[],ax); ylim([-.4 .4]); title('Signal Residuals Autocorrelation'); 
 
     figure(hFig3);
     subplot(311);
     plot(t,x_sig_orig(:,3),'b',t(1+minInd+offset:end),x_sig(:,3),'r'); title('Signal'); xlim([0 t(end)])
     subplot(312);
     plot(t(1+m:end),E_orig(:,3),'b',t(1+minInd+tmp_mdl.order+offset:end),tmp_E(:,3),'r'); title('Residuals'); xlim([0 t(end)])
-    ax=subplot(313); cla;
-    plot_acf(tmp_E(:,3),[],[],ax); 
+    ax=subplot(325); cla;
+    plot_acf(e_E(:,3),[],[],ax); ylim([-.4 .4]); title('Filtered Residuals Autocorrelation'); 
+    ax=subplot(326); cla;
+    plot_acf(tmp_E(:,3),[],[],ax); ylim([-.4 .4]); title('Signal Residuals Autocorrelation'); 
 
     figure(hFig4);
     subplot(311);
     plot(t,x_sig_orig(:,4),'b',t(1+minInd+offset:end),x_sig(:,4),'r'); title('Signal'); xlim([0 t(end)])
     subplot(312);
     plot(t(1+m:end),E_orig(:,4),'b',t(1+minInd+tmp_mdl.order+offset:end),tmp_E(:,4),'r'); title('Residuals'); xlim([0 t(end)])
-    ax=subplot(313); cla;
-    plot_acf(tmp_E(:,4),[],[],ax); 
+    ax=subplot(325); cla;
+    plot_acf(e_E(:,4),[],[],ax); ylim([-.4 .4]); title('Filtered Residuals Autocorrelation'); 
+    ax=subplot(326); cla;
+    plot_acf(tmp_E(:,4),[],[],ax); ylim([-.4 .4]); title('Signal Residuals Autocorrelation'); 
+    %%
     waitforbuttonpress;
     
     E=tmp_E;

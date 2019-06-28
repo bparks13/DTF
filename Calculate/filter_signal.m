@@ -23,18 +23,15 @@ bool_isUnivariate=false;
 
 if size(phi,3) == 1 && numChannels == 1
     order=size(phi,1);
-    bool_isUnivariate=true;    
+    bool_isUnivariate=true;   
+    phi=phi';
 else
     order=size(phi,3);
 end
 
 if bool_isUnivariate
-    f=zeros(1,order+1);
-    f(1)=1;
-
-    for j=1:order
-        f(j+1)=-phi(j);
-    end
+    f=[1,-phi];
+%     f=[1,phi];
 
     tmp_sig=filter(f,1,sig);
     sig_filt=tmp_sig(1+order:end);
