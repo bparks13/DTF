@@ -160,7 +160,7 @@ for i=1:numOrders
         logL=calculate_loglikelihood(tmp_E,C);
 
         if strcmp(crit,'bic')
-            criterion(i)=calculate_bic(logL,orderRange(i),numSamples-orderRange(i));
+            criterion(i)=calculate_bic(logL,orderRange(i),numSeries,numSamples-orderRange(i));
             
             if strcmp(orderSelection,'min')
                 result = criterion(i) < minCrit;
@@ -173,8 +173,18 @@ for i=1:numOrders
                 end
             end
         elseif strcmp(crit,'aic')
-            disp('WARNING: No AIC calculation implemented. No criterion tested.');
-            result=false;
+            criterion(i)=calculate_aic(logL,orderRange(i),numSamples-orderRange(i));
+            
+            if strcmp(orderSelection,'min')
+                result = criterion(i) < minCrit;
+            elseif strcmp(orderSelection,'diff')
+                if i>1 && ~bool_minDiffFound
+                    result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
+                        criterion(i) - criterion(i-1) > 0;
+                else
+                    result=false;
+                end
+            end
         elseif strcmp(crit,'psd')
             pxx_ar=pwelch(x_hat,window,overlap,freqRange,fs);
 %             criterion(i)=mean(mean(abs(10*log10(pxx_sig(freqForAnalysis,:)) - 10*log10(pxx_ar(freqForAnalysis,:)))));
