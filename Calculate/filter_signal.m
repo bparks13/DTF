@@ -2,7 +2,7 @@ function sig_filt=filter_signal(sig,phi)
 %% sig_filt=filter_signal(sig,phi)
 %
 %  Filter a signal based on the serially correlated residuals, given by phi, where the new
-%  signal is sig_filt = filter([1 phi(1) phi(2) ... phi(3)],1,sig) for each individual
+%  signal is sig_filt = filter([1 -phi(1) -phi(2) ... -phi(3)],1,sig) for each individual
 %  channel (no cross correlation correction performed)
 %
 %   Inputs:
@@ -14,36 +14,62 @@ function sig_filt=filter_signal(sig,phi)
 %
 %   Outputs:
 %    - sig_filt: Filtered signal obtained by convolving the coefficients of phi with the
-%       given signal. size is [(n-p) x c], where p is the number of lags
+%       given signal. size is [n x c]. The first m points are calculated using the 
 %   
 
 numSamples=size(sig,1);
 numChannels=size(sig,2);
 bool_isUnivariate=false;
 
-if size(phi,3) == 1 && numChannels == 1
-    order=size(phi,1);
+if numChannels == 1
+    if size(phi,3)==1
+        order=size(phi,1);
+        phi=phi';
+    else
+        order=size(phi,3);
+        phi=squeeze(phi)';
+    end
+    
     bool_isUnivariate=true;   
-    phi=phi';
 else
     order=size(phi,3);
 end
 
 if bool_isUnivariate
     f=[1,-phi];
-%     f=[1,phi];
 
     tmp_sig=filter(f,1,sig);
-    sig_filt=tmp_sig(1+order:end);
+    sig_filt=zeros(size(tmp_sig));
+    
+    for i=1:order
+        prevSig=-phi(1:i-1)*sig(1:i-1);
+        
+        if isempty(prevSig)
+            sig_filt(i)=sig(i)*sqrt(1-phi(i)^2);
+        else
+            sig_filt(i)=sig(i)*sqrt(1-phi(i)^2)+prevSig;
+        end
+    end
+    
+    sig_filt(1+order:end)=tmp_sig(1+order:end);
 else
-    sig_filt=zeros(numSamples-order,numChannels);
+    sig_filt=zeros(numSamples,numChannels);
+    I=eye(numChannels);
+    
+    for i=1:order
+        sig_filt(i,:)=sig(i,:)*sqrt(abs(I-phi(:,:,i).^2));
+%         sig_filt(i,:)=sig(i,:)*sqrt(1-phi(:,:,i).^2);
+        
+        for j=i-1:-1:1
+            sig_filt(i,:)=sig_filt(i,:)-sig(j,:)*phi(:,:,j);
+        end
+    end
 
     for i=1+order:numSamples
-        sig_filt(i-order,:)=sig(i,:);
+        sig_filt(i,:)=sig(i,:);
         
         for j=1:order
-            sig_filt(i-order,:)=sig_filt(i-order,:)-sig(i-j,:)*phi(:,:,j);
-%             sig_filt(i-order,:)=sig_filt(i-order,:)+sig(i-j,:)*phi(:,:,j);
+            sig_filt(i,:)=sig_filt(i,:)+sig(i-j,:)*(-phi(:,:,j));
         end
     end
 end
