@@ -34,7 +34,7 @@ if isUnivariate
         x_hat(i-m)=sum(X(i-1:-1:i-m).*AR);
     end
 
-    E=X(m+1:end)-x_hat;
+    E=x_hat-X(m+1:end);
 else
     m=size(AR,3);
     
@@ -46,7 +46,7 @@ else
         end
     end
     
-    E=X(m+1:end,:)-x_hat;
+    E=x_hat-X(m+1:end,:);
 end
 
 C=(E' * E) / length(E);
