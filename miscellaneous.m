@@ -79,8 +79,8 @@ figure;
 
 for i=1:numChannels
     subplot(numChannels,1,i);
-    plot(freqRange,pxx_sig(freqRange,i)); hold on;
-    plot(freqRange,pxx_ar(freqRange,i));
+    plot(freqRange,10*log10(pxx_sig(freqRange,i))); hold on;
+    plot(freqRange,10*log10(pxx_ar(freqRange,i)));
 end
 
 %% Testing using no filtering except for high pass filtering
@@ -131,8 +131,6 @@ conf=data.config_crit;
 
 [mdl,E,~]=mvar(x,conf);
 
-%% cont'd
-
 numSamples=length(E);
 AR=mdl.AR;
 m=mdl.order;
@@ -149,8 +147,33 @@ tmp_xhat=tmp_xhat(1+m:end);
 figure; plot(t,x,'b',t(1+m:end),mdl.x_hat,'g',t(1+m:end),tmp_xhat,'r');
 legend('Original','mdl.x\_hat','tmp\_xhat');
 
+%% Testing indexing of residuals/x_hat
 
+FILE='ET_CL_004__2018_06_20__run5__200Hz__Z_SCORE__BIC_(1).mat';
+load(fullfile(get_root_path,'Files',FILE));
+currTrial=2;
+currChannel=2;
+currCond='Rest';
 
+config_e=config_crit;
+config_e.orderRange=1:15;
+
+s1=x.(currCond)(:,currChannel,currTrial);
+e1=res.(currCond)(currTrial).E(:,currChannel);
+s2=ar.(currCond)(currTrial).mdl.x_hat(:,currChannel);
+
+t=(0:size(s1,1)-1)/fs;
+m=ar.(currCond)(currTrial).mdl.order;
+
+figure;
+plot(t,s1,'b',t(1+m:end),s2,'r',t(1+m:end),e1,'g');
+
+[e_mdl,~,~]=mvar(e1,config_e);
+s1_filt=filter_signal(s1,e_mdl.AR);
+s2_filt=filter_signal(s2,e_mdl.AR);
+
+figure;
+plot(t,s1_filt,'b',t(1+m:end),s2_filt,'r');
 
 
 
