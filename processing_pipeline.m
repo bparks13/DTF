@@ -1,6 +1,7 @@
-%% single_patient_all_conditions
+%% processing_pipeline
 %
-%  Collect all connectivity values for all conditions in one run of one patient
+%  Collect all connectivity values for all conditions in one run of one patient. Models
+%  the data, tests the model, and calculates connectivity values.
 %
 %  See also: mvar, plot_connectivity, dtf, load_data
 %
@@ -13,12 +14,12 @@ dtf_startup;
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET\\OR\\with_DBS';
 % PATIENT_ID='ET_OR_STIM_018';
 PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
-PATIENT_ID='ET_CL_001';
+PATIENT_ID='ET_CL_004';
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_Tourette';
 % PATIENT_ID='TS04 Double DBS Implantation';
-RECORDING_DATE='2017_05_17';
+RECORDING_DATE='2018_06_20';
 MIDPATH='preproc';
-RUN_ID='run12';
+RUN_ID='run5';
 ADDON='__200Hz__Z_SCORE__BIC';
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
 % config=struct('default',false,'preset',2);
@@ -96,7 +97,8 @@ for j=1:numConditions
 
     for i=1:numTrials
         fprintf('%d/%d - ',i,numTrials);
-        [ar.(currCond)(i).mdl,res.(currCond)(i).E,crit.(currCond)(i).(config_crit.crit)]=mvar(squeeze(x.(currCond)(:,:,i)),config_crit);
+        [ar.(currCond)(i).mdl,res.(currCond)(i).E,crit.(currCond)(i).(config_crit.crit)]=...
+            mvar(squeeze(x.(currCond)(:,:,i)),config_crit);
     end
 
     %% Test whiteness
@@ -106,7 +108,8 @@ for j=1:numConditions
     pass.(currCond)=nan(numTrials,1);
 
     for i=1:numTrials
-        [pass.(currCond)(i),h.(currCond)(i,:),pVal.(currCond)(i,:)]=test_model(res.(currCond)(i).E,length(x.(currCond)(:,:,i)));
+        [pass.(currCond)(i),h.(currCond)(i,:),pVal.(currCond)(i,:)]=...
+            test_model(res.(currCond)(i).E,length(x.(currCond)(:,:,i)));
     end
     
     print_whiteness(h.(currCond),pVal.(currCond),labels);
@@ -118,13 +121,6 @@ for j=1:numConditions
     for i=1:numTrials
         gamma.(currCond)(:,:,:,i)=dtf(ar.(currCond)(i).mdl,freqRange,fs);
     end
-
-    %% Plot all connectivities and PSDs
-
-%     config_plot.hFig=figure;
-%     config_plot.figTitle=sprintf('%s, %s, %s - %s: Connectivity',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
-%     
-%     plot_connectivity(gamma.(currCond),x.(currCond),freqRange,labels,config_plot);
 end
 
 %% Save relevant variables
@@ -140,9 +136,9 @@ end
 
 config_crit.hFig=[];
 config_plot.hFig=[];
-save(newFile,'ADDON','ar','avg_gamma','avg_psd','channels','conditions','cond_labels','crit',...
+save(newFile,'ADDON','ar','channels','conditions','cond_labels','crit',...
     'FILE','freqRange','freqForAnalysis','filtering','fs','fs_init','gamma','h','labels','newFile',...
-    'PATIENT_ID','pVal','RECORDING_DATE','res','RUN_ID','x','x_all','config_crit','config_plot');
+    'pass','PATIENT_ID','pVal','RECORDING_DATE','res','RUN_ID','x','x_all','config_crit','config_plot');
 
 
 
