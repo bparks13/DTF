@@ -1,5 +1,5 @@
-function [x_filt,filt_settings]=filter_serial_correlation(file,config)
-%% [x_filt,filt_settings]=filter_serial_correlation(file,config)
+function [x_filt,filt_values]=filter_serial_correlation(file,config)
+%% [x_filt,filt_values]=filter_serial_correlation(file,config)
 %
 %  If the AR model has correlated errors, filter the original signal to get rid of the
 %  correlated errors. Iterates through error model orders sequentially until the signal
@@ -18,7 +18,7 @@ function [x_filt,filt_settings]=filter_serial_correlation(file,config)
 %   Outputs:
 %    - x_filt: Filtered signal as a struct, in the same format as the struct 'x'.
 %       Contains the same subfields and number of samples/trials/channels in each field
-%    - filt_settings: Struct that matches the format of x_filt, and contains the error
+%    - filt_values: Struct that matches the format of x_filt, and contains the error
 %       model order that was filtered, as well as the iteration it was filtered on
 %
 
@@ -60,13 +60,13 @@ fields=fieldnames(x);
 c=cell(length(fields),1);
 
 x_filt=cell2struct(c,fields,1);
-filt_settings=cell2struct(c,fields,1);
+filt_values=cell2struct(c,fields,1);
 
 numChannels=size(x.(fields{1}),2);
 
 for i=1:length(fields)
     numTrials=size(x.(fields{i}),3);
-    filt_settings.(fields{i})=struct('decorrelated',nan,'order',nan,'iteration',nan);
+    filt_values.(fields{i})=struct('decorrelated',nan,'order',nan,'iteration',nan);
     
     for j=1:numTrials
         sig_orig=x.(fields{i})(:,:,j);
@@ -79,7 +79,7 @@ for i=1:length(fields)
         
         if tmp_pass
             x_filt.(fields{i})(:,:,j)=sig_orig;
-            filt_settings.(fields{i})(j).decorrelated=true;
+            filt_values.(fields{i})(j).decorrelated=true;
             fprintf('\n%s: Trial %d already uncorrelated',fields{i},j);
         else
             for k=1:length(errorModelOrders)
@@ -110,9 +110,9 @@ for i=1:length(fields)
                     
                     if tmp_pass
                         x_filt.(fields{i})(:,:,j)=sig;
-                        filt_settings.(fields{i})(j).decorrelated=true;
-                        filt_settings.(fields{i})(j).order=currModelOrder;
-                        filt_settings.(fields{i})(j).iteration=l;
+                        filt_values.(fields{i})(j).decorrelated=true;
+                        filt_values.(fields{i})(j).order=currModelOrder;
+                        filt_values.(fields{i})(j).iteration=l;
                         fprintf('\n%s: Trial %d decorrelated',fields{i},j);
                         bool_decorrelated=true;
                         break
@@ -127,10 +127,17 @@ for i=1:length(fields)
             if ~bool_decorrelated
                 fprintf('\nWARNING: %s Trial %d was not decorrelated\n',fields{i},j);
                 x_filt.(fields{i})(:,:,j)=nan(size(sig));
-                filt_settings.(fields{i})(j).decorrelated=false;
+                filt_values.(fields{i})(j).decorrelated=false;
             end
         end
     end
+end
+
+%% Either return the structs, or save the file
+
+if nargout == 0
+    save(fullfile(get_root_path,'Files',file),'-append',x_filt,filt_values);
+    clear x_filt filt_values
 end
 
 end

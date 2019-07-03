@@ -14,6 +14,8 @@ function [surrogate]=surrogate_analysis(file,config)
 %       method: String indicating which method to use. All surrogate analysis uses
 %           trial-shuffling, but this can be constrained to a single condition ['single']
 %           (default) or can shuffle trials from all conditions together ['combine']
+%       signal: String defining if the original signal is used ['original', default], or the
+%           decorrelated signal ['decorr']
 %
 %   Outputs:
 %    - surrogate: Struct containing all of the values created by the surrogate analysis
@@ -22,15 +24,20 @@ function [surrogate]=surrogate_analysis(file,config)
 %  10.1016/j.neuroimage.2004.09.036 
 %
 
+bool_original=true;
+
 %% Load file
 
 if nargin==0
     file=uigetfile(fullfile(get_root_path,'Files','*.mat'));
 end
 
-if file~=0
-    data=load(fullfile(get_root_path,'Files',file));
+if file==0
+    surrogate=[];
+    return
 end
+
+data=load(fullfile(get_root_path,'Files',file));
 
 fs=data.fs;
 freqForAnalysis=data.config_plot.freqLims;
@@ -53,6 +60,18 @@ if nargin == 2 && isstruct(config)
     if isfield(config,'cond')
         fields=config.cond;
     end
+    
+    if isfield(config,'method')
+        
+    end
+    
+    if isfield(config,'signal')
+        if strcmp(config.signal,'original')
+            bool_original=true;
+        elseif strcmp(config.signal,'decorr') && isfield(data,'x_filt')
+            bool_original=false;
+        end
+    end
 end
 
 %% Surrogate on a single condition
@@ -63,7 +82,11 @@ totalOperations=numFields*numIterations;
 for k=1:numFields
     currCond=fields{k};
     
-    x=data.x.(currCond);
+    if bool_original
+        x=data.x.(currCond);
+    else
+        x=data.x_filt.(currCond);
+    end
     config_crit.orderRange=round(summarize_model_orders(data.ar.(currCond)));
     numSamples=size(x,1);
     numChannels=size(x,2);
@@ -93,8 +116,14 @@ end
 %% Either save the file, or return the struct
 
 if nargout==0
-    save(fullfile(get_root_path,'Files',file),'-append','surrogate')
-    clear surrogate
+    if bool_original
+        save(fullfile(get_root_path,'Files',file),'-append','surrogate')
+        clear surrogate
+    else
+        surrogate_filt=surrogate; %#ok<NASGU>
+        save(fullfile(get_root_path,'Files',file),'-append','surrogate_filt')
+        clear surrogate_filt surrogate
+    end
 end
 
 end

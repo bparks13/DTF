@@ -16,6 +16,7 @@ function plot_trial(currCond,trial,file,plots)
 %       'crit': Criterion
 %       'time': Plots the original signal and the estimated signal, as well as the
 %           residuals
+%       'comp': Compare the original signal with the decorrelated signal
 %
 %   Outputs:
 %    Figure(s) containing all the different plots, including connectivity, ACF, criterion,
@@ -26,6 +27,7 @@ bool_plotCrit=false;
 bool_plotConn=false;
 bool_plotAcf=false;
 bool_plotTime=false;
+bool_plotCompare=false;
 
 if nargin==2 || isempty(plots)
     bool_plotAll=true;
@@ -49,6 +51,9 @@ else
                     
                 case 'time'
                     bool_plotTime=true;
+                    
+                case 'comp'
+                    bool_plotCompare=true;
             end
         end
     end
@@ -139,6 +144,12 @@ if bool_plotAll || bool_plotTime
         xlim([t(1) t(end)])
         legend('x','x\_hat','error');
     end
+end
+
+%% Plot Compare
+
+if bool_plotAll || bool_plotCompare
+    % Add in a function call here to the comparator i am about to make
 end
 
 end
