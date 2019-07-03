@@ -9,7 +9,7 @@ CCC;
 
 %% Load data
 
-FILE='ET_CL_004__2018_06_20__run5__PSD__Z_SCORE.mat';
+FILE='ET_CL_004__2018_06_20__run5__200Hz__Z_SCORE__BIC_(1).mat';
 
 load(fullfile(get_root_path,'Files',FILE));
 

@@ -13,14 +13,14 @@ CCC;
 FILE='ET_CL_004__2018_06_20__run5__200Hz__Z_SCORE__BIC_(1).mat';
 % FILE='ET_CL_004__2018_06_20__run5_GOOD.mat';
 load(fullfile(get_root_path,'Files',FILE));
-currTrial=3;
+currTrial=4;
 currCond='Rest';
 numChannels=size(x.(currCond),2);
 
 %% Testing different model orders for estimating AR coefficients for serially correlated errors
 
 maxOrder=15;
-maxIterations=1000;
+maxIterations=10;
 epsilon=0.1;
 
 e_crit=zeros(maxOrder,numChannels);
@@ -52,10 +52,10 @@ config_filt.output=0;
 % ax=subplot(224);
 % plot_acf(E_orig(:,4),[],[],ax); title('Ch. 4')
 
-hFig1=figure('Name','Ch. 1');
-hFig2=figure('Name','Ch. 2');
-hFig3=figure('Name','Ch. 3');
-hFig4=figure('Name','Ch. 4');
+% hFig1=figure('Name','Ch. 1');
+% hFig2=figure('Name','Ch. 2');
+% hFig3=figure('Name','Ch. 3');
+% hFig4=figure('Name','Ch. 4');
 
 %% Implement proposed algorithm
 
@@ -96,55 +96,55 @@ for i=1:maxIterations
     
     m=tmp_mdl.order;
     
-    figure(hFig1);
-    ax=zeros(2,1);
-    ax(1)=subplot(311);
-    plot(t,x_sig_orig(:,1),'b',t,sig_filt(:,1),'r',t(1+m:end),tmp_mdl.x_hat(:,1),'g'); title('Signal'); xlim([0 t(end)])
-    ax(2)=subplot(312);
-    plot(t(1+m_orig:end),E_orig(:,1),'b',t(1+tmp_mdl.order:end),tmp_E(:,1),'r'); title('Residuals'); xlim([0 t(end)]); 
-    linkaxes(ax,'x');
-    ax=subplot(325); cla;
-    plot_acf(e_E(:,1),[],[],ax); ylim([-.4 .4]); title('Filtered Residuals Autocorrelation'); 
-    ax=subplot(326); cla;
-    plot_acf(tmp_E(:,1),[],[],ax); ylim([-.4 .4]); title('Signal Residuals Autocorrelation'); 
-
-    figure(hFig2);
-    ax=zeros(2,1);
-    ax(1)=subplot(311);
-    plot(t,x_sig_orig(:,2),'b',t,sig_filt(:,2),'r',t(1+m:end),tmp_mdl.x_hat(:,2),'g'); title('Signal'); xlim([0 t(end)])
-    ax(2)=subplot(312);
-    plot(t(1+m_orig:end),E_orig(:,2),'b',t(1+tmp_mdl.order:end),tmp_E(:,2),'r'); title('Residuals'); xlim([0 t(end)]); 
-    linkaxes(ax,'x');
-    ax=subplot(325); cla;
-    plot_acf(e_E(:,2),[],[],ax); ylim([-.4 .4]); title('Filtered Residuals Autocorrelation'); 
-    ax=subplot(326); cla;
-    plot_acf(tmp_E(:,2),[],[],ax); ylim([-.4 .4]); title('Signal Residuals Autocorrelation'); 
-
-    figure(hFig3);
-    ax=zeros(2,1);
-    ax(1)=subplot(311);
-    plot(t,x_sig_orig(:,3),'b',t,sig_filt(:,3),'r',t(1+m:end),tmp_mdl.x_hat(:,3),'g'); title('Signal'); xlim([0 t(end)])
-    ax(2)=subplot(312);
-    plot(t(1+m_orig:end),E_orig(:,3),'b',t(1+tmp_mdl.order:end),tmp_E(:,3),'r'); title('Residuals'); xlim([0 t(end)]); 
-    linkaxes(ax,'x');
-    ax=subplot(325); cla;
-    plot_acf(e_E(:,3),[],[],ax); ylim([-.4 .4]); title('Filtered Residuals Autocorrelation'); 
-    ax=subplot(326); cla;
-    plot_acf(tmp_E(:,3),[],[],ax); ylim([-.4 .4]); title('Signal Residuals Autocorrelation'); 
-
-    figure(hFig4);
-    ax=zeros(2,1);
-    ax(1)=subplot(311);
-    plot(t,x_sig_orig(:,4),'b',t,sig_filt(:,4),'r',t(1+m:end),tmp_mdl.x_hat(:,4),'g'); title('Signal'); xlim([0 t(end)])
-    ax(2)=subplot(312);
-    plot(t(1+m_orig:end),E_orig(:,4),'b',t(1+tmp_mdl.order:end),tmp_E(:,4),'r'); title('Residuals'); xlim([0 t(end)]); 
-    linkaxes(ax,'x');
-    ax=subplot(325); cla;
-    plot_acf(e_E(:,4),[],[],ax); ylim([-.4 .4]); title('Filtered Residuals Autocorrelation'); 
-    ax=subplot(326); cla;
-    plot_acf(tmp_E(:,4),[],[],ax); ylim([-.4 .4]); title('Signal Residuals Autocorrelation'); 
-    
-    waitforbuttonpress;
+%     figure(hFig1);
+%     ax=zeros(2,1);
+%     ax(1)=subplot(311);
+%     plot(t,x_sig_orig(:,1),'b',t,sig_filt(:,1),'r',t(1+m:end),tmp_mdl.x_hat(:,1),'g'); title('Signal'); xlim([0 t(end)])
+%     ax(2)=subplot(312);
+%     plot(t(1+m_orig:end),E_orig(:,1),'b',t(1+tmp_mdl.order:end),tmp_E(:,1),'r'); title('Residuals'); xlim([0 t(end)]); 
+%     linkaxes(ax,'x');
+%     ax=subplot(325); cla;
+%     plot_acf(e_E(:,1),[],[],ax); ylim([-.4 .4]); title('Filtered Residuals Autocorrelation'); 
+%     ax=subplot(326); cla;
+%     plot_acf(tmp_E(:,1),[],[],ax); ylim([-.4 .4]); title('Signal Residuals Autocorrelation'); 
+% 
+%     figure(hFig2);
+%     ax=zeros(2,1);
+%     ax(1)=subplot(311);
+%     plot(t,x_sig_orig(:,2),'b',t,sig_filt(:,2),'r',t(1+m:end),tmp_mdl.x_hat(:,2),'g'); title('Signal'); xlim([0 t(end)])
+%     ax(2)=subplot(312);
+%     plot(t(1+m_orig:end),E_orig(:,2),'b',t(1+tmp_mdl.order:end),tmp_E(:,2),'r'); title('Residuals'); xlim([0 t(end)]); 
+%     linkaxes(ax,'x');
+%     ax=subplot(325); cla;
+%     plot_acf(e_E(:,2),[],[],ax); ylim([-.4 .4]); title('Filtered Residuals Autocorrelation'); 
+%     ax=subplot(326); cla;
+%     plot_acf(tmp_E(:,2),[],[],ax); ylim([-.4 .4]); title('Signal Residuals Autocorrelation'); 
+% 
+%     figure(hFig3);
+%     ax=zeros(2,1);
+%     ax(1)=subplot(311);
+%     plot(t,x_sig_orig(:,3),'b',t,sig_filt(:,3),'r',t(1+m:end),tmp_mdl.x_hat(:,3),'g'); title('Signal'); xlim([0 t(end)])
+%     ax(2)=subplot(312);
+%     plot(t(1+m_orig:end),E_orig(:,3),'b',t(1+tmp_mdl.order:end),tmp_E(:,3),'r'); title('Residuals'); xlim([0 t(end)]); 
+%     linkaxes(ax,'x');
+%     ax=subplot(325); cla;
+%     plot_acf(e_E(:,3),[],[],ax); ylim([-.4 .4]); title('Filtered Residuals Autocorrelation'); 
+%     ax=subplot(326); cla;
+%     plot_acf(tmp_E(:,3),[],[],ax); ylim([-.4 .4]); title('Signal Residuals Autocorrelation'); 
+% 
+%     figure(hFig4);
+%     ax=zeros(2,1);
+%     ax(1)=subplot(311);
+%     plot(t,x_sig_orig(:,4),'b',t,sig_filt(:,4),'r',t(1+m:end),tmp_mdl.x_hat(:,4),'g'); title('Signal'); xlim([0 t(end)])
+%     ax(2)=subplot(312);
+%     plot(t(1+m_orig:end),E_orig(:,4),'b',t(1+tmp_mdl.order:end),tmp_E(:,4),'r'); title('Residuals'); xlim([0 t(end)]); 
+%     linkaxes(ax,'x');
+%     ax=subplot(325); cla;
+%     plot_acf(e_E(:,4),[],[],ax); ylim([-.4 .4]); title('Filtered Residuals Autocorrelation'); 
+%     ax=subplot(326); cla;
+%     plot_acf(tmp_E(:,4),[],[],ax); ylim([-.4 .4]); title('Signal Residuals Autocorrelation'); 
+%     
+%     waitforbuttonpress;
 
     % Iterate until the AR coefficients of the model change less than 1 between
     % iterations
