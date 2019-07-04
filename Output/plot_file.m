@@ -95,8 +95,13 @@ numChannels=size(x_all,2);
 for i=1:numChannels
     subplot(numChannels,1,i);
     pxx_sig=pwelch(x.(currCond)(:,i,trialNum),fs,fs/2,1:(fs/2),fs); 
+    if isempty(ar.(currCond)(trialNum).mdl.pxx)
+       pxx_ar=pwelch(ar.(currCond)(trialNum).mdl.x_hat,fs,fs/2,1:(fs/2),fs); 
+    else
+        pxx_ar=ar.(currCond)(trialNum).mdl.pxx;
+    end
     plot(freqRange,10*log10(pxx_sig(freqRange)),'b'); hold on;
-    plot(freqRange,10*log10(ar.(currCond)(trialNum).mdl.pxx(freqRange,i)),'r');
+    plot(freqRange,10*log10(pxx_ar(freqRange,i)),'r');
 end
 
 
