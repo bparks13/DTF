@@ -55,6 +55,7 @@ orderSelection='min';
 epsilon=0.001;
 pxx_sig=[];
 pxx_ar=[];
+ll_method=1; % Log-Likelihood method; 1 == Matlab, 2 == Ding
 
 if nargin > 1 && isstruct(config)
     if isfield(config,'orderRange')
@@ -93,6 +94,10 @@ if nargin > 1 && isstruct(config)
         if isfield(config,'epsilon')
             epsilon=config.epsilon;
         end
+    end
+    
+    if isfield(config,'logLikelihoodMethod')
+        ll_method=config.logLikelihoodMethod;
     end
 end
 
@@ -157,10 +162,10 @@ for i=1:numOrders
     elseif strcmp(method,'yule')
         [AR]=estimate_ar_coefficients(x,orderRange(i));
         [tmp_E,C,x_hat]=estimate_residuals(x,AR);
-        logL=calculate_loglikelihood(tmp_E,C);
+        logL=calculate_loglikelihood(tmp_E,C,ll_method);
 
         if strcmp(crit,'bic')
-            criterion(i)=calculate_bic(logL,orderRange(i),numSeries,numSamples-orderRange(i));
+            criterion(i)=calculate_bic(logL,orderRange(i),numSeries,numSamples,ll_method);
             
             if strcmp(orderSelection,'min')
                 result = criterion(i) < minCrit;
@@ -237,7 +242,7 @@ if isempty(mdl.order)
     
     [mdl.AR]=estimate_ar_coefficients(x,minCritInd);
     [E,mdl.C]=estimate_residuals(x,mdl.AR);
-    mdl.logL=calculate_loglikelihood(E,mdl.C);
+    mdl.logL=calculate_loglikelihood(E,mdl.C,ll_method);
     mdl.order=minCritInd;
 end
 
