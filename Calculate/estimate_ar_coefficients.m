@@ -47,15 +47,21 @@ else
         [R_all(:,i),lags] = xcov(X(:,a),X(:,b),m,'unbiased');
     end
 
-    r_n = zeros(numSeries,m*numSeries);
+    r_n = zeros(m*numSeries,numSeries);
 
-    for i=1:numSeries
-        for j=1:m*numSeries
-            a=(i-1)*numSeries + mod(j-1,numSeries)+1;
-            b=-ceil(j/numSeries);
-    %         fprintf('(%d,%d) a = %d, b = %d\n',i,j,a,b);
+    for j=1:numSeries
+        for i=1:m*numSeries
+            a=(j-1)*numSeries + mod(i-1,numSeries)+1;
+%             b=-ceil(i/numSeries);
+            b=ceil(i/numSeries);
+%             fprintf('(%d,%d) a = %d, b = %d\n',i,j,a,b);
             r_n(i,j)=R_all(lags==b,a);
         end
+    end
+    
+    for i=1:m
+        ind=(i-1)*numSeries+1:i*numSeries;
+        r_n(ind,:) = r_n(ind,:)';
     end
 
     R_n = zeros(m*numSeries);
@@ -68,9 +74,15 @@ else
             R_n(i,j)=R_all(lags==b,a);
         end
     end
-
-    AR = reshape(r_n / R_n,numSeries,numSeries,m); 
     
+    theta = (R_n \ r_n);
+    AR=zeros(numSeries,numSeries,m);
+    
+    for i=1:m
+        ind=(i-1)*numSeries+1:i*numSeries;
+        AR(:,:,i) = theta(ind,:);
+    end
+     
     if nargout > 1 
         C=reshape(R_all(lags==0,:),numSeries,numSeries);
 
