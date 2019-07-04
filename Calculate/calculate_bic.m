@@ -1,5 +1,5 @@
-function bic=calculate_bic(logL,modelOrder,numChannels,N)
-%% bic=calculate_bic(logL,modelOrder,numChannels,N)
+function bic=calculate_bic(logL,modelOrder,numChannels,N,method)
+%% bic=calculate_bic(logL,modelOrder,numChannels,N,method)
 %
 %  Calculate the Bayesian Information Criterion for the AR model
 %
@@ -8,6 +8,8 @@ function bic=calculate_bic(logL,modelOrder,numChannels,N)
 %    - modelOrder: Model order of the model
 %    - numChannels: Number of channels used in the model
 %    - N: Number of samples in the original dataset
+%    - method: Int defining whether to use the Matlab Log-Likelihood [1] or the Ding
+%       Log-Likelihood [2], or the Awareness during anaesthesia paper method [3]
 %
 %   Outputs:
 %    - bic: Bayesian Information Criterion
@@ -17,7 +19,12 @@ function bic=calculate_bic(logL,modelOrder,numChannels,N)
 
 numParams=numChannels^2 * modelOrder;
 
-bic = -2 * logL + numParams * log(N - modelOrder);
-% bic = 2 * logL + 2 * (modelOrder + 1) / N / log(N);
+if method == 1
+    bic = -2 * logL + numParams * log(N - modelOrder);
+elseif method == 2
+    bic = 2 * logL + ((2 * numParams * log(N - modelOrder)) / (N - modelOrder));
+elseif method == 3
+    bic = logL + numParams * log(N - modelOrder);
+end
 
 end
