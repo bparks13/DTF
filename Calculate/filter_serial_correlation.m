@@ -140,4 +140,6 @@ if nargout == 0
     clear x_filt filt_values
 end
 
+fprintf('\n');
+
 end

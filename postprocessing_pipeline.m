@@ -21,7 +21,7 @@ surrogate_analysis(fullfile(get_root_path,'Files',file));   % run and save the s
 
 %% Decorrelation
 
-[x_filt,filt_values]=filter_serial_correlation(fullfile(get_root_path,'Files',file)); % filter all conditions
+[x_filt,filt_values]=filter_serial_correlation(file); % filter all conditions
 save(fullfile(get_root_path,'Files',file),'-append','x_filt','filt_values');
 
 %% Run analyses on filtered data

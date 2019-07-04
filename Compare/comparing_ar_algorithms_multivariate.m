@@ -5,7 +5,7 @@ CCC;
 numSamples=10000;
 numSeries=4;
 N=[numSamples,numSeries];
-modelOrder=30;
+modelOrder=2;
 stdZ=2;
 [X,a]=create_data(N,modelOrder,stdZ); 
 
@@ -48,7 +48,7 @@ tic_yule=tic;
 [AR,C]=estimate_ar_coefficients(X,modelOrder);
 [E,C_2]=estimate_residuals(X,AR);
 logL=calculate_loglikelihood(E,C);
-bic=calculate_bic(logL,modelOrder,numSamples-modelOrder);
+bic=calculate_bic(logL,modelOrder,numSeries,numSamples,1);
 
 % config=struct('changeDOF',true,'numParameters',modelOrder);
 % [pass,h,pVal]=test_model(E,length(X),config);
