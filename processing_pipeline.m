@@ -20,7 +20,7 @@ PATIENT_ID='ET_CL_004';
 RECORDING_DATE='2018_06_20';
 MIDPATH='preproc';
 RUN_ID='run5';
-ADDON='__200Hz__Z_SCORE__BIC';
+ADDON='__testingLOGL';
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
 % config=struct('default',false,'preset',2);
 % [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID,config);
@@ -70,9 +70,10 @@ freqForAnalysis=4:100;
 config_crit=struct(...
     'orderSelection','min',...
     'crit','bic',...
-    'orderRange',1:50,...
+    'orderRange',1:30,...
     'fs',fs,...
-    'freqRange',freqForAnalysis);
+    'freqRange',freqForAnalysis,...
+    'logLikelihoodMethod',3);
 config_plot=struct(...
     'hFig',[],...
     'seriesType',1,...
@@ -125,14 +126,15 @@ end
 
 %% Save relevant variables
 
-count=1;
-
-newFile=fullfile(get_root_path,'Files',sprintf('%s__%s__%s%s.mat',PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON));
-
-while exist(newFile,'file') == 2
-    newFile=fullfile(get_root_path,'Files',sprintf('%s__%s__%s%s_(%d).mat',PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON,count));
-    count=count+1;
-end
+% count=1;
+% 
+% newFile=fullfile(get_root_path,'Files',sprintf('%s__%s__%s%s.mat',PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON));
+% 
+% while exist(newFile,'file') == 2
+%     newFile=fullfile(get_root_path,'Files',sprintf('%s__%s__%s%s_(%d).mat',PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON,count));
+%     count=count+1;
+% end
+newFile=simplify_filename(PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON);
 
 config_crit.hFig=[];
 config_plot.hFig=[];
