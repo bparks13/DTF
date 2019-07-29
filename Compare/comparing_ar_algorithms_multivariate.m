@@ -3,9 +3,9 @@ CCC;
 %% Create a multivariate model
 
 numSamples=10000;
-numSeries=4;
+numSeries=2;
 N=[numSamples,numSeries];
-modelOrder=2;
+modelOrder=4;
 stdZ=2;
 [X,a]=create_data(N,modelOrder,stdZ); 
 
@@ -82,7 +82,7 @@ for i=1:(size(AR,1) * size(AR,2) * size(AR,3))
         a(i),AR(i),a(i)-AR(i),AR_varm(i),a(i)-AR_varm(i),AR(i)-AR_varm(i));
 end
 
-fprintf('\nResiduals comparison:\n\tAverage difference in residuals = %.5f\n',mean(E-E_varm));
+fprintf('\nResiduals comparison:\n\tMean-Absolute difference of residuals = %.5f\n',mean(abs(E-E_varm)));
 
 fprintf('\nCovariance matrix comparison:\n\tYule 1:\t\t\tYule 2:\t\t\tVarm:\t\t\tDiff 1:\t\t\tDiff 2\n');
 

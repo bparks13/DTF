@@ -4,14 +4,14 @@ function [pxx]=calculate_ar_psd(ar,freqRange,fs)
 %  Given the AR coefficients, calculate the PSD
 %
 %   Inputs:
-%    - Vector of AR coefficients. Size is [m x 1], where m is the model order
+%    - ar: Vector of AR coefficients. Size is [m x 1], where m is the model order
 %    - freqRange: Vector of frequencies to calculate the PSD over
 %    - fs: Sampling frequency in Hz
 %
 %   Outputs:
 %    - pxx: Estimated power 
 %
-%   See also: plot_psd, estimate_ar_coefficients
+%   See also: plot_psd, estimate_ar_coefficients, calculate_ar_spectra
 %
 
 if size(ar,1)==1
