@@ -10,7 +10,7 @@ function [mdl,E,criterion]=mvar(x,config)
 %    - config: Struct containing optional parameters
 %       orderRange: Vector containing the model orders to consider. Default [1:30]
 %       crit: String defining which information criterion to use, 'aic', 'bic' [default],
-%           or 'psd'
+%           'psd', or 'spectra'
 %       output: Int defining level of verbosity for output. 0 (none), 1 (model number)
 %           [default], 2 (model order and criterion tested)
 %       method: String defining which method to use; Matlab's varm ('varm') or Yule-Walker
@@ -27,6 +27,9 @@ function [mdl,E,criterion]=mvar(x,config)
 %       freqRange: If crit is defined as 'psd', the PSD will be calculated up to half the
 %           sampling frequency. freqRange can be defined to restrict the analysis of the
 %           PSD to a smaller range
+%       logLikelihoodMethod: Int defining which equation to use for calculating the log
+%           likelihood of the model. 1 is for Matlab [default], 2 for Ding, 3 for
+%           Awareness paper (see calculate_loglikelihood)
 %
 %   Outputs:
 %    - mdl: Struct containing the AR model fit for the data given
@@ -77,6 +80,9 @@ if nargin > 1 && isstruct(config)
             else
                 freqForAnalysis=freqRange;
             end
+        elseif strcmp(crit,'spectra')
+            fs=config.fs;
+            pxx_sig=fft(x,fs);
         end 
     end
     
@@ -178,7 +184,7 @@ for i=1:numOrders
                 end
             end
         elseif strcmp(crit,'aic')
-            criterion(i)=calculate_aic(logL,orderRange(i),numSamples-orderRange(i));
+            criterion(i)=calculate_aic(logL,orderRange(i),numSeries,numSamples,ll_method);
             
             if strcmp(orderSelection,'min')
                 result = criterion(i) < minCrit;
@@ -192,7 +198,6 @@ for i=1:numOrders
             end
         elseif strcmp(crit,'psd')
             pxx_ar=pwelch(x_hat,window,overlap,freqRange,fs);
-%             criterion(i)=mean(mean(abs(10*log10(pxx_sig(freqForAnalysis,:)) - 10*log10(pxx_ar(freqForAnalysis,:)))));
             
             if numSeries == 1
                 criterion(i)=mean(mean(abs(pxx_sig(freqForAnalysis) - pxx_ar(freqForAnalysis))));
@@ -209,6 +214,25 @@ for i=1:numOrders
                 else
                     result=false;
                 end
+            end
+        elseif strcmp(crit,'spectra')
+            S_ar=calculate_ar_spectra(AR,freqRange,fs,C);
+            
+            if strcmp(orderSelection,'min')
+                result = criterion(i) < minCrit;
+            elseif strcmp(orderSelection,'diff')
+                if i>1 && ~bool_minDiffFound
+                    result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
+                        criterion(i) - criterion(i-1) > 0;
+                else
+                    result=false;
+                end
+            end
+            
+            pxx_ar=nan(size(S_ar,3),size(S_ar,1));
+            
+            for j=1:size(S_ar,1)
+                pxx_ar(:,j)=squeeze(S_ar(j,j,:));
             end
         end
         
