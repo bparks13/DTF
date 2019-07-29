@@ -631,7 +631,7 @@ end
                     end
                     
                     hold on;
-                    title(sprintf('%s %c %s',labels{k},8594,labels{l}));
+                    title(sprintf('%s %c %s',labels{l},8594,labels{k}));
                 end
             end
         end
