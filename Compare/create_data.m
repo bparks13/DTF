@@ -7,7 +7,8 @@ function [X,a]=create_data(N,m,stdZ,a)
 %
 %   Inputs:
 %    - N: Number of samples. If more than one value is given, second value is assumed to
-%       be the number of channels to simulate [d] (multivariate case)
+%       be the number of channels to simulate [d] (multivariate case). This is only
+%       extracted when there is no coefficients given
 %    - m: AR model order
 %    - stdZ: Standard deviation of the random Gaussian error injected into the signal
 %    - a: Known AR coefficients for testing purposes. Size is [m x 1] for univariate, and
@@ -24,6 +25,7 @@ function [X,a]=create_data(N,m,stdZ,a)
 %
 
 isUnivariate=true;
+isSingleErrorVariance=true;
 
 if nargin == 0
     N = 100000;   % Number of points
@@ -52,6 +54,23 @@ elseif nargin < 4 || isempty(a)
             a(:,:,i) = I.*((randAR) - 0.5) / i + (1 - I).*((randAR - 0.5) * 0.05);
         end
     end
+elseif nargin==4
+    numSeries=size(a,1);
+
+    if numSeries > 1
+        isUnivariate=false;
+    end
+end
+
+if ~exist('stdZ','var')
+    stdZ=1;
+else
+    if length(stdZ) > 1
+        if length(stdZ) ~= numSeries
+            error('Cannot have an uneven number of stdZ inputs. Must be matched with the number of series being simulated');
+        end
+        isSingleErrorVariance=false;
+    end
 end
 
 if isUnivariate
@@ -73,7 +92,13 @@ else
         mu=zeros(numSeries,1);
         sigma=eye(numSeries);
 
-        X(i,:) = X(i,:) + stdZ*mvnrnd(mu,sigma);
+        if isSingleErrorVariance
+            X(i,:) = X(i,:) + stdZ*mvnrnd(mu,sigma);
+        else
+            for j=1:numSeries
+                X(i,j) = X(i,j) + stdZ(j)*randn(1);
+            end
+        end
     end
     
     X=X(m+1:end,:);
