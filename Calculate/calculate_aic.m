@@ -1,20 +1,29 @@
-function aic=calculate_aic(logL,modelOrder,N)
-%% aic=calculate_aic(logL,modelOrder,N)
+function aic=calculate_aic(logL,modelOrder,numChannels,N,method)
+%% aic=calculate_aic(logL,modelOrder,N,method)
 %
 %  Calculate the Akaike Information Criterion for the AR model
 %
 %   Inputs:
 %    - logL: Log-likelihood of the model
 %    - modelOrder: Model order of the model
+%    - numChannels: Number of channels used in the model
 %    - N: Number of samples in the original dataset
+%    - method: Int defining whether to use the Matlab Log-Likelihood [1] or the Ding
+%       Log-Likelihood [2]
 %
 %   Outputs:
-%    - bic: Bayesian Information Criterion
+%    - aic: Akaike Information Criterion
 %
 %  See also: calculate_loglikelihood, estimate_residuals, estimate_ar_coefficients,
 %       calculate_bic
 %
 
-aic = -2 * logL + modelOrder * 2;
+numParams=numChannels^2 * (modelOrder+1);
+
+if method == 1
+    aic = -2 * logL + modelOrder * 2;
+elseif method == 2
+    aic = logL + ((2 * numParams) / (N));
+end
 
 end
