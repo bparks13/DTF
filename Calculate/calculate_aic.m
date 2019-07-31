@@ -18,12 +18,12 @@ function aic=calculate_aic(logL,modelOrder,numChannels,N,method)
 %       calculate_bic
 %
 
-numParams=numChannels^2 * (modelOrder+1);
+numParams = numChannels^2 * (modelOrder);
 
 if method == 1
     aic = -2 * logL + modelOrder * 2;
 elseif method == 2
-    aic = logL + ((2 * numParams) / (N));
+    aic = 2 * logL + ((2 * numParams) / (N));
 end
 
 end

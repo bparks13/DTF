@@ -25,7 +25,7 @@ function [X,a]=create_data(N,m,stdZ,a)
 %
 
 isUnivariate=true;
-isSingleErrorVariance=true;
+% isSingleErrorVariance=true;
 
 if nargin == 0
     N = 100000;   % Number of points
@@ -69,7 +69,7 @@ else
         if length(stdZ) ~= numSeries
             error('Cannot have an uneven number of stdZ inputs. Must be matched with the number of series being simulated');
         end
-        isSingleErrorVariance=false;
+%         isSingleErrorVariance=false;
     end
 end
 
@@ -82,23 +82,16 @@ if isUnivariate
     
     X=X(m+1:end);
 else
-    X = zeros(N + m,numSeries);           
+    X = zeros(N + m,numSeries);   
+    mu=zeros(numSeries,1);        
+    sigma=(stdZ.^2).*eye(numSeries);
 
     for i = m+1:N+m
         for j = 1:m
-            X(i,:) = X(i,:) + X(i-j,:) * a(:,:,j);
+            X(i,:) = X(i,:) + (a(:,:,j) * X(i-j,:)')';
         end
         
-        mu=zeros(numSeries,1);
-        sigma=eye(numSeries);
-
-        if isSingleErrorVariance
-            X(i,:) = X(i,:) + stdZ*mvnrnd(mu,sigma);
-        else
-            for j=1:numSeries
-                X(i,j) = X(i,j) + stdZ(j)*randn(1);
-            end
-        end
+        X(i,:) = X(i,:) + mvnrnd(mu,sigma);
     end
     
     X=X(m+1:end,:);

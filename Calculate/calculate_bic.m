@@ -17,12 +17,12 @@ function bic=calculate_bic(logL,modelOrder,numChannels,N,method)
 %  See also: calculate_loglikelihood, estimate_residuals, estimate_ar_coefficients
 %
 
-numParams=numChannels^2 * (modelOrder + 1);
+numParams=numChannels^2 * (modelOrder);
 
 if method == 1
     bic = -2 * logL + numParams * log(N - modelOrder);
 elseif method == 2
-    bic = logL + ((2 * numParams * log(N)) / N);
+    bic = 2 * logL + ((2 * numParams * log(N)) / N);
 elseif method == 3
     bic = logL + numParams * log(N - modelOrder);
 end

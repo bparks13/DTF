@@ -44,7 +44,7 @@ else
         for j=1:m
 %             x_hat(i-m,:)=x_hat(i-m,:)+X(i-j,:)*(AR(:,:,j));
 %             x_hat(i-m,:)=x_hat(i-m,:)-X(i-j,:)*(AR(:,:,j));
-            x_hat(i-m,:)=x_hat(i-m,:)+((AR(:,:,j))*X(i-j,:)')';
+            x_hat(i-m,:)=x_hat(i-m,:)+(AR(:,:,j) * X(i-j,:)')';
         end
     end
     

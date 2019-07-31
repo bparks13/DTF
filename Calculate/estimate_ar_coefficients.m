@@ -44,24 +44,21 @@ else
     for i=1:numSeries^2
         a=ceil(i/numSeries);
         b=mod(i-1,numSeries)+1;
+%         fprintf('i = %d, a = %d, b = %d\n',i,a,b);
         [R_all(:,i),lags] = xcov(X(:,a),X(:,b),m,'unbiased');
     end
 
     r_n = zeros(m*numSeries,numSeries);
-
+    
     for j=1:numSeries
         for i=1:m*numSeries
-            a=(j-1)*numSeries + mod(i-1,numSeries)+1;
+%             a=(j-1)*numSeries + mod(i-1,numSeries)+1;
 %             b=-ceil(i/numSeries);
+            a=j+mod(i-1,numSeries)*numSeries;
             b=ceil(i/numSeries);
 %             fprintf('(%d,%d) a = %d, b = %d\n',i,j,a,b);
             r_n(i,j)=R_all(lags==b,a);
         end
-    end
-    
-    for i=1:m
-        ind=(i-1)*numSeries+1:i*numSeries;
-        r_n(ind,:) = r_n(ind,:)';
     end
 
     R_n = zeros(m*numSeries);
@@ -70,7 +67,7 @@ else
         for j=1:m*numSeries
             a=mod((i-1)*numSeries+mod(j-1,numSeries),numSeries^2)+1;
             b=-floor((j-1)/numSeries)+floor((i-1)/numSeries);
-    %         fprintf('(%d,%d) a = %d, b = %d\n',i,j,a,b);
+%             fprintf('(%d,%d) a = %d, b = %d\n',i,j,a,b);
             R_n(i,j)=R_all(lags==b,a);
         end
     end

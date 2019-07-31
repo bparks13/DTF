@@ -3,9 +3,9 @@ CCC;
 %% Create a multivariate model
 
 numSamples=10000;
-numSeries=2;
+numSeries=5;
 N=[numSamples,numSeries];
-modelOrder=4;
+modelOrder=2;
 stdZ=2;
 [X,a]=create_data(N,modelOrder,stdZ); 
 

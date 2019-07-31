@@ -81,8 +81,33 @@ if nargin > 1 && isstruct(config)
                 freqForAnalysis=freqRange;
             end
         elseif strcmp(crit,'spectra')
-            fs=config.fs;
-            pxx_sig=fft(x,fs);
+            if isfield(config,'simulated')
+                N=length(x);
+                freqRange=1:round(N/2);
+                S_orig=calculate_ar_spectra(config.simulated.a,freqRange,2*freqRange(end),config.simulated.C);
+                
+                P1=nan(size(S_orig,3),size(S_orig,1)); 
+            
+                for j=1:size(S_orig,1)
+                    P1(:,j)=squeeze(abs(S_orig(j,j,:)));
+                end
+            end
+% %             fs=config.fs;
+% %             freqRange=1:round(fs/2);
+%             N=length(x);
+%             freqRange=1:round(N/2);
+%             
+% %             if isfield(config,'freqRange')
+% %                 freqForAnalysis=config.freqRange;
+% %             else
+% %                 freqForAnalysis=freqRange;
+% %             end
+%             
+%             Y=fft(x);
+%             P2=abs(Y/N);
+%             P1=P2(2:floor(N/2)+1,:); % Ignore the DC component
+%             P1(1:end-1,:)=2*P1(1:end-1,:);
+% %             P1=P1(freqForAnalysis,:);
         end 
     end
     
@@ -216,7 +241,16 @@ for i=1:numOrders
                 end
             end
         elseif strcmp(crit,'spectra')
-            S_ar=calculate_ar_spectra(AR,freqRange,fs,C);
+%             S_ar=calculate_ar_spectra(AR,freqForAnalysis,fs,C);
+            S_ar=calculate_ar_spectra(AR,freqRange,2*freqRange(end),C);
+            
+            pxx_ar=nan(size(S_ar,3),size(S_ar,1)); % Not actually pxx, but maintaining consistency of the naming scheme 
+            
+            for j=1:size(S_ar,1)
+                pxx_ar(:,j)=squeeze(abs(S_ar(j,j,:)));
+            end
+            
+            criterion(i)=mean(mean((P1-pxx_ar).^2));
             
             if strcmp(orderSelection,'min')
                 result = criterion(i) < minCrit;
@@ -229,11 +263,6 @@ for i=1:numOrders
                 end
             end
             
-            pxx_ar=nan(size(S_ar,3),size(S_ar,1));
-            
-            for j=1:size(S_ar,1)
-                pxx_ar(:,j)=squeeze(S_ar(j,j,:));
-            end
         end
         
         if result

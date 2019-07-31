@@ -10,6 +10,7 @@ function [connectivity]=dtf(mdl,freqRange,fs,config)
 %       C: Covariance matrx as calculated by the Yule-Walker equations
 %       logL: Log-likelihood of the model fit, used for calculating information criterion
 %       order: Model order that is found to have the lowest information criterion
+%       numSeries: Number of channels/series used 
 %    - freqRange: Vector containing the specific frequencies to calculate the connectivity
 %       over
 %    - fs: Sampling frequency in Hz

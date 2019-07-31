@@ -1,7 +1,10 @@
 function S=calculate_ar_spectra(AR,freqRange,fs,C)
 %% [S]=calculate_ar_psd(AR,freqRange,fs,C)
 %
-%  Given the AR coefficients, calculate the PSD
+%  Given the AR coefficients, calculate the normalized spectra. Normalized based on the
+%  number of frequencies that are calculated. The DC component of the spectra (i.e.
+%  frequency of 0 Hz) is ignored; therefore an index of 1 corresponds to the first
+%  frequency component calculated.
 %
 %   Inputs:
 %    - AR: 3D matrix of autoregressive coefficient values. Size is [c x c x o], where
@@ -43,5 +46,8 @@ S=nan(size(H));
 for i=1:nFreqs
     S(:,:,i)=H(:,:,i) * C * H(:,:,i)';
 end
+
+% S=S./(modelOrder * (nFreqs/50));
+S=S./(nFreqs);
 
 end
