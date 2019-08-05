@@ -3,14 +3,11 @@
 
 % The program prints the coefficients we use (a and b)
 % plus their estimates (vector A) obtained with the arfit function
-['If needed INSTALL ARfit toolbox: http://climate-dynamics.org/software/#arfit']
-['put the toolbox files in your current folder, or use "set path" in the ']
-['File menu to include it in the MALAB paths']
+% ['If needed INSTALL ARfit toolbox: http://climate-dynamics.org/software/#arfit']
+% ['put the toolbox files in your current folder, or use "set path" in the ']
+% ['File menu to include it in the MALAB paths']
 % installed in path C:\Program Files\MATLAB71\toolbox\ar_tools
-
-clear;
-close all;
-
+CCC;
 % Set coefficients a and b
 a=0.95;         
 b=-.55;

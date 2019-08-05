@@ -81,3 +81,14 @@ for n=1:3
         title(ttl);
     end
 end
+
+return
+
+%% 
+
+AR=zeros(3,3,13); %#ok<*UNRCH>
+AR(:,:,1)=A1;
+AR(:,:,2)=A2;
+AR(:,:,4)=A4;
+AR(:,:,7)=A7;
+AR(:,:,13)=A13;
