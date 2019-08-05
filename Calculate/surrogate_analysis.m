@@ -37,7 +37,7 @@ if file==0
     return
 end
 
-data=load(fullfile(get_root_path,'Files',file));
+data=load(file);
 
 fs=data.fs;
 freqForAnalysis=data.config_plot.freqLims;
@@ -50,6 +50,7 @@ config_crit=struct(...
     'orderSelection',data.config_crit.orderSelection,...
     'crit',data.config_crit.crit,...
     'orderRange',[],...
+    'method',data.config_crit.method,...
     'fs',fs,...
     'freqRange',freqForAnalysis,...
     'output',0);
@@ -74,7 +75,7 @@ if nargin == 2 && isstruct(config)
     end
 end
 
-%% Surrogate on a single condition
+%% Surrogate analysis
 
 numFields=length(fields);
 totalOperations=numFields*numIterations;
@@ -117,11 +118,11 @@ end
 
 if nargout==0
     if bool_original
-        save(fullfile(get_root_path,'Files',file),'-append','surrogate')
+        save(file,'-append','surrogate')
         clear surrogate
     else
         surrogate_filt=surrogate; %#ok<NASGU>
-        save(fullfile(get_root_path,'Files',file),'-append','surrogate_filt')
+        save(file,'-append','surrogate_filt')
         clear surrogate_filt surrogate
     end
 end
