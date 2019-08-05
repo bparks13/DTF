@@ -7,22 +7,25 @@
 %  See also: processing_pipeline, surrogate_analysis, filter_serial_correlation
 %
 
-CCC
+CCC;
 
 %% Set file
 
 file=uigetfile(fullfile(get_root_path,'Files','*.mat'));
 
-data=load(fullfile(get_root_path,'Files',file));
+if file~=0
+    data=load(fullfile(get_root_path,'Files',file));
+end
+
+%% Decorrelation
+
+% [x_filt,filt_values]=filter_serial_correlation(file); % filter all conditions
+[x_filt,filt_values]=filter_serial_correlation(data); % filter all conditions
+save(fullfile(get_root_path,'Files',file),'-append','x_filt','filt_values');
 
 %% Surrogate analysis
 
 surrogate_analysis(fullfile(get_root_path,'Files',file));   % run and save the surrogate analysis for all conditions
-
-%% Decorrelation
-
-[x_filt,filt_values]=filter_serial_correlation(file); % filter all conditions
-save(fullfile(get_root_path,'Files',file),'-append','x_filt','filt_values');
 
 %% Run analyses on filtered data
 
@@ -81,5 +84,5 @@ save(fullfile(get_root_path,'Files',file),'-append','ar_filt','res_filt','crit_f
 
 %% Surrogate analysis on filtered data
 
-config_surr=struct(signal,'decorr');
+config_surr=struct('signal','decorr');
 surrogate_analysis(fullfile(get_root_path,'Files',file),config_surr);
