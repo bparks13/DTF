@@ -1,5 +1,5 @@
-function [connectivity]=dtf(mdl,freqRange,fs,config)
-%% [connectivity]=dtf(mdl,freqRange,fs,config)
+function [connectivity,H]=dtf(mdl,freqRange,fs,config)
+%% [connectivity,H]=dtf(mdl,freqRange,fs,config)
 %
 %  Using the estimated AR model, calculate the connectivity of the series in question. Can
 %  return either the raw connections or the normalized connections as specified in config
@@ -20,6 +20,7 @@ function [connectivity]=dtf(mdl,freqRange,fs,config)
 %   Outputs:
 %    - connectivity: Directed transfer function values for all combinations of series and
 %       frequencies; either normalized [default] or not, depending on if config is set
+%    - H: System transfer function
 %
 %  See also: mvar
 %
