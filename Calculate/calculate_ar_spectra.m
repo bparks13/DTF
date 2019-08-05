@@ -1,10 +1,8 @@
-function S=calculate_ar_spectra(AR,freqRange,fs,C)
-%% [S]=calculate_ar_psd(AR,freqRange,fs,C)
+function S=calculate_ar_spectra(AR,freqRange,fs,C,norm)
+%% [S]=calculate_ar_psd(AR,freqRange,fs,C,norm)
 %
 %  Given the AR coefficients, calculate the normalized spectra. Normalized based on the
-%  number of frequencies that are calculated. The DC component of the spectra (i.e.
-%  frequency of 0 Hz) is ignored; therefore an index of 1 corresponds to the first
-%  frequency component calculated.
+%  number of frequencies that are calculated. 
 %
 %   Inputs:
 %    - AR: 3D matrix of autoregressive coefficient values. Size is [c x c x o], where
@@ -12,12 +10,18 @@ function S=calculate_ar_spectra(AR,freqRange,fs,C)
 %    - freqRange: Vector of frequencies to calculate the PSD over
 %    - fs: Sampling frequency in Hz
 %    - C: Covariance matrix of the AR model
+%    - norm: Optional bool input, defining whether or not to normalize the spectra by the
+%       number of frequencies calculated
 %
 %   Outputs:
 %    - S: Estimated power 
 %
 %   See also: plot_psd, estimate_ar_coefficients
 %
+
+if nargin==4
+    norm=false;
+end
 
 nFreqs=length(freqRange);
 numSeries=size(AR,1);
@@ -47,7 +51,8 @@ for i=1:nFreqs
     S(:,:,i)=H(:,:,i) * C * H(:,:,i)';
 end
 
-% S=S./(modelOrder * (nFreqs/50));
-S=S./(nFreqs);
+if norm
+    S=S./(sqrt(nFreqs) * numSeries);
+end
 
 end
