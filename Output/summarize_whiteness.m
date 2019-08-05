@@ -17,6 +17,18 @@ function summarize_whiteness(h,labels)
 %   See also: test_model, print_whiteness
 %
 
+if isstruct(h)
+    conds=fieldnames(h);
+    numConds=length(conds);
+    
+    for i=1:numConds
+        fprintf('\n%s',conds{i});
+        summarize_whiteness(h.(conds{i}),labels);
+    end
+    
+    return
+end
+
 numTrialsRejected=sum(h);
 numTrials=size(h,1);
 numChannels=length(labels);
