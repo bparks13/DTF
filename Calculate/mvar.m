@@ -14,7 +14,8 @@ function [mdl,E,criterion]=mvar(x,config)
 %       output: Int defining level of verbosity for output. 0 (none), 1 (model number)
 %           [default], 2 (model order and criterion tested)
 %       method: String defining which method to use; Matlab's varm ('varm') or Yule-Walker
-%           equations ('yule') [default]
+%           equations ('yule') [default]. Additionally can use the Signal Processing for
+%           Neuroscientists method ('arfit')
 %       orderSelection: String defining how to algorithmically choose the model order.
 %           'min' [default] uses the minimum information criterion found, while 'diff'
 %           uses the first model order that the abs(difference) between successive ICs is
@@ -30,6 +31,11 @@ function [mdl,E,criterion]=mvar(x,config)
 %       logLikelihoodMethod: Int defining which equation to use for calculating the log
 %           likelihood of the model. 1 is for Matlab [default], 2 for Ding, 3 for
 %           Awareness paper (see calculate_loglikelihood)
+%       simulated: Additional struct subfield, which defines certain aspects of the
+%           simulated data for testing purposes. 
+%         a: Matrix of coefficients that are simulated for the AR model (ground truth)
+%         C: Matrix of the original covariance matrix used to defined the model
+%       spectral_range: Vector of frequencies over which to calculate the spectrum
 %
 %   Outputs:
 %    - mdl: Struct containing the AR model fit for the data given
@@ -55,14 +61,20 @@ crit='bic';
 output=1;
 method='yule';
 orderSelection='min';
+estimatorMethod='yule';
 epsilon=0.001;
 pxx_sig=[];
 pxx_ar=[];
 ll_method=1; % Log-Likelihood method; 1 == Matlab, 2 == Ding
+normalize_spectra=true;
 
 if nargin > 1 && isstruct(config)
     if isfield(config,'orderRange')
         orderRange=config.orderRange;
+    end
+    
+    if isfield(config,'normalizeSpectra')
+        normalize_spectra=config.normalizeSpectra;
     end
     
     if isfield(config,'crit')
@@ -82,32 +94,55 @@ if nargin > 1 && isstruct(config)
             end
         elseif strcmp(crit,'spectra')
             if isfield(config,'simulated')
-                N=length(x);
-                freqRange=1:round(N/2);
-                S_orig=calculate_ar_spectra(config.simulated.a,freqRange,2*freqRange(end),config.simulated.C);
+                if isfield(config,'fs')
+                    fs=config.fs;
+                else
+                    fs=1;
+                end
+                
+                if isfield(config,'spectral_range')
+                    spectral_range=config.spectral_range;
+                else
+                    N=length(x);
+                    spectral_range=(1:round(N/2))/fs;
+                end
+                
+                S_orig=calculate_ar_spectra(config.simulated.a,spectral_range,fs,config.simulated.C,normalize_spectra);
                 
                 P1=nan(size(S_orig,3),size(S_orig,1)); 
             
                 for j=1:size(S_orig,1)
                     P1(:,j)=squeeze(abs(S_orig(j,j,:)));
                 end
+            else
+                if isfield(config,'fs')
+                    fs=config.fs;
+                else
+                    fs=1;
+                end
+                
+                [P1,spectral_range]=calculate_fft(x,fs,normalize_spectra);
+                
+                if isfield(config,'freqRange')
+                    freqForAnalysis=config.freqRange;
+                else
+                    freqForAnalysis=spectral_range;
+                end
+                
+                len1=length(freqForAnalysis);
+                len2=size(P1,1);
+                
+                if len1 == len2
+                    spectral_range=freqForAnalysis;
+                elseif len1 > len2
+                    error('Cannot analyze more frequencies than exist from the fft');
+                else
+                    freqStart=find(spectral_range == freqForAnalysis(1));
+                    freqEnd=find(spectral_range == freqForAnalysis(end));
+                    P1=P1(freqStart:freqEnd,:);
+                    spectral_range=spectral_range(freqStart:freqEnd);
+                end
             end
-% %             fs=config.fs;
-% %             freqRange=1:round(fs/2);
-%             N=length(x);
-%             freqRange=1:round(N/2);
-%             
-% %             if isfield(config,'freqRange')
-% %                 freqForAnalysis=config.freqRange;
-% %             else
-% %                 freqForAnalysis=freqRange;
-% %             end
-%             
-%             Y=fft(x);
-%             P2=abs(Y/N);
-%             P1=P2(2:floor(N/2)+1,:); % Ignore the DC component
-%             P1(1:end-1,:)=2*P1(1:end-1,:);
-% %             P1=P1(freqForAnalysis,:);
         end 
     end
     
@@ -191,7 +226,7 @@ for i=1:numOrders
             end
         end
     elseif strcmp(method,'yule')
-        [AR]=estimate_ar_coefficients(x,orderRange(i));
+        [AR]=estimate_ar_coefficients(x,orderRange(i),method);
         [tmp_E,C,x_hat]=estimate_residuals(x,AR);
         logL=calculate_loglikelihood(tmp_E,C,ll_method);
 
@@ -242,7 +277,7 @@ for i=1:numOrders
             end
         elseif strcmp(crit,'spectra')
 %             S_ar=calculate_ar_spectra(AR,freqForAnalysis,fs,C);
-            S_ar=calculate_ar_spectra(AR,freqRange,2*freqRange(end),C);
+            S_ar=calculate_ar_spectra(AR,spectral_range,fs,C,normalize_spectra);
             
             pxx_ar=nan(size(S_ar,3),size(S_ar,1)); % Not actually pxx, but maintaining consistency of the naming scheme 
             
@@ -279,6 +314,59 @@ for i=1:numOrders
                 bool_minDiffFound=true;
             end
         end
+    elseif strcmp(method,'arfit')
+        [~,AR_tmp,C_ar,sbc,fpe,~]=arfit(x,orderRange(i),orderRange(i));
+        
+        AR=zeros(numSeries,numSeries,i);
+    
+        for j=1:orderRange(i)
+            AR(:,:,j)=AR_tmp(:,(j-1)*numSeries+1:j*numSeries);
+        end
+        
+        [tmp_E,C_yule,x_hat]=estimate_residuals(x,AR); 
+        logL=calculate_loglikelihood(tmp_E,C_yule,ll_method);
+        
+        if strcmp(crit,'bic')
+            criterion(i)=sbc;
+        elseif strcmp(crit,'aic')
+            criterion(i)=fpe;
+        elseif strcmp(crit,'spectra')
+            S_ar=calculate_ar_spectra(AR,spectral_range,fs,C_yule,normalize_spectra);
+            
+            pxx_ar=nan(size(S_ar,3),size(S_ar,1)); % Not actually pxx, but maintaining consistency of the naming scheme 
+            
+            for j=1:size(S_ar,1)
+                pxx_ar(:,j)=squeeze(abs(S_ar(j,j,:)));
+            end
+            
+            criterion(i)=mean(mean((P1-pxx_ar).^2));
+        end
+        
+        if strcmp(orderSelection,'min')
+            result = criterion(i) < minCrit;
+        elseif strcmp(orderSelection,'diff')
+            if i>1 && ~bool_minDiffFound
+                result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
+                    criterion(i) - criterion(i-1) > 0;
+            else
+                result=false;
+            end
+        end
+        
+        if result
+            minCrit=criterion(i);
+            mdl.AR=AR;
+            mdl.C=C_ar;
+            mdl.logL=logL;
+            mdl.order=orderRange(i);
+            mdl.x_hat=x_hat;
+            mdl.pxx=pxx_ar;
+            E=tmp_E;
+
+            if strcmp(orderSelection,'diff')
+                bool_minDiffFound=true;
+            end
+        end
     end
     
     if output == 1
@@ -293,7 +381,7 @@ if isempty(mdl.order)
     
     minCritInd=find(criterion==min(criterion));
     
-    [mdl.AR]=estimate_ar_coefficients(x,minCritInd);
+    [mdl.AR]=estimate_ar_coefficients(x,minCritInd,estimatorMethod);
     [E,mdl.C]=estimate_residuals(x,mdl.AR);
     mdl.logL=calculate_loglikelihood(E,mdl.C,ll_method);
     mdl.order=minCritInd;
