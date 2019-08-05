@@ -2,18 +2,20 @@ function plot_acf(x,lag,numSD,hAx)
 %% plot_acf(x,lag,numSD,hAx)
 %
 %  Function to plot the autocorrelation up to the lag given. Based on the 'autocorr'
-%  function in Matlab, reiterated here to bypass the licensing issue.
+%  function in Matlab, reiterated here to bypass the licensing issue. If a matrix is
+%  given, each channel will be plotted in a different figure
 %
 %   Inputs:
-%    - x: Signal to autocorrelate. Should be a vector of values.
+%    - x: Signal to autocorrelate. Can be a vector or a matrix. Size is [n x c], where n
+%       is the number of samples and c is the number of channels
 %    - lag: Max lag to plot the ACF up to. Default is 20. Can be empty to use default
 %    - numSD: Number of standard deviations to plot for the confidence interval. Default
 %       is 2. Can be empty to use default
 %    - hAx: Optional input containing the handle to an axis to plot in, instead of
-%       creating a new figure
+%       creating a new figure. This input is ignored if there is a matrix of values given
 %
 %   Outputs:
-%    Figure containing the autocorrelation values at lags up to lag, with confidence
+%    Figure(s) containing the autocorrelation values at lags up to lag, with confidence
 %       intervals defined by numSD
 %
 %   See also: autocorr
@@ -45,6 +47,14 @@ elseif nargin==4
     if ~isempty(hAx)
         bool_newAxis=false;
     end
+end
+
+if size(x,2) > 1
+    for i=1:size(x,2)
+        plot_acf(x(:,i),maxLag,numSTD);
+    end
+    
+    return
 end
 
 N=length(x);
