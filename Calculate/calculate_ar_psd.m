@@ -14,6 +14,9 @@ function [pxx]=calculate_ar_psd(ar,freqRange,fs)
 %   See also: plot_psd, estimate_ar_coefficients, calculate_ar_spectra
 %
 
+pxx=nan;
+return
+
 if size(ar,1)==1
     ar=squeeze(ar);
 end
