@@ -22,6 +22,8 @@ function [x_filt,filt_values]=filter_serial_correlation(file,config)
 %       model order that was filtered, as well as the iteration it was filtered on
 %
 
+bool_structGiven=false;
+
 if nargin == 0 || isempty(file)
     file=uigetfile(fullfile(get_root_path,'Files'));
     
@@ -29,6 +31,8 @@ if nargin == 0 || isempty(file)
         x_filt=[];
         return
     end
+elseif isstruct(file)
+    bool_structGiven=true;
 end
 
 maxIterations=10;
@@ -44,7 +48,12 @@ if nargin == 2 && isstruct(config)
     end
 end
 
-data=load(fullfile(get_root_path,'Files',file));
+if ~bool_structGiven
+    data=load(fullfile(get_root_path,'Files',file));
+else
+    data=file;
+end
+
 x=data.x;
 res=data.res;
 h=data.h;
