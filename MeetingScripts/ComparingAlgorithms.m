@@ -103,7 +103,6 @@ orderRange=1:20;
 
 a=zeros(5,5,3);
 a(1,1,1)=0.95*sqrt(2);
-% a(1,1,1)=0.90;
 a(4,4,1)=0.25*sqrt(2);
 a(4,5,1)=0.25*sqrt(2);
 a(5,5,1)=0.25*sqrt(2);
@@ -114,6 +113,7 @@ a(4,1,2)=-0.5;
 a(3,1,3)=-0.4;
 
 stdZ=sqrt([0.6 0.5 0.3 0.3 0.6]);
+C_orig=diag(stdZ.^2);
 
 fs=200;
 freqRange=4:100;
@@ -129,7 +129,7 @@ config=struct(...
     'crit','aic',...
     'method','arfit',...
     'fs',fs,...
-    'orderSelection','min',...
+    'orderSelection','diff1',...
     'freqRange',freqRange,...
     'logLikelihoodMethod',2 ...
     );
@@ -143,7 +143,7 @@ config.crit='bic';
 config.crit='spectra';
 config.spectral_range=spectral_range;
 config.normalizeSpectra=true;
-config.orderSelection='diff';
+% config.orderSelection='diff1';
 
 [mdl_mse1,E_mse1,crit_mse1]=mvar(X,config);
 
@@ -163,7 +163,21 @@ subplot(224); plot(orderRange,crit_mse2); title('MSE (10,000 Points)');
 mdl_orig=struct('AR',a,'order',3,'numSeries',5);
 [conn_orig,H_orig]=dtf(mdl_orig,freqRange,fs);
 
-config_plot=struct('seriesType',6);
-plot_connectivity(conn_orig,H_orig,freqRange,{'Sig1','Sig2','Sig3','Sig4','Sig5'},config_plot);
+S_orig=calculate_spectra(H_orig,C_orig);
 
+config_plot=struct('seriesType',7);
+plot_connectivity(conn_orig,S_orig,freqRange,{'Sig1','Sig2','Sig3','Sig4','Sig5'},config_plot);
+hFig=gcf;
+hFig.Position=[hFig.Position(1:2) 1250 800];
+
+%% Bijurika 5 variable AR(3) model - Figure 3
+
+% Using bic for modeling
+
+[conn_bic,H_bic]=dtf(mdl_bic,freqRange,fs);
+
+S_bic=calculate_spectra(H_bic,mdl_bic.C);
+
+config_plot=struct('seriesType',7);
+plot_connectivity(conn_bic,S_bic,freqRange,{'Sig1','Sig2','Sig3','Sig4','Sig5'},config_plot);
 
