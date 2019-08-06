@@ -30,7 +30,10 @@ function [avgPSD,avgConn,stdPSD,stdConn]=plot_connectivity(conn,series,freqRange
 %           6) Transfer function values: Matrix containing the output from the dtf.m
 %              function. Size is [c x c x f], where c is the number of channels and f is
 %              the number of frequencies (must match freqRange given)
-%           7) Struct containing any combination of the inputs above. The possible
+%           7) Spectral matrix values: Matrix containing the spectral matrix defined as
+%              S = H * C * H'. Size is [c x c x f], where c is the number of channels and
+%              f is the number of frequencies (must match freqRange given)
+%           8) Struct containing any combination of the inputs above. The possible
 %              subfields are given below;
 %               'original' is a matrix similar to 1)
 %               'estimated' is a matrix similar to 2)
@@ -105,6 +108,7 @@ threshold=0.01;
 bool_showRejectedNull=false; % whether or not to plot the rejected null hypothesis trials in red
 bool_plotThreshold=false; % Plot the values given in the surrogate analysis for significance
 bool_plotTransferFunction=false; % Plot the transfer function values instead of the Pxx values
+bool_plotSpectralMatrix=false; % Plot the spectral matrix values instead of the Pxx values
 
 numChannels=size(conn,1);
 numTrials=size(conn,4);
@@ -222,6 +226,20 @@ elseif seriesType == 6
         [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr(series,conn);
     end
 elseif seriesType == 7
+    bool_plotSpectralMatrix=true;
+    
+    if size(series,3) > 1
+        series=resize_spectra(series);
+    end
+    
+    if strcmp(plotType,'ind')
+        [ax_diag,ax_offdiag,yLimits]=plot_ind(series,conn,h);
+    elseif strcmp(plotType,'avg')
+        [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn]=plot_avg(series,conn);
+    elseif strcmp(plotType,'avgerr')
+        [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr(series,conn);
+    end
+elseif seriesType == 8
     if ~isstruct(series)
         error('ERROR: Series is set as ''struct'' in config, but is not a struct');
     end
@@ -346,6 +364,8 @@ end
 
         if bool_plotTransferFunction
             yLim=[0 max(max(y_diag.^2))+2];
+        elseif bool_plotSpectralMatrix
+            yLim=[0 max(max(y_diag))+5];
         else
             yLim=[min(min(10*log10(y_diag)))-5,max(max(10*log10(y_diag)))+5];
         end
@@ -373,6 +393,8 @@ end
         
         if bool_plotTransferFunction
             yLimits=[0 max(max(avg_diag.^2))+2];
+        elseif bool_plotSpectralMatrix
+            yLimits=[0 max(max(avg_diag))+5];
         else
             yLimits=[min(min(10*log10(avg_diag)))-5,max(max(10*log10(avg_diag)))+5];
         end
@@ -402,6 +424,8 @@ end
         
         if bool_plotTransferFunction
             yLimits=[0 max(max(avg_diag.^2+std_diag))+2];
+        elseif bool_plotSpectralMatrix
+            yLimits=[0 max(max(avg_diag+std_diag))+5];
         else
             yLimits=[min(min(10*log10(avg_diag)-std_diag))-5,max(max(10*log10(avg_diag)+std_diag))+5];
         end
@@ -483,6 +507,12 @@ end
                             plot(freqRange,pxx(:,k).^2,'r'); % Not actually pxx, is actually H 
                         else
                             plot(freqRange,pxx(:,k).^2,lineprops_diag); 
+                        end
+                    elseif bool_plotSpectralMatrix
+                        if bool_showRejectedNull && (h(k) || h(l))
+                            plot(freqRange,pxx(:,k),'r'); % Not actually pxx, is actually H 
+                        else
+                            plot(freqRange,pxx(:,k),lineprops_diag); 
                         end
                     else
                         if bool_showRejectedNull && (h(k) || h(l))
