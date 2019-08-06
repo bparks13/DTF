@@ -20,6 +20,9 @@ function plot_spectra(S,spectral_range,S_orig)
 
 bool_SingleSpectra=true;
 bool_reformatOrig=false;
+bool_reformatEst=false;
+
+numChannels=size(S,1);
 
 if nargin==3
     bool_SingleSpectra=false;
@@ -27,15 +30,24 @@ if nargin==3
     if size(S_orig,3)==1 % If the FFT output is given instead of the spectral output, reformat when plotting
         bool_reformatOrig=true;
     end
+    
+    if size(S,3)==1
+        bool_reformatEst=true;
+        numChannels=size(S,2);
+    end
 end
 
-numChannels=size(S,1);
-
 figure;
+ax=zeros(numChannels,1);
 
 for i=1:numChannels
-    subplot(numChannels,1,i);
-    plot(spectral_range,abs(squeeze(S(i,i,:))));
+    ax(i)=subplot(numChannels,1,i);
+    
+    if bool_reformatEst
+        plot(spectral_range,S(:,i));
+    else
+        plot(spectral_range,abs(squeeze(S(i,i,:))));
+    end
     
     if ~bool_SingleSpectra
         hold on;
@@ -50,5 +62,7 @@ for i=1:numChannels
         legend('S')
     end
 end
+
+linkaxes(ax,'x');
 
 end
