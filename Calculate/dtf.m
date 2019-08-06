@@ -45,7 +45,7 @@ tmp_pdc=zeros(numSeries,numSeries,nFreqs);
 % Calculate PDC
 for i=1:nFreqs
     tmp_pdc(:,:,i)=I-reshape(sum(bsxfun(@times,reshape(AR,numSeries^2,modelOrder),...
-        exp(-(2*pi*1i/fs)*(1:modelOrder)*freqRange(i))),2),numSeries,numSeries);
+        exp(-(2*pi*1i*(1:modelOrder))*(freqRange(i)/fs))),2),numSeries,numSeries);
 end
 
 % Calculate H (system transfer function) from the inverse of the PDC above
