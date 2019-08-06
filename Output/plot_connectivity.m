@@ -27,7 +27,10 @@ function [avgPSD,avgConn,stdPSD,stdConn]=plot_connectivity(conn,series,freqRange
 %              values for a particular condition. Size should be [c x c x f x t], where c
 %              is the number of channels, f is the number of frequencies being analyzed,
 %              and t is the number of iterations the surrogate analysis was run for
-%           6) Struct containing any combination of the inputs above. The possible
+%           6) Transfer function values: Matrix containing the output from the dtf.m
+%              function. Size is [c x c x f], where c is the number of channels and f is
+%              the number of frequencies (must match freqRange given)
+%           7) Struct containing any combination of the inputs above. The possible
 %              subfields are given below;
 %               'original' is a matrix similar to 1)
 %               'estimated' is a matrix similar to 2)
@@ -101,6 +104,7 @@ threshold=0.01;
 
 bool_showRejectedNull=false; % whether or not to plot the rejected null hypothesis trials in red
 bool_plotThreshold=false; % Plot the values given in the surrogate analysis for significance
+bool_plotTransferFunction=false; % Plot the transfer function values instead of the Pxx values
 
 numChannels=size(conn,1);
 numTrials=size(conn,4);
@@ -204,6 +208,20 @@ elseif seriesType == 5
         [~,~,~,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr([],conn);
     end
 elseif seriesType == 6
+    bool_plotTransferFunction=true;
+    
+    if size(series,3) > 1
+        series=resize_spectra(series);
+    end
+    
+    if strcmp(plotType,'ind')
+        [ax_diag,ax_offdiag,yLimits]=plot_ind(series,conn,h);
+    elseif strcmp(plotType,'avg')
+        [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn]=plot_avg(series,conn);
+    elseif strcmp(plotType,'avgerr')
+        [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr(series,conn);
+    end
+elseif seriesType == 7
     if ~isstruct(series)
         error('ERROR: Series is set as ''struct'' in config, but is not a struct');
     end
@@ -294,163 +312,6 @@ else
     set_figure(ax_diag,ax_offdiag,yLimits);
 end 
 
-% if isstruct(series)
-%     if seriesType == 1
-%         pxx_sig=nan(length(freqRange),numChannels,numTrials);
-%         pxx_est=nan(length(freqRange),numChannels,numTrials);
-%     
-%         for i=1:numChannels
-%             for j=1:numTrials
-%                 pxx_sig(:,i,j)=pwelch(series.signal(:,i,j),window,overlap,freqRange,fs);
-%                 pxx_est(:,i,j)=pwelch(series.estimated(j).mdl.x_hat(:,i),window,overlap,freqRange,fs);
-%             end
-%         end
-%     elseif seriesType == 2
-%         pxx_sig=nan(length(freqRange),numChannels,numTrials);
-%         pxx_est=nan(length(freqRange),numChannels,numTrials);
-%     
-%         for i=1:numChannels
-%             for j=1:numTrials
-%                 pxx_sig(:,i,j)=pwelch(series.signal(:,i,j),window,overlap,freqRange,fs);
-%                 pxx_est(:,i,j)=calculate_ar_psd(series.estimated(j).mdl.AR(i,i,:),freqRange,fs);
-%             end
-%         end
-%     elseif seriesType == 3
-%         pxx_sig=series.signal;
-%         pxx_est=nan(length(freqRange),numChannels,numTrials);
-%         
-%         for i=1:numChannels
-%             for j=1:numTrials
-%                 if ~isempty(series.esimated(j).mdl.pxx)
-%                     pxx_est(:,i,j)=series.esimated(j).mdl.pxx(:,i);
-%                 else
-%                     pxx_est(:,i,j)=pwelch(series.estimated(j).mdl.x_hat(:,i),window,overlap,freqRange,fs);
-%                 end
-%             end
-%         end
-%     end
-%     
-%     % Calculate averages and standard deviations if needed, then plot everything
-%     
-%     if strcmp(plotType,'ind')
-%         for i=1:numTrials
-%             [~,~]=plotting(pxx_sig(:,:,i),conn(:,:,:,i),[],[],h(i,:),'-b');
-%             [ax_diag,ax_offdiag]=plotting(pxx_est(:,:,i),[],[],[],h(i,:),'-g');
-%         end
-% 
-%         yLimits=[min(min(10*log10(pxx_sig)))-5,max(max(10*log10(pxx_sig)))+5];
-% 
-%         if bool_changeFreqRange
-%             set_figure(ax_diag,ax_offdiag,yLimits,freqLims);
-%         else
-%             set_figure(ax_diag,ax_offdiag,yLimits);
-%         end
-%     elseif strcmp(plotType,'avg')
-%         avgPSD_sig=mean(pxx_sig,3);
-%         avgPSD_est=mean(pxx_est,3);
-%         avgConn=mean(conn,4);
-%         
-%         [~,~]=plotting(avgPSD_sig,avgConn,[],[],[],'-b');
-%         [ax_diag,ax_offdiag]=plotting(avgPSD_est,[],[],[],[],'-g');
-%         
-%         yLimits=[min(min(10*log10(avgPSD_sig)))-5,max(max(10*log10(avgPSD_sig)))+5];
-%     
-%         if bool_changeFreqRange
-%             set_figure(ax_diag,ax_offdiag,yLimits,freqLims);
-%         else
-%             set_figure(ax_diag,ax_offdiag,yLimits);
-%         end
-%     elseif strcmp(plotType,'avgerr')
-%         avgPSD_sig=mean(pxx_sig,3);
-%         stdPSD_sig=std(10*log10(pxx_sig),0,3);  
-%         avgPSD_est=mean(pxx_est,3);
-%         stdPSD_est=std(10*log10(pxx_est),0,3);  
-%         avgConn=mean(conn,4);
-%         stdConn=std(conn,0,4); 
-%         
-%         [~,~]=plotting(avgPSD_sig,avgConn,stdPSD_sig,stdConn,[],'-b');
-%         [ax_diag,ax_offdiag]=plotting(avgPSD_est,[],stdPSD_est,[],[],'-g');
-%         
-%         yLimits=[min(min(10*log10(avgPSD_sig)))-5,max(max(10*log10(avgPSD_sig)))+5];
-%     
-%         if bool_changeFreqRange
-%             set_figure(ax_diag,ax_offdiag,yLimits,freqLims);
-%         else
-%             set_figure(ax_diag,ax_offdiag,yLimits);
-%         end   
-%     end
-% else
-%     if seriesType == 1 && ~isempty(series)
-%         pxx_sig=nan(length(freqRange),numChannels,numTrials);
-%         
-%         for i=1:numChannels
-%             for j=1:numTrials
-%                 pxx_sig(:,i,j)=pwelch(series(:,i,j),window,overlap,freqRange,fs);
-%             end
-%         end
-%     elseif seriesType == 2 && ~isempty(series)
-%         pxx_sig=nan(length(freqRange),numChannels,numTrials); % This is the estimated PSD from the AR coefficients. 
-%     
-%         for i=1:numChannels
-%             for j=1:numTrials
-%                 pxx_sig(:,i,j)=calculate_ar_psd(series(j).mdl.AR(i,i,:),freqRange,fs);
-%             end
-%         end
-%     elseif seriesType == 3 && ~isempty(series)
-%         pxx_sig=series;
-%     else
-%         pxx_sig=nan(length(freqRange),numChannels,numTrials);
-%     end
-%     
-%     % Calculate averages and standard deviations if needed, then plot everything
-%     
-%     if strcmp(plotType,'ind')
-%         for i=1:numTrials
-%             [ax_diag,ax_offdiag]=plotting(pxx_sig(:,:,i),conn(:,:,:,i),[],[],h(i,:));
-%         end
-% 
-%         yLimits=[min(min(10*log10(pxx_sig)))-5,max(max(10*log10(pxx_sig)))+5];
-% 
-%         if bool_changeFreqRange
-%             set_figure(ax_diag,ax_offdiag,yLimits,freqLims);
-%         else
-%             set_figure(ax_diag,ax_offdiag,yLimits);
-%         end
-%     elseif strcmp(plotType,'avg')
-%         avgPSD=mean(pxx_sig,3);
-%         avgConn=mean(conn,4);
-%         
-%         [ax_diag,ax_offdiag]=plotting(avgPSD,avgConn);
-%         
-%         yLimits=[min(min(10*log10(avgPSD)))-5,max(max(10*log10(avgPSD)))+5];
-%     
-%         if bool_changeFreqRange
-%             set_figure(ax_diag,ax_offdiag,yLimits,freqLims);
-%         else
-%             set_figure(ax_diag,ax_offdiag,yLimits);
-%         end
-%     elseif strcmp(plotType,'avgerr')
-%         avgPSD=mean(pxx_sig,3);
-%         avgConn=mean(conn,4);
-%         stdPSD=std(10*log10(pxx_sig),0,3);  
-%         stdConn=std(conn,0,4);  
-%         
-%         [ax_diag,ax_offdiag]=plotting(avgPSD,avgConn,stdPSD,stdConn);
-%         
-%         if all(any(isnan(avgPSD)))
-%             yLimits=ylim;
-%         else
-%             yLimits=[min(min(10*log10(avgPSD)))-5,max(max(10*log10(avgPSD)))+5];
-%         end
-%         
-%         if bool_changeFreqRange
-%             set_figure(ax_diag,ax_offdiag,yLimits,freqLims);
-%         else
-%             set_figure(ax_diag,ax_offdiag,yLimits);
-%         end
-%     end
-% end
-
 if ~isempty(figTitle)
     tmp_hFig=gcf;
     tmp_hFig.Name=figTitle;
@@ -483,7 +344,11 @@ end
             [ax_diag,ax_offdiag]=plotting(y_diag(:,:,k),y_offdiag(:,:,:,k),[],[],h(k,:),lineprops_offdiag,lineprops_diag);
         end
 
-        yLim=[min(min(10*log10(y_diag)))-5,max(max(10*log10(y_diag)))+5];
+        if bool_plotTransferFunction
+            yLim=[0 max(max(y_diag.^2))+2];
+        else
+            yLim=[min(min(10*log10(y_diag)))-5,max(max(10*log10(y_diag)))+5];
+        end
     end
 
 %% Internal function to plot averages
@@ -506,8 +371,11 @@ end
         
         [ax_diag,ax_offdiag]=plotting(avg_diag,avg_offdiag,[],[],[],lineprops_offdiag,lineprops_diag);
         
-        yLimits=[min(min(10*log10(avg_diag)))-5,max(max(10*log10(avg_diag)))+5];
-        
+        if bool_plotTransferFunction
+            yLimits=[0 max(max(avg_diag.^2))+2];
+        else
+            yLimits=[min(min(10*log10(avg_diag)))-5,max(max(10*log10(avg_diag)))+5];
+        end
     end
 
 %% Internal function to plot averages with shaded error bars
@@ -532,7 +400,11 @@ end
         
         [ax_diag,ax_offdiag]=plotting(avg_diag,avg_offdiag,std_diag,std_offdiag,[],lineprops_offdiag,lineprops_diag);
         
-        yLimits=[min(min(10*log10(avg_diag)-std_diag))-5,max(max(10*log10(avg_diag)+std_diag))+5];
+        if bool_plotTransferFunction
+            yLimits=[0 max(max(avg_diag.^2+std_diag))+2];
+        else
+            yLimits=[min(min(10*log10(avg_diag)-std_diag))-5,max(max(10*log10(avg_diag)+std_diag))+5];
+        end
     end
 
 %% Internal function to plot the significance threshold from surrogate analysis
@@ -605,6 +477,12 @@ end
                         
                         if isempty(ax.Children)
                             axis off;
+                        end
+                    elseif bool_plotTransferFunction
+                        if bool_showRejectedNull && (h(k) || h(l))
+                            plot(freqRange,pxx(:,k).^2,'r'); % Not actually pxx, is actually H 
+                        else
+                            plot(freqRange,pxx(:,k).^2,lineprops_diag); 
                         end
                     else
                         if bool_showRejectedNull && (h(k) || h(l))
