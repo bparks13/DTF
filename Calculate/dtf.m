@@ -7,8 +7,6 @@ function [connectivity,H]=dtf(mdl,freqRange,fs,config)
 %   Inputs:
 %    - mdl: Estimated AR model struct as returned by mvar
 %       AR: Autoregressive coefficients as found by estimate_ar_coefficients
-%       C: Covariance matrx as calculated by the Yule-Walker equations
-%       logL: Log-likelihood of the model fit, used for calculating information criterion
 %       order: Model order that is found to have the lowest information criterion
 %       numSeries: Number of channels/series used 
 %    - freqRange: Vector containing the specific frequencies to calculate the connectivity
@@ -82,7 +80,7 @@ for k=1:size(H,3)
     for i=1:size(H,1)
         den=sum(abs(H(i,:,k)).^2);
         for j=1:size(H,2)
-            gamma(i,j,k)=abs(H(i,j,k))^2/den;
+            gamma(i,j,k)=theta(i,j,k)/den;
         end
     end
 end
