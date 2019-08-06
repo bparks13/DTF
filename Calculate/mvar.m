@@ -62,7 +62,7 @@ output=1;
 method='yule';
 orderSelection='min';
 estimatorMethod='yule';
-epsilon=0.001;
+epsilon=0.01;
 pxx_sig=[];
 pxx_ar=[];
 ll_method=1; % Log-Likelihood method; 1 == Matlab, 2 == Ding
@@ -109,11 +109,13 @@ if nargin > 1 && isstruct(config)
                 
                 S_orig=calculate_ar_spectra(config.simulated.a,spectral_range,fs,config.simulated.C,normalize_spectra);
                 
-                P1=nan(size(S_orig,3),size(S_orig,1)); 
-            
-                for j=1:size(S_orig,1)
-                    P1(:,j)=squeeze(abs(S_orig(j,j,:)));
-                end
+                P1=resize_spectra(S_orig);
+                
+%                 P1=nan(size(S_orig,3),size(S_orig,1)); 
+%             
+%                 for j=1:size(S_orig,1)
+%                     P1(:,j)=squeeze(abs(S_orig(j,j,:)));
+%                 end
             else
                 if isfield(config,'fs')
                     fs=config.fs;
@@ -278,12 +280,13 @@ for i=1:numOrders
         elseif strcmp(crit,'spectra')
 %             S_ar=calculate_ar_spectra(AR,freqForAnalysis,fs,C);
             S_ar=calculate_ar_spectra(AR,spectral_range,fs,C,normalize_spectra);
+            pxx_ar=resize_spectra(S_ar);
             
-            pxx_ar=nan(size(S_ar,3),size(S_ar,1)); % Not actually pxx, but maintaining consistency of the naming scheme 
-            
-            for j=1:size(S_ar,1)
-                pxx_ar(:,j)=squeeze(abs(S_ar(j,j,:)));
-            end
+%             pxx_ar=nan(size(S_ar,3),size(S_ar,1)); % Not actually pxx, but maintaining consistency of the naming scheme 
+%             
+%             for j=1:size(S_ar,1)
+%                 pxx_ar(:,j)=squeeze(abs(S_ar(j,j,:)));
+%             end
             
             criterion(i)=mean(mean((P1-pxx_ar).^2));
             
@@ -293,6 +296,12 @@ for i=1:numOrders
                 if i>1 && ~bool_minDiffFound
                     result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
                         criterion(i) - criterion(i-1) > 0;
+                    
+                    [AR]=estimate_ar_coefficients(x,orderRange(i-1),method);
+                    [tmp_E,C,x_hat]=estimate_residuals(x,AR);
+                    logL=calculate_loglikelihood(tmp_E,C,ll_method);
+                    S_ar=calculate_ar_spectra(AR,spectral_range,fs,C,normalize_spectra);
+                    pxx_ar=resize_spectra(S_ar);
                 else
                     result=false;
                 end
@@ -301,11 +310,17 @@ for i=1:numOrders
         end
         
         if result
-            minCrit=criterion(i);
+            if strcmp(orderSelection,'diff')    
+                minCrit=criterion(i-1);
+                mdl.order=orderRange(i-1);
+            else
+                minCrit=criterion(i);
+                mdl.order=orderRange(i);                
+            end
+            
             mdl.AR=AR;
             mdl.C=C;
             mdl.logL=logL;
-            mdl.order=orderRange(i);
             mdl.x_hat=x_hat;
             mdl.pxx=pxx_ar;
             E=tmp_E;
@@ -315,7 +330,7 @@ for i=1:numOrders
             end
         end
     elseif strcmp(method,'arfit')
-        [~,AR_tmp,C_ar,sbc,fpe,~]=arfit(x,orderRange(i),orderRange(i));
+        [~,AR_tmp,~,sbc,fpe,~]=arfit(x,orderRange(i),orderRange(i));
         
         AR=zeros(numSeries,numSeries,i);
     
@@ -332,12 +347,12 @@ for i=1:numOrders
             criterion(i)=fpe;
         elseif strcmp(crit,'spectra')
             S_ar=calculate_ar_spectra(AR,spectral_range,fs,C_yule,normalize_spectra);
-            
-            pxx_ar=nan(size(S_ar,3),size(S_ar,1)); % Not actually pxx, but maintaining consistency of the naming scheme 
-            
-            for j=1:size(S_ar,1)
-                pxx_ar(:,j)=squeeze(abs(S_ar(j,j,:)));
-            end
+            pxx_ar=resize_spectra(S_ar);
+%             pxx_ar=nan(size(S_ar,3),size(S_ar,1)); % Not actually pxx, but maintaining consistency of the naming scheme 
+%             
+%             for j=1:size(S_ar,1)
+%                 pxx_ar(:,j)=squeeze(abs(S_ar(j,j,:)));
+%             end
             
             criterion(i)=mean(mean((P1-pxx_ar).^2));
         end
@@ -348,17 +363,29 @@ for i=1:numOrders
             if i>1 && ~bool_minDiffFound
                 result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
                     criterion(i) - criterion(i-1) > 0;
+                
+                [AR]=estimate_ar_coefficients(x,orderRange(i-1),method);
+                [tmp_E,C_yule,x_hat]=estimate_residuals(x,AR);
+                logL=calculate_loglikelihood(tmp_E,C_yule,ll_method);
+                S_ar=calculate_ar_spectra(AR,spectral_range,fs,C_yule,normalize_spectra);
+                pxx_ar=resize_spectra(S_ar);
             else
                 result=false;
             end
         end
         
         if result
-            minCrit=criterion(i);
+            if strcmp(orderSelection,'diff')    
+                minCrit=criterion(i-1);
+                mdl.order=orderRange(i-1);
+            else
+                minCrit=criterion(i);
+                mdl.order=orderRange(i);                
+            end
+            
             mdl.AR=AR;
-            mdl.C=C_ar;
+            mdl.C=C_yule;
             mdl.logL=logL;
-            mdl.order=orderRange(i);
             mdl.x_hat=x_hat;
             mdl.pxx=pxx_ar;
             E=tmp_E;
