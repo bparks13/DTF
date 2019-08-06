@@ -17,9 +17,12 @@ function [mdl,E,criterion]=mvar(x,config)
 %           equations ('yule') [default]. Additionally can use the Signal Processing for
 %           Neuroscientists method ('arfit')
 %       orderSelection: String defining how to algorithmically choose the model order.
-%           'min' [default] uses the minimum information criterion found, while 'diff'
+%           'min' [default] uses the minimum information criterion found, while 'diff1'
 %           uses the first model order that the abs(difference) between successive ICs is
-%           smaller than some epsilon, which is either 0.01 or user specified
+%           smaller than some epsilon, which is either 0.01 or user specified. 'diff2'
+%           uses the same criteria as 'diff1', but chooses the model order (m-1) from when
+%           the criteria is met; this is the difference betweeen choosing the first bend
+%           in the criterion and the second point after the bend
 %       epsilon: Can be specified if orderSelection is set to 'diff', where epsilon is the
 %           threshold for defining when differences have decreased to a small enough
 %           degree to select the model order, defined as a percentage (i.e. 0.01 == 1%).
@@ -110,12 +113,6 @@ if nargin > 1 && isstruct(config)
                 S_orig=calculate_ar_spectra(config.simulated.a,spectral_range,fs,config.simulated.C,normalize_spectra);
                 
                 P1=resize_spectra(S_orig);
-                
-%                 P1=nan(size(S_orig,3),size(S_orig,1)); 
-%             
-%                 for j=1:size(S_orig,1)
-%                     P1(:,j)=squeeze(abs(S_orig(j,j,:)));
-%                 end
             else
                 if isfield(config,'fs')
                     fs=config.fs;
@@ -159,6 +156,10 @@ if nargin > 1 && isstruct(config)
     if isfield(config,'orderSelection')
         orderSelection=config.orderSelection;
         
+        if strcmp(orderSelection,'diff')
+            orderSelection='diff1';
+        end
+        
         if isfield(config,'epsilon')
             epsilon=config.epsilon;
         end
@@ -195,7 +196,7 @@ for i=1:numOrders
             
             if strcmp(orderSelection,'min')
                 result = results.BIC < minCrit;
-            elseif strcmp(orderSelection,'diff')
+            elseif strcmp(orderSelection,'diff1') || strcmp(orderSelection,'diff2')
                 if i>1 && ~bool_minDiffFound
                     result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
                         criterion(i) - criterion(i-1) > 0;
@@ -216,7 +217,7 @@ for i=1:numOrders
                 mdl.order=orderRange(i);
                 E=tmp_E;
                 
-                if strcmp(orderSelection,'diff')
+                if strcmp(orderSelection,'diff1') || strcmp(orderSelection,'diff2')
                     bool_minDiffFound=true;
                 end
             end
@@ -237,7 +238,7 @@ for i=1:numOrders
             
             if strcmp(orderSelection,'min')
                 result = criterion(i) < minCrit;
-            elseif strcmp(orderSelection,'diff')
+            elseif strcmp(orderSelection,'diff1') || strcmp(orderSelection,'diff2')
                 if i>1 && ~bool_minDiffFound
                     result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
                         criterion(i) - criterion(i-1) > 0;
@@ -250,7 +251,7 @@ for i=1:numOrders
             
             if strcmp(orderSelection,'min')
                 result = criterion(i) < minCrit;
-            elseif strcmp(orderSelection,'diff')
+            elseif strcmp(orderSelection,'diff1') || strcmp(orderSelection,'diff2')
                 if i>1 && ~bool_minDiffFound
                     result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
                         criterion(i) - criterion(i-1) > 0;
@@ -269,7 +270,7 @@ for i=1:numOrders
             
             if strcmp(orderSelection,'min')
                 result = criterion(i) < minCrit;
-            elseif strcmp(orderSelection,'diff')
+            elseif strcmp(orderSelection,'diff1') || strcmp(orderSelection,'diff2')
                 if i>1 && ~bool_minDiffFound
                     result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
                         criterion(i) - criterion(i-1) > 0;
@@ -278,21 +279,21 @@ for i=1:numOrders
                 end
             end
         elseif strcmp(crit,'spectra')
-%             S_ar=calculate_ar_spectra(AR,freqForAnalysis,fs,C);
             S_ar=calculate_ar_spectra(AR,spectral_range,fs,C,normalize_spectra);
             pxx_ar=resize_spectra(S_ar);
-            
-%             pxx_ar=nan(size(S_ar,3),size(S_ar,1)); % Not actually pxx, but maintaining consistency of the naming scheme 
-%             
-%             for j=1:size(S_ar,1)
-%                 pxx_ar(:,j)=squeeze(abs(S_ar(j,j,:)));
-%             end
             
             criterion(i)=mean(mean((P1-pxx_ar).^2));
             
             if strcmp(orderSelection,'min')
                 result = criterion(i) < minCrit;
-            elseif strcmp(orderSelection,'diff')
+            elseif strcmp(orderSelection,'diff1')
+                if i>1 && ~bool_minDiffFound
+                    result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
+                        criterion(i) - criterion(i-1) > 0;
+                else
+                    result=false;
+                end
+            elseif strcmp(orderSelection,'diff2')
                 if i>1 && ~bool_minDiffFound
                     result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
                         criterion(i) - criterion(i-1) > 0;
@@ -310,7 +311,7 @@ for i=1:numOrders
         end
         
         if result
-            if strcmp(orderSelection,'diff')    
+            if strcmp(orderSelection,'diff2')    
                 minCrit=criterion(i-1);
                 mdl.order=orderRange(i-1);
             else
@@ -325,7 +326,7 @@ for i=1:numOrders
             mdl.pxx=pxx_ar;
             E=tmp_E;
 
-            if strcmp(orderSelection,'diff')
+            if strcmp(orderSelection,'diff1') || strcmp(orderSelection,'diff2')
                 bool_minDiffFound=true;
             end
         end
@@ -348,18 +349,20 @@ for i=1:numOrders
         elseif strcmp(crit,'spectra')
             S_ar=calculate_ar_spectra(AR,spectral_range,fs,C_yule,normalize_spectra);
             pxx_ar=resize_spectra(S_ar);
-%             pxx_ar=nan(size(S_ar,3),size(S_ar,1)); % Not actually pxx, but maintaining consistency of the naming scheme 
-%             
-%             for j=1:size(S_ar,1)
-%                 pxx_ar(:,j)=squeeze(abs(S_ar(j,j,:)));
-%             end
             
             criterion(i)=mean(mean((P1-pxx_ar).^2));
         end
         
         if strcmp(orderSelection,'min')
             result = criterion(i) < minCrit;
-        elseif strcmp(orderSelection,'diff')
+        elseif strcmp(orderSelection,'diff1')
+            if i>1 && ~bool_minDiffFound
+                result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
+                    criterion(i) - criterion(i-1) > 0;
+            else
+                result=false;
+            end
+        elseif strcmp(orderSelection,'diff2')
             if i>1 && ~bool_minDiffFound
                 result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
                     criterion(i) - criterion(i-1) > 0;
@@ -375,7 +378,7 @@ for i=1:numOrders
         end
         
         if result
-            if strcmp(orderSelection,'diff')    
+            if strcmp(orderSelection,'diff2')    
                 minCrit=criterion(i-1);
                 mdl.order=orderRange(i-1);
             else
@@ -390,7 +393,7 @@ for i=1:numOrders
             mdl.pxx=pxx_ar;
             E=tmp_E;
 
-            if strcmp(orderSelection,'diff')
+            if strcmp(orderSelection,'diff1') || strcmp(orderSelection,'diff2')
                 bool_minDiffFound=true;
             end
         end
