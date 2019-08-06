@@ -19,6 +19,17 @@ function [meanOrder]=summarize_model_orders(ar)
 %  See also: mvar, dtf, estimate_ar_coefficients
 %
 
+if ~isfield(ar,'mdl')
+    fields=fieldnames(ar);
+    
+    for i=1:length(fields)
+        fprintf('%s: ',fields{i});
+        summarize_model_orders(ar.(fields{i}));
+    end
+    
+    return
+end
+
 numOrders=length(ar);
 orders=zeros(numOrders,1);
 
