@@ -7,6 +7,7 @@ CCC;
 fs=200;
 freqRange=4:100;
 spectral_range=freqRange(1):0.1:freqRange(end);
+normalizeSpectra=true;
 
 N=1000;
 m=2;
@@ -41,13 +42,34 @@ config.normalizeSpectra=true;
 
 %% 
 
-AR=estimate_ar_coefficients(X,2,'arfit');
+AR=estimate_ar_coefficients(X,4,'arfit');
 [tmp_E,C,x_hat]=estimate_residuals(X,AR);
-[S_orig,tmp_sr]=calculate_fft(X,fs,config.normalizeSpectra);
-S=calculate_ar_spectra(AR,tmp_sr,fs,C,config.normalizeSpectra);
+% [S_orig,tmp_sr]=calculate_fft(X,fs,normalizeSpectra);
+tmp_sr=1:0.5:(fs/2);
+S_orig=pwelch(X,fs,fs/2,tmp_sr,fs);
+S=calculate_ar_spectra(AR,tmp_sr,fs,C,normalizeSpectra);
 % S_orig=calculate_ar_spectra(a,spectral_range,fs,C_orig);
 
 plot_spectra(S,tmp_sr,S_orig);
+
+%% Playing around with using pwelch instead of fft
+
+tmp_sr=1:0.5:(fs/2);
+tmp_crit=nan(15,1);
+
+for i=1:15
+    AR=estimate_ar_coefficients(X,i,'arfit');
+    [tmp_E,C,tmp_xhat]=estimate_residuals(X,AR);
+    [tmp_X]=create_data(length(tmp_E),i,diag(C),AR);
+    S_orig=pwelch(X,fs,fs/2,tmp_sr,fs);
+    S=pwelch(tmp_X,fs,fs/2,tmp_sr,fs);
+%     S=pwelch(tmp_xhat,fs,fs/2,tmp_sr,fs);
+%     S=calculate_ar_spectra(AR,tmp_sr,fs,C,normalizeSpectra);
+
+    tmp_crit(i)=mean(mean((S-sqrt(S_orig)).^2));
+    plot_spectra(S,tmp_sr,S_orig);
+    waitforbuttonpress
+end
 
 %% 
 
