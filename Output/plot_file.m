@@ -9,7 +9,7 @@ CCC;
 
 %% Load data
 
-FILE='ET_CL_004__2018_06_20__run5__200Hz__Z_SCORE__BIC_(1).mat';
+% FILE='ET_CL_004__2018_06_20__run5__200Hz__Z_SCORE__BIC_(1).mat';
 
 load(fullfile(get_root_path,'Files',FILE));
 
@@ -29,6 +29,7 @@ end
 %% Plot criterion
 
 config=struct; 
+config.crit=config_crit.crit;
 
 for i=1:length(cond_labels)
     currCond=cond_labels{i};
@@ -56,7 +57,7 @@ for i=1:numChannels
     plot(t,x.(currCond)(:,i,trialNum),'Color',colors(1,:)); hold on;
     plot(t(modelOrder+1:end),ar.(currCond)(trialNum).mdl.x_hat(:,i),'Color',colors(2,:));
     plot(t(modelOrder+1:end),res.(currCond)(trialNum).E(:,i),'Color',colors(3,:));
-    xlim([t(1) t(end)])
+    xlim([t(1) t(end)]); xlabel('Time [s]'); ylabel('Z-Score'); 
     legend('x','x\_hat','error');
 end
 

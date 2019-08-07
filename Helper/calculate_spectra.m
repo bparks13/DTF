@@ -1,5 +1,5 @@
 function S=calculate_spectra(H,C)
-%% S=calculate_spectra(H)
+%% S=calculate_spectra(H,C)
 %
 %  Helper function to take a transfer function and the covariance matrix, and produce the
 %  spectral matrix, which is defined as S = H * C * H'
