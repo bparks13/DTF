@@ -20,8 +20,8 @@ PATIENT_ID='ET_CL_004';
 RECORDING_DATE='2018_06_20';
 MIDPATH='preproc';
 RUN_ID='run5';
-ADDON='__SPF';
-NOTES='Using the functions grabbed from the Signal Processing for Neuroscientists book';
+ADDON='_SPECTRA';
+NOTES='Testing how spectra works with a real data set';
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
 % config=struct('default',false,'preset',2);
 % [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID,config);
@@ -62,6 +62,7 @@ crit=struct;
 h=struct;
 pVal=struct;
 gamma=struct;
+H=struct;
 avg_psd=struct;
 avg_gamma=struct;
 pass=struct;
@@ -69,10 +70,10 @@ pass=struct;
 freqForAnalysis=4:100;
 
 config_crit=struct(...
-    'orderSelection','min',...
-    'crit','bic',...
+    'orderSelection','diff1',...
+    'crit','spectra',...
     'method','arfit',...
-    'orderRange',1:30,...
+    'orderRange',1:25,...
     'fs',fs,...
     'freqRange',freqForAnalysis,...
     'logLikelihoodMethod',2);   % 1 == Matlab, 2 == Ding, 3 == Awareness Paper (see calculate_bic.m)
@@ -100,8 +101,8 @@ for j=1:numConditions
 
     for i=1:numTrials
         fprintf('%d/%d - ',i,numTrials);
-        [ar.(currCond)(i).mdl,res.(currCond)(i).E,crit.(currCond)(i).(config_crit.crit)]=...
-            mvar(squeeze(x.(currCond)(:,:,i)),config_crit);
+        [ar.(currCond)(i).mdl, res.(currCond)(i).E, crit.(currCond)(i).(config_crit.crit)]=...
+            mvar(squeeze(x.(currCond)(:,:,i)), config_crit);
     end
 
     %% Test whiteness
@@ -111,7 +112,7 @@ for j=1:numConditions
     pass.(currCond)=nan(numTrials,1);
 
     for i=1:numTrials
-        [pass.(currCond)(i),h.(currCond)(i,:),pVal.(currCond)(i,:)]=...
+        [pass.(currCond)(i), h.(currCond)(i,:), pVal.(currCond)(i,:)]=...
             test_model(res.(currCond)(i).E,length(x.(currCond)(:,:,i)));
     end
     
@@ -119,23 +120,16 @@ for j=1:numConditions
 
     %% Calculate DTF
 
-    gamma.(currCond)=zeros(numChannels,numChannels,length(freqRange),numTrials);
+    gamma.(currCond)=nan(numChannels,numChannels,length(freqRange),numTrials);
+    H.(currCond)=nan(numChannels,numChannels,length(freqRange),numTrials);
 
     for i=1:numTrials
-        gamma.(currCond)(:,:,:,i)=dtf(ar.(currCond)(i).mdl,freqRange,fs);
+        [gamma.(currCond)(:,:,:,i), H.(currCond)(:,:,:,i)]=dtf(ar.(currCond)(i).mdl,freqRange,fs);
     end
 end
 
 %% Save relevant variables
 
-% count=1;
-% 
-% newFile=fullfile(get_root_path,'Files',sprintf('%s__%s__%s%s.mat',PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON));
-% 
-% while exist(newFile,'file') == 2
-%     newFile=fullfile(get_root_path,'Files',sprintf('%s__%s__%s%s_(%d).mat',PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON,count));
-%     count=count+1;
-% end
 newFile=simplify_filename(PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON);
 
 config_crit.hFig=[];
