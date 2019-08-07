@@ -136,8 +136,8 @@ if nargin > 1 && isstruct(config)
                 elseif len1 > len2
                     error('Cannot analyze more frequencies than exist from the fft');
                 else
-                    freqStart=find(spectral_range == freqForAnalysis(1));
-                    freqEnd=find(spectral_range == freqForAnalysis(end));
+                    [~,freqStart]=min(abs(spectral_range-freqForAnalysis(1)));
+                    [~,freqEnd]=min(abs(spectral_range-freqForAnalysis(end)));
                     P1=P1(freqStart:freqEnd,:);
                     spectral_range=spectral_range(freqStart:freqEnd);
                 end
