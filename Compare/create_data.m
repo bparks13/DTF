@@ -10,7 +10,9 @@ function [X,a]=create_data(N,m,stdZ,a)
 %       be the number of channels to simulate [d] (multivariate case). This is only
 %       extracted when there is no coefficients given
 %    - m: AR model order
-%    - stdZ: Standard deviation of the random Gaussian error injected into the signal
+%    - stdZ: Standard deviation of the random Gaussian error injected into the signal. For
+%       the multivariate case, this can be Sigma_w instead, comprising of a [m x m] matrix
+%       of covariances for the error terms
 %    - a: Known AR coefficients for testing purposes. Size is [m x 1] for univariate, and
 %       [d x d x m] for multivariate. If a is not given, or is empty, randomly simulates the
 %       AR coefficients and returns them
@@ -69,7 +71,6 @@ else
         if length(stdZ) ~= numSeries
             error('Cannot have an uneven number of stdZ inputs. Must be matched with the number of series being simulated');
         end
-%         isSingleErrorVariance=false;
     end
 end
 
@@ -84,8 +85,13 @@ if isUnivariate
 else
     X = zeros(N + m,numSeries);   
     mu=zeros(numSeries,1);        
-    sigma=(stdZ.^2).*eye(numSeries);
-
+    
+    if size(stdZ,1) > 1 && size(stdZ,2) > 1
+        sigma=stdZ;
+    else
+        sigma=(stdZ.^2).*eye(numSeries);
+    end
+    
     for i = m+1:N+m
         for j = 1:m
             X(i,:) = X(i,:) + (a(:,:,j) * X(i-j,:)')';
