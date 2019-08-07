@@ -127,7 +127,7 @@ if nargin > 4 && isstruct(config)
         seriesType=config.seriesType;
         
         if isstruct(series)
-            seriesType=6;
+            seriesType=8;
         end
     end
     
@@ -365,7 +365,7 @@ end
         if bool_plotTransferFunction
             yLim=[0 max(max(y_diag.^2))+2];
         elseif bool_plotSpectralMatrix
-            yLim=[0 max(max(y_diag))+5];
+            yLim=[0 max(max(y_diag))+2];
         else
             yLim=[min(min(10*log10(y_diag)))-5,max(max(10*log10(y_diag)))+5];
         end
@@ -394,7 +394,7 @@ end
         if bool_plotTransferFunction
             yLimits=[0 max(max(avg_diag.^2))+2];
         elseif bool_plotSpectralMatrix
-            yLimits=[0 max(max(avg_diag))+5];
+            yLimits=[0 max(max(avg_diag))+2];
         else
             yLimits=[min(min(10*log10(avg_diag)))-5,max(max(10*log10(avg_diag)))+5];
         end
@@ -425,7 +425,7 @@ end
         if bool_plotTransferFunction
             yLimits=[0 max(max(avg_diag.^2+std_diag))+2];
         elseif bool_plotSpectralMatrix
-            yLimits=[0 max(max(avg_diag+std_diag))+5];
+            yLimits=[0 max(max(avg_diag+std_diag))+2];
         else
             yLimits=[min(min(10*log10(avg_diag)-std_diag))-5,max(max(10*log10(avg_diag)+std_diag))+5];
         end
@@ -490,12 +490,15 @@ end
         for k=1:numChannels
             for l=1:numChannels
                 currSubPlot=(k-1)*numChannels+l;
+                xLabel='';
+                yLabel='';
 
                 if k == l
                     ax_diag(currSubPlot)=subplot(numChannels,numChannels,currSubPlot);
                     
                     if bool_plotErrorBars
                         shadedErrorBar(freqRange,10*log10(pxx(:,k)),pxx_std(:,k),'lineProps',lineprops_diag);
+                        xLabel='Frequency [Hz]'; yLabel='Power [dB]';
                     elseif bool_plotThreshold
                         ax=gca;
                         
@@ -508,18 +511,21 @@ end
                         else
                             plot(freqRange,pxx(:,k).^2,lineprops_diag); 
                         end
+                        xLabel='Frequency [Hz]'; yLabel='Transfer Function';
                     elseif bool_plotSpectralMatrix
                         if bool_showRejectedNull && (h(k) || h(l))
-                            plot(freqRange,pxx(:,k),'r'); % Not actually pxx, is actually H 
+                            plot(freqRange,pxx(:,k),'r'); % Not actually pxx, is actually S
                         else
                             plot(freqRange,pxx(:,k),lineprops_diag); 
                         end
+                        xLabel='Frequency [Hz]'; yLabel='Spectral Matrix';
                     else
                         if bool_showRejectedNull && (h(k) || h(l))
                             plot(freqRange,10*log10(pxx(:,k)),'r'); 
                         else
                             plot(freqRange,10*log10(pxx(:,k)),lineprops_diag); 
                         end
+                        xLabel='Frequency [Hz]'; yLabel='Power [dB]';
                     end
                     
                     title(labels{k}); hold on;
@@ -528,19 +534,25 @@ end
                     
                     if bool_plotErrorBars
                         shadedErrorBar(freqRange,conn(k,l,:),conn_std(k,l,:),'lineProps',lineprops_offdiag);
+                        xLabel='Frequency [Hz]'; yLabel='Connectivity [\gamma]';
                     else
                         if bool_showRejectedNull && (h(k) || h(l))
                             plot(freqRange,squeeze(conn(k,l,:)),'r'); 
+                            xLabel='Frequency [Hz]'; yLabel='Connectivity [\gamma]';
                         elseif bool_plotThreshold
-                            plot(freqRange,squeeze(conn(k,l,:)),':k','LineWidth',3);
+                            plot(freqRange,squeeze(conn(k,l,:)),':k','LineWidth',2);
+                            xLabel='Frequency [Hz]'; yLabel='Connectivity [\gamma]';
                         else
                             plot(freqRange,squeeze(conn(k,l,:)),lineprops_offdiag); 
+                            xLabel='Frequency [Hz]'; yLabel='Connectivity [\gamma]';
                         end
                     end
                     
                     hold on;
                     title(sprintf('%s %c %s',labels{l},8594,labels{k}));
                 end
+                
+                xlabel(xLabel); ylabel(yLabel);
             end
         end
     end
