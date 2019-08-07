@@ -27,6 +27,8 @@ function plot_criterion(criterion,config)
 bool_newFig=true;
 bool_newAx=true;
 bool_plotModelOrder=false;
+bool_criteriaKnown=false;
+yLabel='';
 epsilon=0.001;
 figTitle='';
 
@@ -55,13 +57,23 @@ if nargin > 1
                 critInd=find(abs(diff(criterion)) < epsilon,1);
                 bool_plotModelOrder=true;
             end
-        else
-            critInd=find(criterion==min(criterion));
-            bool_plotModelOrder=true;
         end
         
         if isfield(config,'figTitle')
             figTitle=config.figTitle;
+        end
+        
+        if isfield(config,'crit')
+            if strcmp(config.crit,'aic')
+                yLabel='AIC';
+                bool_criteriaKnown=true;
+            elseif strcmp(config.crit,'bic')
+                yLabel='BIC';
+                bool_criteriaKnown=true;
+            elseif strcmp(config.crit,'psd') || strcmp(config.crit,'spectra')
+                yLabel='MSE';
+                bool_criteriaKnown=true;
+            end
         end
     end
 end
@@ -84,6 +96,12 @@ else
     if bool_plotModelOrder
         plot(config.hAx,critInd,criterion(critInd),'r*');
     end
+end
+
+xlabel('Model Order'); 
+
+if bool_criteriaKnown
+    ylabel(yLabel);
 end
 
 if ~isempty(figTitle)
