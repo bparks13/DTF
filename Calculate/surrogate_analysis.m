@@ -102,11 +102,13 @@ for k=1:numFields
     
     if bool_original
         x=data.x.(currCond);
+        ar=data.ar.(currCond);
     else
         x=data.x_filt.(currCond);
+        ar=data.ar_filt.(currCond);
     end
     
-    config_crit.orderRange=round(summarize_model_orders(data.ar.(currCond)));
+    config_crit.orderRange=round(summarize_model_orders(ar));
     numSamples=size(x,1);
     numChannels=size(x,2);
     numTrials=size(x,3);
