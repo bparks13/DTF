@@ -13,16 +13,31 @@ CCC;
 
 load(fullfile(get_root_path,'Files',FILE));
 
-%% Plot connectivity figure
+%% Plot connectivity figure - Original
 
 for i=1:length(cond_labels)
     currCond=cond_labels{i};
     config_plot.figTitle=sprintf('%s, %s, %s - %s: Connectivity',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
     if exist('surrogate','var') == 1
         series=struct('original',x.(currCond),'surrogate',surrogate.(currCond));
+        config_plot.surr_params.highlightSignificance=true;
         plot_connectivity(gamma.(currCond),series,freqRange,labels,config_plot);
     else
         plot_connectivity(gamma.(currCond),x.(currCond),freqRange,labels,config_plot);
+    end
+end
+
+%% Plot connectivity figure - Decorrelated
+
+for i=1:length(cond_labels)
+    currCond=cond_labels{i};
+    config_plot.figTitle=sprintf('%s, %s, %s - %s: Connectivity (Decorrelated)',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
+    if exist('surrogate_filt','var') == 1
+        series=struct('original',x_filt.(currCond),'surrogate',surrogate_filt.(currCond));
+        config_plot.surr_params.highlightSignificance=true;
+        plot_connectivity(gamma_filt.(currCond),series,freqRange,labels,config_plot);
+    else
+        plot_connectivity(gamma_filt.(currCond),x_filt.(currCond),freqRange,labels,config_plot);
     end
 end
 
