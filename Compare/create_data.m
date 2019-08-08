@@ -27,7 +27,6 @@ function [X,a]=create_data(N,m,stdZ,a)
 %
 
 isUnivariate=true;
-% isSingleErrorVariance=true;
 
 if nargin == 0
     N = 100000;   % Number of points
