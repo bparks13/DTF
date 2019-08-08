@@ -28,6 +28,8 @@ surrogate_analysis(data);   % run and save the surrogate analysis for all condit
 % [x_filt,filt_values]=filter_serial_correlation(file); % filter all conditions
 [x_filt,filt_values]=filter_serial_correlation(data); % filter all conditions
 save(fullfile(get_root_path,'Files',file),'-append','x_filt','filt_values');
+data.x_filt=x_filt;
+data.filt_values=filt_values;
 
 %% Run analyses on filtered data
 
@@ -38,8 +40,8 @@ h_filt=struct;
 pVal_filt=struct;
 gamma_filt=struct;
 
-fields=fieldnames(x_filt);
-numChannels=size(x_filt.(fields{1}),2);
+fields=fieldnames(data.x_filt);
+numChannels=size(data.x_filt.(fields{1}),2);
 labels=data.labels;
 freqRange=data.freqRange;
 fs=data.fs;
@@ -53,7 +55,7 @@ for i=1:length(fields)
     
     fprintf('Beginning condition ''%s''\n',currCond);
     
-    numTrials=size(x_filt.(currCond),3);
+    numTrials=size(data.x_filt.(currCond),3);
     
     h_filt.(currCond)=nan(numTrials,numChannels);
     pVal_filt.(currCond)=nan(numTrials,numChannels);
@@ -62,16 +64,16 @@ for i=1:length(fields)
     gamma_filt.(currCond)=zeros(numChannels,numChannels,length(freqRange),numTrials);
 
     for j=1:numTrials
-        if filt_values.(currCond)(j).decorrelated
+        if data.filt_values.(currCond)(j).decorrelated
             fprintf('%d/%d - ',j,numTrials);
 
             % Calculate all MVAR models
             [ar_filt.(currCond)(j).mdl,res_filt.(currCond)(j).E,crit_filt.(currCond)(j).(config_crit.crit)]=...
-                mvar(squeeze(x_filt.(currCond)(:,:,j)),config_crit);
+                mvar(squeeze(data.x_filt.(currCond)(:,:,j)),config_crit);
 
             % Test whiteness
             [~,h_filt.(currCond)(j,:),pVal_filt.(currCond)(j,:)]=...
-                test_model(res_filt.(currCond)(j).E,length(x_filt.(currCond)(:,:,j)));
+                test_model(res_filt.(currCond)(j).E,length(data.x_filt.(currCond)(:,:,j)));
 
             % Calculate DTF
             gamma_filt.(currCond)(:,:,:,j)=dtf(ar_filt.(currCond)(j).mdl,freqRange,fs);
@@ -87,5 +89,5 @@ save(fullfile(get_root_path,'Files',file),'-append','ar_filt','res_filt','crit_f
 %% Surrogate analysis on filtered data
 
 config_surr=struct('signal','decorr');
-surrogate_analysis(fullfile(get_root_path,'Files',file),config_surr);
+surrogate_analysis(file,config_surr);
 
