@@ -17,6 +17,8 @@ function plot_spectra(S,spectral_range,S_orig)
 %   Outputs:
 %    Figure containing subplots for each channel and its corresponding spectra
 %
+%  See also: calculate_ar_spectra
+%
 
 bool_SingleSpectra=true;
 bool_reformatOrig=false;

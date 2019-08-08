@@ -18,7 +18,7 @@ function [AR,C]=estimate_ar_coefficients(X,m,method)
 %    - C: Estimated variance of the error term. Size is scalar for univariate signals, and
 %       [d x d] for multivariate signals
 %
-%  See also: mvar, dtf, estimate_residuals
+%  See also: mvar, dtf, estimate_residuals, arfit
 %
 
 if nargin==2

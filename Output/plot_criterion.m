@@ -23,6 +23,9 @@ function plot_criterion(criterion,config)
 %   Outputs:
 %    Figure containing the plot of the criterion
 %
+%  See also: mvar, calculate_loglikelihood, calculate_aic, calculate_bic,
+%   calculate_ar_spectra
+%
 
 bool_newFig=true;
 bool_newAx=true;

@@ -13,7 +13,7 @@ function plot_compare(x_orig,x_filt)
 %    Figure containing multiple subplots, with each channel showing both the original and
 %       the decorrelated signal
 %
-%  See also: filter_serial_correlation
+%  See also: filter_serial_correlation, plot_trial
 %
 
 figure;

@@ -10,6 +10,8 @@ function fs=extract_sampling_frequency(file)
 %   Outputs:
 %    - fs: Sampling frequency in Hz
 %
+%  See also: processing_pipeline
+%
 
 tmp=load(file,'datastorage');
 fs=tmp.datastorage.src.LFP.Fs;

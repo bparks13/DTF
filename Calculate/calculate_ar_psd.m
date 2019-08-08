@@ -1,4 +1,4 @@
-function [pxx]=calculate_ar_psd(ar,freqRange,fs)
+function [pxx]=calculate_ar_psd(ar,freqRange,fs) %#ok<*INUSD>
 %% [pxx]=calculate_ar_psd(ar,freqRange,fs)
 %
 %  Given the AR coefficients, calculate the PSD
@@ -17,7 +17,7 @@ function [pxx]=calculate_ar_psd(ar,freqRange,fs)
 pxx=nan;
 return
 
-if size(ar,1)==1
+if size(ar,1)==1 %#ok<*UNRCH>
     ar=squeeze(ar);
 end
 

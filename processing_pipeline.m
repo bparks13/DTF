@@ -3,7 +3,7 @@
 %  Collect all connectivity values for all conditions in one run of one patient. Models
 %  the data, tests the model, and calculates connectivity values.
 %
-%  See also: mvar, plot_connectivity, dtf, load_data
+%  See also: mvar, plot_connectivity, dtf, load_data, postprocessing_pipeline
 %
 
 CCC;
@@ -132,8 +132,6 @@ end
 
 newFile=simplify_filename(PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON);
 
-config_crit.hFig=[];
-config_plot.hFig=[];
 save(newFile,'ADDON','ar','channels','conditions','cond_labels','crit',...
     'FILE','freqRange','freqForAnalysis','filtering','fs','fs_init','gamma','h','labels','newFile',...
     'pass','PATIENT_ID','pVal','RECORDING_DATE','res','RUN_ID','x','x_all','config_crit','config_plot',...

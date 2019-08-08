@@ -15,6 +15,7 @@ function plot_time_series(x,x_hat,e,fs)
 %    Figure contianing c subplots, with each subplot containing the original/estimated
 %       signal, and the residuals 
 %
+%  See also: estimate_residuals
 
 figure;
 numChannels=size(x,2);

@@ -78,7 +78,7 @@ function [avgPSD,avgConn,stdPSD,stdConn]=plot_connectivity(conn,series,freqRange
 %                 1%
 %
 %   Outputs:
-%    - Figure containing subplots with PSD on the diagonal, and DTF connectivity
+%    Figure containing subplots with PSD on the diagonal, and DTF connectivity
 %       measurements in the off-diagonal plots
 %    - avgPSD: If plotType is 'avg' or 'avgerr', can return the average PSD calculated
 %    - avgConn: If plotType is 'avg' or 'avgerr', can return the average gamma values

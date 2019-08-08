@@ -13,6 +13,8 @@ function trialsToDrop=drop_trials(file,condition)
 %    - trialsToDrop: Vector containing the indices of trials to drop. If there are none to
 %       drop, this will be empty
 %
+%  See also: processing_pipeline, load_data
+%
 
 trialsToDrop=[];
 

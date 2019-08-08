@@ -10,17 +10,12 @@ function phi_hat=calculate_serial_coefficients(E,order)
 %    - phi_hat: Serial correlated coefficients of the residuals. Matrix of size [c x c x o]
 %       where o is the model order, and c is the number of channels
 %
+%  See also: filter_serial_correlation, filter_signal
+%
 
 numChannels=size(E,2);
 
 phi_hat=zeros(numChannels,numChannels,order);
-
-% for i=1:order
-%     phi_hat(:,:,i) = (E((1+i):end,:)'*E(1:(end-i),:)) / (E(1:(end-i),:)'*E(1:(end-i),:));
-%     phi_hat(:,:,i) = diag(diag((E((1+i):end,:)'*E(1:(end-i),:)) ./ (E(1:(end-i),:)'*E(1:(end-i),:))));
-    % Errors should not be estimated across channels due to the supposed randomness of
-    % channels
-% end
 
 for i=1:numChannels
     phi_hat(i,i,:)=internal_calculate_acf(E(:,i),order);

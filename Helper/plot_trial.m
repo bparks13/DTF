@@ -22,6 +22,7 @@ function plot_trial(currCond,trial,file,plots)
 %    Figure(s) containing all the different plots, including connectivity, ACF, criterion,
 %       etc. 
 %
+%  See also: plot_connectivity, plot_acf, plot_criterion, plot_time_series
 
 bool_plotCrit=false;
 bool_plotConn=false;

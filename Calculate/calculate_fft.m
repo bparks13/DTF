@@ -15,6 +15,8 @@ function [P1,spectral_range]=calculate_fft(x,fs,norm)
 %       samples. Size is [f x s], where f is equal to N/2, and s is the number of series
 %    - spectral_range: Vector of frequencies over which the FFT was calculated
 %    
+%  See also: calculate_ar_spectra, mvar
+%
 
 if nargin==2
     norm=true;

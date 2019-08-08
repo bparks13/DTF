@@ -55,7 +55,7 @@ function [mdl,E,criterion]=mvar(x,config)
 %    - criterion: Optional output, contains the information criterion chosen in config
 %
 % See also: estimate_ar_coefficients, estimate_residuals, calculate_loglikelihood,
-%   calculate_bic
+%   calculate_bic, arfit, calculate_ar_spectra, calculate_fft
 %
 
 % Defaults
@@ -359,6 +359,8 @@ for i=1:numOrders
             if i>1 && ~bool_minDiffFound
                 result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
                     criterion(i) - criterion(i-1) > 0;
+            elseif numOrders == 1 % In surrogate_analysis, one model order is given only, not a range
+                result=true;
             else
                 result=false;
             end
@@ -372,13 +374,15 @@ for i=1:numOrders
                 logL=calculate_loglikelihood(tmp_E,C_yule,ll_method);
                 S_ar=calculate_ar_spectra(AR,spectral_range,fs,C_yule,normalize_spectra);
                 pxx_ar=resize_spectra(S_ar);
+            elseif numOrders == 1
+                result=true;
             else
                 result=false;
             end
         end
         
         if result
-            if strcmp(orderSelection,'diff2')    
+            if strcmp(orderSelection,'diff2') && numOrders ~= 1
                 minCrit=criterion(i-1);
                 mdl.order=orderRange(i-1);
             else

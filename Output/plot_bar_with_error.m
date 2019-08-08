@@ -35,6 +35,7 @@ function plot_bar_with_error(freqBand,gamma,labels,config)
 %   Outputs:
 %    Figure containing the bar plot, with error bars, and the channel labels on the x-axis
 %
+%  See also: plot_connectivity
 
 yLim=[0 1];
 axTitle='Connectivity Values';

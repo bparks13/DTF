@@ -19,6 +19,7 @@ function noise=generate_correlated_noise(N,m,rho,stdZ)
 %   Outputs:
 %    - noise: Correlated noise for the given channels
 %
+%  See also: create_data_correlated_noise
 
 rng('shuffle');
 

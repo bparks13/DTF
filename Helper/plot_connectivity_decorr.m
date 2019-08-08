@@ -11,6 +11,8 @@ function plot_connectivity_decorr(file)
 %   Outputs:
 %    One figure for each condition that is run for the file
 %
+%  See also: plot_connectivity
+%
 
 if nargin==0
     file=uigetfile(fullfile(get_root_path,'Files','*.mat'));

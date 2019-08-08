@@ -11,6 +11,8 @@ function P=resize_spectra(S)
 %   Outputs:
 %    - P: Matrix containing only the auto-spectral components. Size is [f x c]
 %
+%  See also: mvar, plot_connectivity
+%
 
 P=nan(size(S,3),size(S,1));
 

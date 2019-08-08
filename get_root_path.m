@@ -9,6 +9,7 @@ function rootPath=get_root_path()
 %   Outputs:
 %    - rootPath: String containing the absolute path to the folder where this function is
 %       running. This should be found in the root directory of the DTF Git
+%
 
 currPath=mfilename('fullpath');
 rootPath=fileparts(currPath);

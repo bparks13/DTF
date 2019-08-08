@@ -1,4 +1,4 @@
-function [connectivity,H]=dtf(mdl,freqRange,fs,config)
+function [connectivity,H]=dtf(mdl,freqRange,fs,normalize)
 %% [connectivity,H]=dtf(mdl,freqRange,fs,config)
 %
 %  Using the estimated AR model, calculate the connectivity of the series in question. Can
@@ -12,25 +12,18 @@ function [connectivity,H]=dtf(mdl,freqRange,fs,config)
 %    - freqRange: Vector containing the specific frequencies to calculate the connectivity
 %       over
 %    - fs: Sampling frequency in Hz
-%    - config: Struct containing additional optional parameters
-%       normalize: Boolean defining whether to normalize [default] or not
+%    - normalize: Boolean defining whether to normalize [true, default] or not [false]
 %
 %   Outputs:
 %    - connectivity: Directed transfer function values for all combinations of series and
 %       frequencies; either normalized [default] or not, depending on if config is set
 %    - H: System transfer function
 %
-%  See also: mvar
+%  See also: mvar, plot_connectivity
 %
 
-normalize=true;
-
-if nargin > 3 && isstruct(config)
-    if isfield(config,'normalize')
-        if islogical(config.normalize)
-            normalize=config.normalize;
-        end
-    end
+if nargin < 4
+    normalize=true;
 end
 
 nFreqs=length(freqRange);

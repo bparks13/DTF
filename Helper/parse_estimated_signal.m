@@ -13,6 +13,8 @@ function x_hat=parse_estimated_signal(ar)
 %       [n x c x t], where n is the number of samples, c is the number of channels, and t
 %       is the number of trials   
 %
+%  See also: mvar, plot_time_series, estimate_residuals
+%
 
 numTrials=length(ar);
 numChannels=size(ar(1).mdl.x_hat,2);

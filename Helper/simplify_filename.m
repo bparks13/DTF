@@ -15,6 +15,8 @@ function [newFile]=simplify_filename(subjID,dateID,runID,addOn)
 %    - newFile: String containing the absolute path to the folder that contains all of the
 %       processed files; guaranteed to be unique
 %
+%  See also: processing_pipeline
+%
 
 if nargin==3
     addOn='';

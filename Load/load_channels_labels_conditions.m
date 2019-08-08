@@ -35,6 +35,8 @@ function [channels,labels,conditions,cond_labels]=load_channels_labels_condition
 %       set of inputs. Size is [1 x m], where m is the number of conditions returned
 %    - cond_labels: Cell array consisting of strings denoting what each condition is
 %
+%  See also: processing_pipeline
+%
 
 if nargin == 3
     bool_default=true;

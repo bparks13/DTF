@@ -16,7 +16,7 @@ function S=calculate_ar_spectra(AR,freqRange,fs,C,norm)
 %   Outputs:
 %    - S: Estimated power 
 %
-%   See also: plot_psd, estimate_ar_coefficients
+%   See also: plot_psd, estimate_ar_coefficients, plot_spectra
 %
 
 if nargin==4

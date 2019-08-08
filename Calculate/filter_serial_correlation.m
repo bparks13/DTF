@@ -21,6 +21,7 @@ function [x_filt,filt_values]=filter_serial_correlation(file,config)
 %    - filt_values: Struct that matches the format of x_filt, and contains the error
 %       model order that was filtered, as well as the iteration it was filtered on
 %
+%  See also: filter_signal, test_model, mvar
 
 bool_structGiven=false;
 

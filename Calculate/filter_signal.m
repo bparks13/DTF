@@ -16,6 +16,8 @@ function sig_filt=filter_signal(sig,phi)
 %    - sig_filt: Filtered signal obtained by convolving the coefficients of phi with the
 %       given signal. size is [n x c]. The first m points are calculated using the 
 %   
+%  See also: filter_serial_correlation
+%
 
 numSamples=size(sig,1);
 numChannels=size(sig,2);
@@ -58,7 +60,6 @@ else
     
     for i=1:order
         sig_filt(i,:)=sig(i,:)*sqrt(abs(I-phi(:,:,i).^2));
-%         sig_filt(i,:)=sig(i,:)*sqrt(1-phi(:,:,i).^2);
         
         for j=i-1:-1:1
             sig_filt(i,:)=sig_filt(i,:)-sig(j,:)*phi(:,:,j);

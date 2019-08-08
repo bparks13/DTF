@@ -11,6 +11,9 @@ function S=calculate_spectra(H,C)
 %
 %   Outputs:
 %    - S: Spectral matrix. Size is [c x c x f]
+%
+%  See also: mvar, dtf, plot_connectivity
+%
 
 S=nan(size(H));
 
