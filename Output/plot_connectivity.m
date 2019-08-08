@@ -76,6 +76,9 @@ function [avgPSD,avgConn,stdPSD,stdConn]=plot_connectivity(conn,series,freqRange
 %               threshold: Float defining what percentage of the distribution is
 %                 considered to be a significant amount of connection. Default is 0.01, or
 %                 1%
+%               highlightSignificance: Boolean denoting whether or not to show the shaded
+%                 error bars at all times [false], or to only show error bars when the
+%                 mean values are above significance as defined by the surrogate values
 %
 %   Outputs:
 %    Figure containing subplots with PSD on the diagonal, and DTF connectivity
@@ -105,10 +108,11 @@ figTitle='';
 seriesType=1;
 threshold=0.01;
 
-bool_showRejectedNull=false; % whether or not to plot the rejected null hypothesis trials in red
-bool_plotThreshold=false; % Plot the values given in the surrogate analysis for significance
-bool_plotTransferFunction=false; % Plot the transfer function values instead of the Pxx values
-bool_plotSpectralMatrix=false; % Plot the spectral matrix values instead of the Pxx values
+bool_showRejectedNull=false;        % whether or not to plot the rejected null hypothesis trials in red
+bool_plotThreshold=false;           % Plot the values given in the surrogate analysis for significance
+bool_plotTransferFunction=false;    % Plot the transfer function values instead of the Pxx values
+bool_plotSpectralMatrix=false;      % Plot the spectral matrix values instead of the Pxx values
+bool_highlightSignificance=false;   % Only show shaded error bars if values are significant
 
 numChannels=size(conn,1);
 numTrials=size(conn,4);
@@ -125,10 +129,10 @@ if nargin > 4 && isstruct(config)
     
     if isfield(config,'seriesType')
         seriesType=config.seriesType;
+    end
         
-        if isstruct(series)
-            seriesType=8;
-        end
+    if isstruct(series)
+        seriesType=8;
     end
     
     if isfield(config,'hFig')
@@ -158,6 +162,10 @@ if nargin > 4 && isstruct(config)
     if isfield(config,'surr_params')
         if isfield(config.surr_params,'threshold')
             threshold=config.surr_params.threshold;
+        end
+        
+        if isfield(config.surr_params,'highlightSignificance')
+            bool_highlightSignificance=config.surr_params.highlightSignificance;
         end
     end
 end
@@ -247,7 +255,15 @@ elseif seriesType == 8
     yLimits=[];
     
     all_lineprops={'-b','-g','-r','-k','-c','-m','-y'};
-    colorNum=2;
+    colorNum=1;
+    
+    if isfield(series,'surrogate')
+        bool_plotThreshold=true;
+        [ax_diag,ax_offdiag,~,thresholdValues]=plot_surrogate(series.surrogate,threshold,all_lineprops{colorNum});
+        bool_plotThreshold=false;
+        
+        colorNum=colorNum+1;
+    end
     
     if isfield(series,'original')
         pxx=nan(numFrequencies,numChannels,numTrials);
@@ -263,7 +279,13 @@ elseif seriesType == 8
         elseif strcmp(plotType,'avg')
             [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn]=plot_avg(pxx,conn,all_lineprops{1},all_lineprops{colorNum});
         elseif strcmp(plotType,'avgerr')
-            [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr(pxx,conn,all_lineprops{1},all_lineprops{colorNum});
+            if bool_highlightSignificance
+                [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr(...
+                    pxx,conn,all_lineprops{1},all_lineprops{colorNum},thresholdValues);
+            else
+                [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr(...
+                    pxx,conn,all_lineprops{1},all_lineprops{colorNum});
+            end
         end
         
         colorNum=colorNum+1;
@@ -310,13 +332,7 @@ elseif seriesType == 8
             [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr(series.estimated_psd,conn,all_lineprops{1},all_lineprops{colorNum});
         end
         
-        colorNum=colorNum+1;
-    end
-    
-    if isfield(series,'surrogate')
-        bool_plotThreshold=true;
-        [ax_diag,ax_offdiag,~]=plot_surrogate(series.surrogate,threshold,all_lineprops{colorNum});
-        bool_plotThreshold=false;
+        colorNum=colorNum+1; %#ok<*NASGU>
     end
     
     if isempty(yLimits)
@@ -402,7 +418,7 @@ end
 
 %% Internal function to plot averages with shaded error bars
 
-    function [ax_diag,ax_offdiag,yLimits,avg_diag,avg_offdiag,std_diag,std_offdiag]=plot_avgerr(y_diag,y_offdiag,lineprops_offdiag,lineprops_diag)
+    function [ax_diag,ax_offdiag,yLimits,avg_diag,avg_offdiag,std_diag,std_offdiag]=plot_avgerr(y_diag,y_offdiag,lineprops_offdiag,lineprops_diag,threshold)
         
         if nargin == 2 || (isempty(lineprops_diag) && sempty(lineprops_offdiag))
             lineprops_offdiag='-b';
@@ -420,6 +436,20 @@ end
         avg_offdiag=mean(y_offdiag,4);
         std_offdiag=std(y_offdiag,0,4); 
         
+        if bool_highlightSignificance
+            for k=1:size(avg_offdiag,1)
+                for l=1:size(avg_offdiag,2)
+                    if k~=l
+                        for m=1:size(avg_offdiag,3)
+                            if avg_offdiag(k,l,m) < threshold(k,l,m)
+                                std_offdiag(k,l,m)=0;
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        
         [ax_diag,ax_offdiag]=plotting(avg_diag,avg_offdiag,std_diag,std_offdiag,[],lineprops_offdiag,lineprops_diag);
         
         if bool_plotTransferFunction
@@ -433,7 +463,7 @@ end
 
 %% Internal function to plot the significance threshold from surrogate analysis
 
-    function [ax_diag,ax_offdiag,yLim]=plot_surrogate(surrogate,threshold,lineprops_offdiag)
+    function [ax_diag,ax_offdiag,yLim,significant_values]=plot_surrogate(surrogate,threshold,lineprops_offdiag)
         
         if nargin == 2 || isempty(lineprops_offdiag)
             lineprops_offdiag='--k';
@@ -499,6 +529,7 @@ end
                     if bool_plotErrorBars
                         shadedErrorBar(freqRange,10*log10(pxx(:,k)),pxx_std(:,k),'lineProps',lineprops_diag);
                         xLabel='Frequency [Hz]'; yLabel='Power [dB]';
+                        axis on;
                     elseif bool_plotThreshold
                         ax=gca;
                         
@@ -511,6 +542,7 @@ end
                         else
                             plot(freqRange,pxx(:,k).^2,lineprops_diag); 
                         end
+                        axis on;
                         xLabel='Frequency [Hz]'; yLabel='Transfer Function';
                     elseif bool_plotSpectralMatrix
                         if bool_showRejectedNull && (h(k) || h(l))
@@ -518,6 +550,7 @@ end
                         else
                             plot(freqRange,pxx(:,k),lineprops_diag); 
                         end
+                        axis on;
                         xLabel='Frequency [Hz]'; yLabel='Spectral Matrix';
                     else
                         if bool_showRejectedNull && (h(k) || h(l))
@@ -525,6 +558,7 @@ end
                         else
                             plot(freqRange,10*log10(pxx(:,k)),lineprops_diag); 
                         end
+                        axis on;
                         xLabel='Frequency [Hz]'; yLabel='Power [dB]';
                     end
                     
