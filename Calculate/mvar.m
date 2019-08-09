@@ -151,6 +151,10 @@ if nargin > 1 && isstruct(config)
     
     if isfield(config,'method')
         method=config.method;
+        
+        if strcmp(method,'arfit')
+            addpath(fullfile(get_root_path,'ExternalFunctions'));
+        end
     end
     
     if isfield(config,'orderSelection')
