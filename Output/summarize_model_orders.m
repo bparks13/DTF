@@ -21,10 +21,21 @@ function [meanOrder]=summarize_model_orders(ar)
 
 if ~isfield(ar,'mdl')
     fields=fieldnames(ar);
+    meanOrder=nan(length(fields),1);
     
     for i=1:length(fields)
-        fprintf('%s: ',fields{i});
-        summarize_model_orders(ar.(fields{i}));
+        if nargout~=0
+            meanOrder(i)=summarize_model_orders(ar.(fields{i}));
+        else
+            fprintf('%s: ',fields{i});
+            summarize_model_orders(ar.(fields{i}));
+        end
+    end
+    
+    if nargout~=0
+        meanOrder=mean(meanOrder);
+    else
+        clear meanOrder
     end
     
     return
