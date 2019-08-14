@@ -7,7 +7,7 @@ addpath(fullfile(rootPath,'Calculate'),...
     fullfile(rootPath,'Load'),...
     fullfile(rootPath,'Output'));
 
-if exist('Files','dir') == 0
+if exist(fullfile(get_root_path,'Files'),'dir') == 0
     mkdir(fullfile(rootPath,'Files'));
 end
 
