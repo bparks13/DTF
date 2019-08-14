@@ -11,7 +11,9 @@ CCC;
 
 % FILE='ET_CL_004__2018_06_20__run5__200Hz__Z_SCORE__BIC_(1).mat';
 
-load(fullfile(get_root_path,'Files',FILE));
+file=uigetfile(fullfile(get_root_path,'Files','*.mat'));
+
+load(fullfile(get_root_path,'Files',file));
 
 %% Plot connectivity figure - Original
 
