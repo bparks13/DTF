@@ -26,6 +26,19 @@ subjID_simp='';
 dateID_simp='';
 runID_simp='';
 
+%  TEMPLATE 
+%
+% elseif strcmp(subjID,'')
+%     subjID_simp='Sxx';
+%     
+%     if strcmp(dateID,'')
+%         dateID_simp='Dxx';
+%         
+%         if strcmp(runID,'')
+%             runID_simp='Rxx';
+%         end
+%     end
+
 if strcmp(subjID,'ET_CL_001')
     subjID_simp='S01';
     
@@ -43,6 +56,16 @@ elseif strcmp(subjID,'ET_CL_004')
         dateID_simp='D01';
         
         if strcmp(runID,'run5')
+            runID_simp='R01';
+        end
+    end
+elseif strcmp(subjID,'ET_OR_STIM_018')
+    subjID_simp='S03';
+    
+    if strcmp(dateID,'2018_11_28')
+        dateID_simp='D01';
+        
+        if strcmp(runID,'run12')
             runID_simp='R01';
         end
     end
