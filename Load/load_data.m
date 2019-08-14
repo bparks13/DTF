@@ -35,6 +35,12 @@ function [x,fs,x_all]=load_data(file,channels,condition,filtering)
 %           this value should be an even multiple of the original sampling frequency.
 %           Additionally, it is recommended that this step is only performed if there is
 %           no low-pass filtering done
+%       realizations: Sub-struct with field 'length' defining the length of realizations
+%           to split the trials into. Should be given as the number of samples to be taken
+%           for each realization. If realizations is empty, default length is 1 second
+%           times the sampling frequency. Note that this is the initial sampling
+%           frequency, but the time of each realization in seconds will remain the same is
+%           'downsample' is specified
 %
 %   Outputs:
 %    - x: Matrix of values for all channels and all trials matching a particular
@@ -72,6 +78,8 @@ end
 % Flexible filtering parameters from the filtering struct 
 
 bool_normalize=false;
+bool_realizations=false;
+realizationLength=nan;
 
 if nargin > 3 && isstruct(filtering)
     if isfield(filtering,'hpf')
@@ -137,6 +145,16 @@ if nargin > 3 && isstruct(filtering)
             bool_normalize=true;
         end
     end
+    
+    if isfield(filtering,'realizations')
+        bool_realizations=true;
+        
+        if isempty(filtering.realizations)
+            realizationLength=1*fs; % 1 seconds worth of samples
+        elseif isfield(filtering.realizations,'length')
+            realizationLength=filtering.realizations.length;
+        end
+    end
 end
 
 % If no condition is given (condition is empty), return the whole signal
@@ -194,17 +212,40 @@ end
 
 minLength=min(ind_curr_end-ind_curr_start);
 
-x=zeros(minLength,numChannels,numTrials);
+if ~bool_realizations
+    x=zeros(minLength,numChannels,numTrials);
 
-for i=1:numTrials
-    x(:,:,i)=x_all(ind_curr_start(i):ind_curr_start(i)+minLength-1,:);
+    for i=1:numTrials
+        x(:,:,i)=x_all(ind_curr_start(i):ind_curr_start(i)+minLength-1,:);
+    end
+    
+    % Manually drop certain trials based on artifacts
+
+    trialsToDrop=drop_trials(file,condition);
+    x(:,:,trialsToDrop)=[];
+    numTrials=numTrials-length(trialsToDrop);
+else
+    numRealizations=floor(minLength/realizationLength);
+    
+    x=zeros(realizationLength,numChannels,numTrials * numRealizations);
+    
+    currNum=1;
+    
+    for i=1:numTrials
+        for j=1:numRealizations
+            currStart=ind_curr_start(i)+(j-1)*realizationLength;
+            currEnd=currStart+realizationLength-1;
+            x(:,:,currNum)=x_all(currStart:currEnd,:);
+            currNum=currNum+1;
+        end
+    end
+    
+    % Manually drop certain trials based on artifacts
+
+    trialsToDrop=drop_trials(file,condition,numRealizations);
+    x(:,:,trialsToDrop)=[];
+    numTrials=numTrials-length(trialsToDrop);
 end
-
-% Manually drop certain trials based on artifacts
-
-trialsToDrop=drop_trials(file,condition);
-x(:,:,trialsToDrop)=[];
-numTrials=numTrials-length(trialsToDrop);
 
 % If filtering.normalize is defined, normalize the individual trials by the average std of
 % the conditions, and normalize the overall signal by the std of the entire signal
