@@ -514,8 +514,8 @@ end
             end
         end
         
-        ax_diag=zeros(numChannels);
-        ax_offdiag=zeros(numChannels * numChannels - numChannels);
+        ax_diag=zeros(numChannels,1);
+        ax_offdiag=zeros(numChannels * numChannels - numChannels,1);
 
         for k=1:numChannels
             for l=1:numChannels
@@ -524,7 +524,7 @@ end
                 yLabel='';
 
                 if k == l
-                    ax_diag(currSubPlot)=subplot(numChannels,numChannels,currSubPlot);
+                    ax_diag(k)=subplot(numChannels,numChannels,currSubPlot);
                     
                     if bool_plotErrorBars
                         shadedErrorBar(freqRange,10*log10(pxx(:,k)),pxx_std(:,k),'lineProps',lineprops_diag);
@@ -564,7 +564,13 @@ end
                     
                     title(labels{k}); hold on;
                 elseif k ~= l 
-                    ax_offdiag(currSubPlot)=subplot(numChannels,numChannels,currSubPlot);
+                    if k < l
+                        axNum=(k-1)*(numChannels-1)+l-1; 
+                    else
+                        axNum=(k-1)*(numChannels)+l-k+1;                         
+                    end
+                    
+                    ax_offdiag(axNum)=subplot(numChannels,numChannels,currSubPlot);
                     
                     if bool_plotErrorBars
                         shadedErrorBar(freqRange,conn(k,l,:),conn_std(k,l,:),'lineProps',lineprops_offdiag);
