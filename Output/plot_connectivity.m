@@ -11,6 +11,7 @@ function [avgPSD,avgConn,stdPSD,stdConn]=plot_connectivity(conn,series,freqRange
 %       number of frequencies being analyzed, and t is the number of trials
 %    - series: This input can be a number of things, and is therefore dependent on being
 %       defined in config. The following are the possible inputs; 
+%           0) No series given. Diagonals are not plotted
 %           1) Original signal [default]: Matrix assumed to be [n x c x t], where n is the
 %              number of samples, c is the number of channels, and t is the number of
 %              trials
@@ -31,8 +32,9 @@ function [avgPSD,avgConn,stdPSD,stdConn]=plot_connectivity(conn,series,freqRange
 %              function. Size is [c x c x f], where c is the number of channels and f is
 %              the number of frequencies (must match freqRange given)
 %           7) Spectral matrix values: Matrix containing the spectral matrix defined as
-%              S = H * C * H'. Size is [c x c x f], where c is the number of channels and
-%              f is the number of frequencies (must match freqRange given)
+%              S = H * C * H'. Size is [c x c x f x t], where c is the number of channels,
+%              f is the number of frequencies (must match freqRange given), and t is the
+%              number of trials
 %           8) Struct containing any combination of the inputs above. The possible
 %              subfields are given below;
 %               'original' is a matrix similar to 1)
@@ -40,6 +42,8 @@ function [avgPSD,avgConn,stdPSD,stdConn]=plot_connectivity(conn,series,freqRange
 %               'original_psd' is a matrix similar to 3)
 %               'estimated_psd' is a matrix similar to 4)
 %               'surrogate' is a matrix similar to 5)
+%               'transfer' is a matrix similar to 6)
+%               'spectral' is a matrix similar to 7)
 %    - freqRange: Vector of the range of frequencies over which the connectivity is
 %       measured 
 %    - labels: Labels of the series, used for the titles to indicate the directionality of
@@ -99,6 +103,7 @@ function [avgPSD,avgConn,stdPSD,stdConn]=plot_connectivity(conn,series,freqRange
 %       Add a legend to the diagonal plots when both the original and estimated signal PSD
 %           are plotted
 %       Add ability to specify lineProps in config
+%       Figure out why the spectral values are not being plotted with error bars
 
 fs=2400;
 bool_newFig=true;
@@ -183,7 +188,16 @@ end
 window=round(fs);
 overlap=round(window/2);
 
-if seriesType == 1 || seriesType == 2
+if seriesType == 0
+    if strcmp(plotType,'ind')
+        [ax_diag,ax_offdiag,yLimits]=plot_ind([],conn,h);
+    elseif strcmp(plotType,'avg')
+        [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn]=plot_avg([],conn);
+    elseif strcmp(plotType,'avgerr')
+        [ax_diag,ax_offdiag,~,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr([],conn);
+        yLimits=[0 1];
+    end
+elseif seriesType == 1 || seriesType == 2
     pxx=nan(numFrequencies,numChannels,numTrials);
     
     for i=1:numChannels
@@ -209,7 +223,7 @@ elseif seriesType == 3 || seriesType == 4
     end
 elseif seriesType == 5
     bool_plotThreshold=true;
-    [ax_diag,ax_offdiag,yLimits]=plot_surrogate(series,threshold);
+    [ax_diag,ax_offdiag,yLimits,thresholdValues]=plot_surrogate(series,threshold);
     bool_plotThreshold=false;
     
     if strcmp(plotType,'ind')
@@ -217,13 +231,24 @@ elseif seriesType == 5
     elseif strcmp(plotType,'avg')
         [~,~,~,avgPSD,avgConn]=plot_avg([],conn);
     elseif strcmp(plotType,'avgerr')
-        [~,~,~,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr([],conn);
+        if bool_highlightSignificance
+            [~,~,~,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr([],conn,[],[],thresholdValues);
+        else
+            [~,~,~,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr([],conn);
+        end
     end
 elseif seriesType == 6
     bool_plotTransferFunction=true;
     
     if size(series,3) > 1
-        series=resize_spectra(series);
+        if size(series,4) == 1
+            series=resize_spectra(series);
+        else
+            tmp_series=nan(size(series,1),size(series,2),size(series,4));
+            for i=1:size(series,4)
+                tmp_series(:,:,i)=resize_spectra(series(:,:,:,i));
+            end
+        end
     end
     
     if strcmp(plotType,'ind')
@@ -237,7 +262,15 @@ elseif seriesType == 7
     bool_plotSpectralMatrix=true;
     
     if size(series,3) > 1
-        series=resize_spectra(series);
+        if size(series,4) == 1
+            series=resize_spectra(series);
+        else
+            tmp_series=nan(size(series,3),size(series,1),size(series,4));
+            for i=1:size(series,4)
+                tmp_series(:,:,i)=resize_spectra(series(:,:,:,i));
+            end
+            series=tmp_series;
+        end
     end
     
     if strcmp(plotType,'ind')
@@ -279,7 +312,7 @@ elseif seriesType == 8
         elseif strcmp(plotType,'avg')
             [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn]=plot_avg(pxx,conn,all_lineprops{1},all_lineprops{colorNum});
         elseif strcmp(plotType,'avgerr')
-            if bool_highlightSignificance
+            if bool_highlightSignificance 
                 [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr(...
                     pxx,conn,all_lineprops{1},all_lineprops{colorNum},thresholdValues);
             else
@@ -333,6 +366,37 @@ elseif seriesType == 8
         end
         
         colorNum=colorNum+1; %#ok<*NASGU>
+    end
+    
+    if isfield(series,'transfer')
+        error('not implemented yet');
+    end
+    
+    if isfield(series,'spectral')
+        bool_plotSpectralMatrix=true;
+    
+        if size(series.spectral,3) > 1
+            if size(series.spectral,4) == 1
+                tmp_series=resize_spectra(series.spectral);
+            else
+                tmp_series=nan(size(series.spectral,3),size(series.spectral,1),size(series.spectral,4));
+                for i=1:size(series.spectral,4)
+                    tmp_series(:,:,i)=resize_spectra(series.spectral(:,:,:,i));
+                end
+            end
+        end
+
+        if strcmp(plotType,'ind')
+            [ax_diag,ax_offdiag,yLimits]=plot_ind(tmp_series,conn,h);
+        elseif strcmp(plotType,'avg')
+            [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn]=plot_avg(tmp_series,conn);
+        elseif strcmp(plotType,'avgerr')
+            if bool_highlightSignificance
+                [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr(tmp_series,conn,[],[],thresholdValues);
+            else
+                [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr(tmp_series,conn);
+            end
+        end
     end
     
     if isempty(yLimits)
@@ -420,7 +484,7 @@ end
 
     function [ax_diag,ax_offdiag,yLimits,avg_diag,avg_offdiag,std_diag,std_offdiag]=plot_avgerr(y_diag,y_offdiag,lineprops_offdiag,lineprops_diag,threshold)
         
-        if nargin == 2 || (isempty(lineprops_diag) && sempty(lineprops_offdiag))
+        if nargin == 2 || (isempty(lineprops_diag) && isempty(lineprops_offdiag))
             lineprops_offdiag='-b';
             lineprops_diag='-k';
         elseif nargin == 3 || isempty(lineprops_diag)
@@ -431,8 +495,14 @@ end
             y_diag=nan(numFrequencies,numChannels,numTrials);
         end
             
-        avg_diag=mean(y_diag,3);
-        std_diag=std(10*log10(y_diag),0,3);  
+        if (bool_plotTransferFunction || bool_plotSpectralMatrix) && size(y_diag,4) > 1
+            avg_diag=mean(y_diag,4);
+            std_diag=std(10*log10(y_diag),0,4);  
+        else
+            avg_diag=mean(y_diag,3);
+            std_diag=std(10*log10(y_diag),0,3);  
+        end
+        
         avg_offdiag=mean(y_offdiag,4);
         std_offdiag=std(y_offdiag,0,4); 
         
@@ -527,9 +597,27 @@ end
                     ax_diag(k)=subplot(numChannels,numChannels,currSubPlot);
                     
                     if bool_plotErrorBars
-                        shadedErrorBar(freqRange,10*log10(pxx(:,k)),pxx_std(:,k),'lineProps',lineprops_diag);
-                        xLabel='Frequency [Hz]'; yLabel='Power [dB]';
-                        axis on;
+                        if bool_plotTransferFunction
+                            if bool_showRejectedNull && (h(k) || h(l))
+                                plot(freqRange,pxx(:,k).^2,'r'); % Not actually pxx, is actually H 
+                            else
+                                plot(freqRange,pxx(:,k).^2,lineprops_diag); 
+                            end
+                            axis on;
+                            xLabel='Frequency [Hz]'; yLabel='Transfer Function';
+                        elseif bool_plotSpectralMatrix
+                            if bool_showRejectedNull && (h(k) || h(l))
+                                plot(freqRange,pxx(:,k),'r'); % Not actually pxx, is actually S
+                            else
+                                plot(freqRange,pxx(:,k),lineprops_diag); 
+                            end
+                            axis on;
+                            xLabel='Frequency [Hz]'; yLabel='Spectral Matrix';
+                        else
+                            shadedErrorBar(freqRange,10*log10(pxx(:,k)),pxx_std(:,k),'lineProps',lineprops_diag);
+                            xLabel='Frequency [Hz]'; yLabel='Power [dB]';
+                            axis on;
+                        end
                     elseif bool_plotThreshold
                         ax=gca;
                         
