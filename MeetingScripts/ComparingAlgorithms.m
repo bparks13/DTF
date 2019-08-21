@@ -434,4 +434,3 @@ plot_connectivity(conn_bic,S_bic,spectral_range,{'Sig1','Sig2','Sig3','Sig4','Si
 hFig=gcf;
 hFig.Position=[round(hFig.Position(1:2)./2) 1338 1026];
 
-
