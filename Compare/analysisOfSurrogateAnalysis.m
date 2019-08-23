@@ -79,6 +79,7 @@ config_surr=struct('iterations',1000,'numSamples',1,'method','sample');
 %% Run surrogate analysis with randomized sample replacement
 
 for i=1:numSamples
+    fprintf('Beginning %d samples...\n',i);
     config_surr.numSamples=i;
     [tmp_surr,tmp_dist,tmp_pxx]=surrogate_analysis(file,config_surr);
     surrogate(i).bic=tmp_surr.rat;
@@ -100,7 +101,7 @@ config_surr=struct('method','shift','numIterations',1000);
 
 %% Plot the time-shifted connectivity measures
 
-% plot_connectivity(gamma.bic,tmp_surr.rat,freqRange,labels,config_plot);
+% plot_connectivity(gamma.bic,shift_surr.rat,freqRange,labels,config_plot);
 
 %%
 
