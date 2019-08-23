@@ -21,7 +21,13 @@ end
 %% Surrogate analysis
 
 % surrogate_analysis(fullfile(get_root_path,'Files',file));   % run and save the surrogate analysis for all conditions
-surrogate_analysis(data);   % run and save the surrogate analysis for all conditions
+if isfield(data,'config_surr')
+    surrogate_analysis(data,data.config_surr); 
+elseif exist('config_surr','var') == 1
+    surrogate_analysis(data,config_surr);   % run and save the surrogate analysis for all conditions
+else
+    surrogate_analysis(data);
+end
 
 %% Decorrelation
 
@@ -88,6 +94,14 @@ save(fullfile(get_root_path,'Files',file),'-append','ar_filt','res_filt','crit_f
 
 %% Surrogate analysis on filtered data
 
-config_surr=struct('signal','decorr');
+if isfield(data,'config_surr')
+    config_surr=data.config_surr;
+    config_surr.signal='decorr';
+elseif exist('config_surr','var') == 1
+    config_surr.signal='decorr';
+else
+    config_surr=struct('signal','decorr');
+end
+
 surrogate_analysis(file,config_surr);
 
