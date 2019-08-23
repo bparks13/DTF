@@ -128,11 +128,11 @@ h=zeros(numTrials,numChannels);
 freqLims=[];
 
 if nargin > 4 && isstruct(config)
-    if isfield(config,'fs')
+    if isfield(config,'fs') && ~isempty(config.fs)
         fs=config.fs;
     end
     
-    if isfield(config,'seriesType')
+    if isfield(config,'seriesType') && ~isempty(config.seriesType)
         seriesType=config.seriesType;
     end
         
@@ -140,13 +140,13 @@ if nargin > 4 && isstruct(config)
         seriesType=8;
     end
     
-    if isfield(config,'hFig')
+    if isfield(config,'hFig') && ~isempty(config.hFig)
         if ~isempty(config.hFig)
             bool_newFig=false;
         end
     end
     
-    if isfield(config,'figTitle')
+    if isfield(config,'figTitle') && ~isempty(config.figTitle)
         figTitle=config.figTitle;
     end
     
@@ -154,22 +154,22 @@ if nargin > 4 && isstruct(config)
         plotType=config.plotType;
     end
     
-    if isfield(config,'h') && strcmp(plotType,'ind')
+    if isfield(config,'h') && strcmp(plotType,'ind') && ~isempty(config.h)
         bool_showRejectedNull=true;
         h=config.h;
     end
     
-    if isfield(config,'freqLims')
+    if isfield(config,'freqLims') && ~isempty(config.freqLims)
         bool_changeFreqRange=true;
         freqLims=[config.freqLims(1),config.freqLims(end)];
     end
     
     if isfield(config,'surr_params')
-        if isfield(config.surr_params,'threshold')
+        if isfield(config.surr_params,'threshold') && ~isempty(config.surr_params.threshold)
             threshold=config.surr_params.threshold;
         end
         
-        if isfield(config.surr_params,'highlightSignificance')
+        if isfield(config.surr_params,'highlightSignificance') && ~isempty(config.surr_params.highlightSignificance)
             bool_highlightSignificance=config.surr_params.highlightSignificance;
         end
     end
@@ -292,7 +292,8 @@ elseif seriesType == 8
     
     if isfield(series,'surrogate')
         bool_plotThreshold=true;
-        [ax_diag,ax_offdiag,~,thresholdValues]=plot_surrogate(series.surrogate,threshold,all_lineprops{colorNum});
+        [ax_diag,ax_offdiag,~,thresholdValues]=plot_surrogate(series.surrogate,threshold,...
+            all_lineprops{colorNum});
         bool_plotThreshold=false;
         
         colorNum=colorNum+1;
@@ -308,9 +309,11 @@ elseif seriesType == 8
         end
 
         if strcmp(plotType,'ind')
-            [ax_diag,ax_offdiag,yLimits]=plot_ind(pxx,conn,h,all_lineprops{1},all_lineprops{colorNum});
+            [ax_diag,ax_offdiag,yLimits]=plot_ind(pxx,conn,h,all_lineprops{1},...
+                all_lineprops{colorNum});
         elseif strcmp(plotType,'avg')
-            [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn]=plot_avg(pxx,conn,all_lineprops{1},all_lineprops{colorNum});
+            [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn]=plot_avg(pxx,conn,...
+                all_lineprops{1},all_lineprops{colorNum});
         elseif strcmp(plotType,'avgerr')
             if bool_highlightSignificance 
                 [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr(...
@@ -334,11 +337,14 @@ elseif seriesType == 8
         end
 
         if strcmp(plotType,'ind')
-            [ax_diag,ax_offdiag,yLimits]=plot_ind(pxx,conn,h,all_lineprops{1},all_lineprops{colorNum});
+            [ax_diag,ax_offdiag,yLimits]=plot_ind(pxx,conn,h,all_lineprops{1},...
+                all_lineprops{colorNum});
         elseif strcmp(plotType,'avg')
-            [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn]=plot_avg(pxx,conn,all_lineprops{1},all_lineprops{colorNum});
+            [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn]=plot_avg(pxx,conn,...
+                all_lineprops{1},all_lineprops{colorNum});
         elseif strcmp(plotType,'avgerr')
-            [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr(pxx,conn,all_lineprops{1},all_lineprops{colorNum});
+            [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr(...
+                pxx,conn,all_lineprops{1},all_lineprops{colorNum});
         end
         
         colorNum=colorNum+1;
@@ -346,11 +352,19 @@ elseif seriesType == 8
     
     if isfield(series,'original_psd')
         if strcmp(plotType,'ind')
-            [ax_diag,ax_offdiag,yLimits]=plot_ind(series.original_psd,conn,h,all_lineprops{1},all_lineprops{colorNum});
+            [ax_diag,ax_offdiag,yLimits]=plot_ind(series.original_psd,conn,h,...
+                all_lineprops{1},all_lineprops{colorNum});
         elseif strcmp(plotType,'avg')
-            [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn]=plot_avg(series.original_psd,conn,all_lineprops{1},all_lineprops{colorNum});
+            [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn]=plot_avg(series.original_psd,...
+                conn,all_lineprops{1},all_lineprops{colorNum});
         elseif strcmp(plotType,'avgerr')
-            [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr(series.original_psd,conn,all_lineprops{1},all_lineprops{colorNum});
+            if bool_highlightSignificance
+                [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr(...
+                    series.original_psd,conn,all_lineprops{1},all_lineprops{colorNum},thresholdValues);
+            else
+                [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr(...
+                    series.original_psd,conn,all_lineprops{1},all_lineprops{colorNum});                
+            end
         end
         
         colorNum=colorNum+1;
@@ -358,11 +372,14 @@ elseif seriesType == 8
     
     if isfield(series,'estimated_psd')
         if strcmp(plotType,'ind')
-            [ax_diag,ax_offdiag,yLimits]=plot_ind(series.estimated_psd,conn,h,all_lineprops{1},all_lineprops{colorNum});
+            [ax_diag,ax_offdiag,yLimits]=plot_ind(series.estimated_psd,conn,h,...
+                all_lineprops{1},all_lineprops{colorNum});
         elseif strcmp(plotType,'avg')
-            [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn]=plot_avg(series.estimated_psd,conn,all_lineprops{1},all_lineprops{colorNum});
+            [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn]=plot_avg(series.estimated_psd,...
+                conn,all_lineprops{1},all_lineprops{colorNum});
         elseif strcmp(plotType,'avgerr')
-            [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr(series.estimated_psd,conn,all_lineprops{1},all_lineprops{colorNum});
+            [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr(...
+                series.estimated_psd,conn,all_lineprops{1},all_lineprops{colorNum});
         end
         
         colorNum=colorNum+1; %#ok<*NASGU>
