@@ -115,7 +115,7 @@ end
 config_crit=struct(...
     'orderSelection',data.config_crit.orderSelection,...
     'crit',data.config_crit.crit,...
-    'orderRange',[],...
+    'orderRange',data.config_crit.orderRange,...
     'method',data.config_crit.method,...
     'fs',fs,...
     'freqRange',freqForAnalysis,...
@@ -149,7 +149,7 @@ if strcmp(method,'single')
         x=data.(xVar).(currCond);
         ar=data.(arVar).(currCond);
 
-        config_crit.orderRange=round(summarize_model_orders(ar));
+%         config_crit.orderRange=round(summarize_model_orders(ar));
         numSamples=size(x,1);
         numChannels=size(x,2);
         numTrials=size(x,3);
@@ -207,7 +207,7 @@ elseif strcmp(method,'combine')
     gamma_dist=zeros(numChannels,numChannels,length(freqRange),numIterations);
 
     tmp_dist=cell(numIterations,numChannels);
-    config_crit.orderRange=round(summarize_model_orders(data.(arVar)));
+%     config_crit.orderRange=round(summarize_model_orders(data.(arVar)));
 
     for i=1:numIterations
         randomTrials=randperm(numTrials,numChannels);
@@ -239,7 +239,7 @@ elseif strcmp(method,'sample')
         x=data.(xVar).(currCond);
         ar=data.(arVar).(currCond);
 
-        config_crit.orderRange=round(summarize_model_orders(ar));
+%         config_crit.orderRange=round(summarize_model_orders(ar));
         numSamples=size(x,1);
         numChannels=size(x,2);
         numTrials=size(x,3);
@@ -315,7 +315,7 @@ elseif strcmp(method,'shift')
         x=data.(xVar).(currCond);
         ar=data.(arVar).(currCond);
 
-        config_crit.orderRange=round(summarize_model_orders(ar));
+%         config_crit.orderRange=round(summarize_model_orders(ar));
         numSamples=size(x,1);
         numChannels=size(x,2);
         numTrials=size(x,3);
