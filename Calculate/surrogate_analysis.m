@@ -1,5 +1,5 @@
-function [surrogate,distribution,avg_pxx]=surrogate_analysis(file,config)
-%% [results,distribution,avg_pxx]=surrogate_analysis(file,config)
+function [surrogate,distribution,pxx]=surrogate_analysis(file,config)
+%% [results,distribution,pxx]=surrogate_analysis(file,config)
 %
 %  Performs surrogate analysis on a pre-existing file, creating an empirical distribution
 %  of samples and then calculating if the values found for connectivity are significant
@@ -30,8 +30,8 @@ function [surrogate,distribution,avg_pxx]=surrogate_analysis(file,config)
 %        * For the bivariate use case of 'shift', distribution is comprised of the random
 %          trial chosen in the first column, followed by the random shift of the channel
 %          in the second column
-%    - avg_pxx: Optional output, returns the average PSD values of the randomly shuffled
-%       trials
+%    - pxx: Optional output, returns a struct containing all of the PSD values for each
+%       iteration, as well as the averages and standard deviations
 %  
 % 'sample' based shuffling is done by randomly choosing a trial, and then randomly
 % shuffling the time points, independently, for that channel, with a different
@@ -99,7 +99,7 @@ if nargin == 2 && isstruct(config)
         end
     end
     
-    if isfield(config,'iterations')
+    if isfield(config,'iterations') && ~isempty(config.iterations)
         numIterations=config.iterations;
     end
     
@@ -132,9 +132,8 @@ else
     arVar='ar_filt';
 end
 
-if nargout==3
-    sum_pxx=[];
-    avg_pxx=struct;
+if nargout == 3
+    pxx=struct;
 end
     
 %% Surrogate analysis
@@ -149,7 +148,6 @@ if strcmp(method,'single')
         x=data.(xVar).(currCond);
         ar=data.(arVar).(currCond);
 
-%         config_crit.orderRange=round(summarize_model_orders(ar));
         numSamples=size(x,1);
         numChannels=size(x,2);
         numTrials=size(x,3);
@@ -158,6 +156,11 @@ if strcmp(method,'single')
         gamma_dist=zeros(numChannels,numChannels,length(freqRange),numIterations);
 
         distribution.(currCond)=nan(numIterations,numChannels);
+        
+        if nargout == 3
+            pxx.(currCond)=struct('all',nan(length(freqRange),numChannels,numIterations),...
+                'avg',nan(length(freqRange),numChannels),'std',nan(length(freqRange),numChannels));
+        end
 
         for i=1:numIterations
             randomTrials=randperm(numTrials,numChannels);
@@ -170,6 +173,10 @@ if strcmp(method,'single')
             gamma_dist(:,:,:,i)=dtf(tmp_mdl,freqRange,fs);
 
             distribution.(currCond)(i,:)=randomTrials;
+            
+            if nargout == 3
+                pxx.(currCond).all(:,:,i)=periodogram(tmp_x,[],freqRange,fs);
+            end
 
             if mod((k-1)*numIterations+i,floor(totalOperations/100)) == 0
                 fprintf('%d%%\n',floor(((k-1)*numIterations+i)/totalOperations*100));
@@ -177,6 +184,11 @@ if strcmp(method,'single')
         end
 
         surrogate.(currCond)=gamma_dist;
+        
+        if nargout == 3
+            pxx.(currCond).avg=mean(pxx.(currCond).all,3);
+            pxx.(currCond).std=std(pxx.(currCond).all,[],3);
+        end
     end
 elseif strcmp(method,'combine')
     minLength=inf;
@@ -207,7 +219,11 @@ elseif strcmp(method,'combine')
     gamma_dist=zeros(numChannels,numChannels,length(freqRange),numIterations);
 
     tmp_dist=cell(numIterations,numChannels);
-%     config_crit.orderRange=round(summarize_model_orders(data.(arVar)));
+
+    if nargout == 3
+        pxx=struct('all',nan(length(freqRange),numChannels,numIterations),...
+            'avg',nan(length(freqRange),numChannels),'std',nan(length(freqRange),numChannels));
+    end
 
     for i=1:numIterations
         randomTrials=randperm(numTrials,numChannels);
@@ -220,6 +236,10 @@ elseif strcmp(method,'combine')
         [tmp_mdl,~,~]=mvar(tmp_x,config_crit);
         gamma_dist(:,:,:,i)=dtf(tmp_mdl,freqRange,fs);
 
+        if nargout == 3
+            pxx.all(:,:,i)=periodogram(tmp_x,[],freqRange,fs);
+        end
+
         if mod(i,floor(numIterations/100)) == 0
             fprintf('%d%%\n',floor(i/numIterations*100));
         end
@@ -228,7 +248,14 @@ elseif strcmp(method,'combine')
     for i=1:length(fields)
         surrogate.(fields{i})=gamma_dist;
         distribution.(fields{i})=tmp_dist;
+        
+        if nargout == 3 
+            pxx.(fields{i}).avg=mean(pxx.all,3);
+            pxx.(fields{i}).std=std(pxx.all,[],3);
+        end
     end
+    
+    pxx=rmfield(pxx,'all');
 elseif strcmp(method,'sample')
     numFields=length(fields);
     totalOperations=numFields*numIterations;
@@ -239,7 +266,6 @@ elseif strcmp(method,'sample')
         x=data.(xVar).(currCond);
         ar=data.(arVar).(currCond);
 
-%         config_crit.orderRange=round(summarize_model_orders(ar));
         numSamples=size(x,1);
         numChannels=size(x,2);
         numTrials=size(x,3);
@@ -250,6 +276,11 @@ elseif strcmp(method,'sample')
 
         gamma_dist=zeros(numChannels,numChannels,length(freqRange),numIterations);
         distribution.(currCond)=nan(numIterations,numChannels);
+
+        if nargout == 3
+            pxx.(currCond)=struct('all',nan(length(freqRange),numChannels,numIterations),...
+                'avg',nan(length(freqRange),numChannels),'std',nan(length(freqRange),numChannels));
+        end
 
         for i=1:numIterations
             randomTrials=randperm(numTrials,numChannels);
@@ -292,7 +323,7 @@ elseif strcmp(method,'sample')
             distribution.(currCond)(i,:)=randomTrials;
             
             if nargout == 3
-                sum_pxx=sum_pxx+periodogram(tmp_x,[],freqRange,fs);
+                pxx.(currCond).all(:,:,i)=periodogram(tmp_x,[],freqRange,fs);
             end
 
             if mod((k-1)*numIterations+i,floor(totalOperations/100)) == 0
@@ -301,7 +332,8 @@ elseif strcmp(method,'sample')
         end
         
         if nargout == 3
-            avg_pxx.(currCond)=sum_pxx/numIterations;
+            pxx.(currCond).avg=mean(pxx.(currCond).all,3);
+            pxx.(currCond).std=std(pxx.(currCond).all,[],3);
         end
 
         surrogate.(currCond)=gamma_dist;
@@ -315,7 +347,6 @@ elseif strcmp(method,'shift')
         x=data.(xVar).(currCond);
         ar=data.(arVar).(currCond);
 
-%         config_crit.orderRange=round(summarize_model_orders(ar));
         numSamples=size(x,1);
         numChannels=size(x,2);
         numTrials=size(x,3);
@@ -326,6 +357,11 @@ elseif strcmp(method,'shift')
         
         gamma_dist=zeros(numChannels,numChannels,length(freqRange),numIterations);
         distribution.(currCond)=nan(numIterations,numChannels);
+
+        if nargout == 3
+            pxx.(currCond)=struct('all',nan(length(freqRange),numChannels,numIterations),...
+                'avg',nan(length(freqRange),numChannels),'std',nan(length(freqRange),numChannels));
+        end
 
         if numChannels == 2 % Bivariate case is different
             for i=1:numIterations
@@ -341,12 +377,24 @@ elseif strcmp(method,'shift')
 
                 distribution.(currCond)(i,:)=[randomTrial,randomShift];
 
+                if nargout == 3
+                    pxx.(currCond).all(:,:,i)=periodogram(tmp_x,[],freqRange,fs);
+                end
+
                 if mod((k-1)*numIterations+i,floor(totalOperations/100)) == 0
                     fprintf('%d%%\n',floor(((k-1)*numIterations+i)/totalOperations*100));
                 end
             end
+            
+            if nargout == 3
+                pxx.(currCond).avg=mean(pxx.(currCond).all,3);
+                pxx.(currCond).std=std(pxx.(currCond).all,[],3);
+            end
 
             surrogate.(currCond)=gamma_dist;
+        else
+            disp('Multivariate time shifting is not implemented yet')
+            return
         end
     end
 end
