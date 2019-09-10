@@ -64,8 +64,8 @@ function [avgPSD,avgConn,stdPSD,stdConn]=plot_connectivity(conn,series,freqRange
 %             'ind' plot all individual traces [Default]
 %             'avg' plot averages
 %             'avgerr' plot averages with shaded error bars
-%           NOTE: If plotType is 'avg' or 'avgerr', can return the average PSDs and the
-%             average gamma values
+%               NOTE: If plotType is 'avg' or 'avgerr', can return the average PSDs and the
+%                 average gamma values
 %           h: Only applicable for plotType = 'ind'; denotes whether the null hypothesis
 %             of no autocorrelation among the residuals is kept (h = 0) or rejected
 %             (h = 1). Plots individual traces where the null hypothesis is rejected in
@@ -83,6 +83,11 @@ function [avgPSD,avgConn,stdPSD,stdConn]=plot_connectivity(conn,series,freqRange
 %               highlightSignificance: Boolean denoting whether or not to show the shaded
 %                 error bars at all times [false], or to only show error bars when the
 %                 mean values are above significance as defined by the surrogate values
+%               binning: String denoting how to bin together the surrogate values to
+%                   create a threshold. Can be frequency-dependent ['dependent'] where
+%                   each frequency receives a unique threshold, or frequency-invariant
+%                   ['invariant'] where a single threshold is used for the entire
+%                   frequency range
 %
 %   Outputs:
 %    Figure containing subplots with PSD on the diagonal, and DTF connectivity
@@ -118,6 +123,7 @@ bool_plotThreshold=false;           % Plot the values given in the surrogate ana
 bool_plotTransferFunction=false;    % Plot the transfer function values instead of the Pxx values
 bool_plotSpectralMatrix=false;      % Plot the spectral matrix values instead of the Pxx values
 bool_highlightSignificance=false;   % Only show shaded error bars if values are significant
+bool_frequencyDependent=false;      % How significance threshold values are calculated
 
 numChannels=size(conn,1);
 numTrials=size(conn,4);
@@ -171,6 +177,12 @@ if nargin > 4 && isstruct(config)
         
         if isfield(config.surr_params,'highlightSignificance') && ~isempty(config.surr_params.highlightSignificance)
             bool_highlightSignificance=config.surr_params.highlightSignificance;
+        end
+        
+        if isfield(config.surr_params,'binning') && ~isempty(config.surr_params.binning)
+            if strcmp(config.surr_params.binning,'dependent')
+                bool_frequencyDependent=true;
+            end
         end
     end
 end
@@ -528,8 +540,14 @@ end
                 for l=1:size(avg_offdiag,2)
                     if k~=l
                         for m=1:size(avg_offdiag,3)
-                            if avg_offdiag(k,l,m) < threshold(k,l,m)
-                                std_offdiag(k,l,m)=0;
+                            if bool_frequencyDependent
+                                if avg_offdiag(k,l,m) < threshold(k,l,m)
+                                    std_offdiag(k,l,m)=0;
+                                end
+                            else
+                                if avg_offdiag(k,l,m) < threshold(k,l)
+                                    std_offdiag(k,l,m)=0;
+                                end
                             end
                         end
                     end
@@ -559,14 +577,28 @@ end
         numFrequencies=size(surrogate,3);
         numIterations=size(surrogate,4);
         
-        significant_values=ones(numChannels,numChannels,numFrequencies);
-        
-        for k=1:numChannels
-            for l=1:numChannels
-                if k ~= l
-                    for m=1:numFrequencies
-                        orderedConnections=sort(squeeze(surrogate(k,l,m,:)));
-                        significant_values(k,l,m)=orderedConnections(round(numIterations*(1-threshold)));
+        if bool_frequencyDependent
+            significant_values=ones(numChannels,numChannels,numFrequencies);
+
+            for k=1:numChannels
+                for l=1:numChannels
+                    if k ~= l
+                        for m=1:numFrequencies
+                            orderedConnections=sort(squeeze(surrogate(k,l,m,:)));
+                            significant_values(k,l,m)=orderedConnections(ceil(length(orderedConnections)*(1-threshold)));
+                        end
+                    end
+                end
+            end
+        else
+            significant_values=ones(numChannels,numChannels);
+
+            for k=1:numChannels
+                for l=1:numChannels
+                    if k ~= l
+                        thisChannel=squeeze(surrogate(k,l,:,:));
+                        orderedConnections=sort(thisChannel(:));
+                        significant_values(k,l)=orderedConnections(ceil(length(orderedConnections)*(1-threshold)));
                     end
                 end
             end
@@ -685,7 +717,11 @@ end
                             plot(freqRange,squeeze(conn(k,l,:)),'r'); 
                             xLabel='Frequency [Hz]'; yLabel='Connectivity [\gamma]';
                         elseif bool_plotThreshold
-                            plot(freqRange,squeeze(conn(k,l,:)),':k','LineWidth',2);
+                            if bool_frequencyDependent
+                                plot(freqRange,squeeze(conn(k,l,:)),':k','LineWidth',2);
+                            else
+                                plot([freqRange(1),freqRange(end)],[conn(k,l),conn(k,l)],':k','LineWidth',2);
+                            end
                             xLabel='Frequency [Hz]'; yLabel='Connectivity [\gamma]';
                         else
                             plot(freqRange,squeeze(conn(k,l,:)),lineprops_offdiag); 
