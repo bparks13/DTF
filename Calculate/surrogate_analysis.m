@@ -49,7 +49,7 @@ function [surrogate,distribution,pxx]=surrogate_analysis(file,config)
 %  Based on the trial-shuffling procedure for surrogate found in
 %  10.1016/j.neuroimage.2004.09.036 
 
-method='single';
+method='sample';
 bool_original=true;
 bool_structGiven=false;
 
@@ -290,27 +290,27 @@ elseif strcmp(method,'sample')
             numSampleIterations=floor(numSamples/numSamplesUsed);
             
             if numSamplesUsed == 1
-                for l=1:numChannels
-                    tmp_x=x(:,l,randomTrials(l));
+                for m=1:numChannels
+                    tmp_x=x(:,m,randomTrials(m));
                     for j=1:numSampleIterations
                         randomSample=randi(length(tmp_x),1);
-                        tmp_x_shuffled(j,l)=tmp_x(randomSample);
+                        tmp_x_shuffled(j,m)=tmp_x(randomSample);
                         tmp_x(randomSample)=[];
                     end
                 end
                 
                 tmp_x=tmp_x_shuffled;
             else
-                for l=1:numChannels
-                    tmp_x=x(:,l,randomTrials(l));
+                for m=1:numChannels
+                    tmp_x=x(:,m,randomTrials(m));
                     for j=1:numSampleIterations
                         randomSample=randi(length(tmp_x)-numSamplesUsed+1,1);
-                        tmp_x_shuffled((j-1)*numSamplesUsed+1:j*numSamplesUsed,l)=tmp_x(randomSample:randomSample+numSamplesUsed-1);
+                        tmp_x_shuffled((j-1)*numSamplesUsed+1:j*numSamplesUsed,m)=tmp_x(randomSample:randomSample+numSamplesUsed-1);
                         tmp_x(randomSample:randomSample+numSamplesUsed-1)=[];
                     end
                     
                     if numSampleIterations*numSamplesUsed < numSamples
-                        tmp_x_shuffled(j*numSamplesUsed+1:end,l)=tmp_x;
+                        tmp_x_shuffled(j*numSamplesUsed+1:end,m)=tmp_x;
                     end
                 end
                 
