@@ -117,6 +117,7 @@ plotType='ind';
 figTitle='';
 seriesType=1;
 threshold=0.01;
+yLim=[0 1]; % Y Limits for the connectivity measures
 
 bool_showRejectedNull=false;        % whether or not to plot the rejected null hypothesis trials in red
 bool_plotThreshold=false;           % Plot the values given in the surrogate analysis for significance
@@ -170,6 +171,10 @@ if nargin > 4 && isstruct(config)
         freqLims=[config.freqLims(1),config.freqLims(end)];
     end
     
+    if isfield(config,'yLims') && ~isempty(config.yLims)
+        yLims=config.yLims;
+    end
+    
     if isfield(config,'surr_params')
         if isfield(config.surr_params,'threshold') && ~isempty(config.surr_params.threshold)
             threshold=config.surr_params.threshold;
@@ -207,7 +212,7 @@ if seriesType == 0
         [ax_diag,ax_offdiag,yLimits,avgPSD,avgConn]=plot_avg([],conn);
     elseif strcmp(plotType,'avgerr')
         [ax_diag,ax_offdiag,~,avgPSD,avgConn,stdPSD,stdConn]=plot_avgerr([],conn);
-        yLimits=[0 1];
+        yLimits=yLims;
     end
 elseif seriesType == 1 || seriesType == 2
     pxx=nan(numFrequencies,numChannels,numTrials);
@@ -752,7 +757,7 @@ end
 
         linkaxes(ax_offdiag); 
         xlim([xLimits(1), xLimits(2)]); 
-        ylim([0 1]);
+        ylim(yLims);
 
     end
 end
