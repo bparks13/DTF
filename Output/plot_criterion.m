@@ -5,7 +5,9 @@ function plot_criterion(criterion,config)
 %  single trial.
 %
 %   Inputs:
-%    - criterion: The information criterion used (AIC/BIC/etc.) in a vector
+%    - criterion: The information criterion used (AIC/BIC/etc.) in a vector. If criterion
+%       is given as a struct containing criteria from all trials, then it will
+%       automatically go through all trials and plot them in the same figure
 %    - config: Optional struct containing additional plotting parameters
 %       hFig: Handle to a figure to plot multiple criterion on the same plot
 %       hAx: Handle to an existing axis, typically a subplot
@@ -85,6 +87,20 @@ if bool_newFig
     figure;
 else
     figure(config.hFig);
+end
+
+if isstruct(criterion)
+    field=fieldnames(criterion);
+    
+    if nargin == 1
+        config.hFig=gcf;
+    end
+    
+    for i=1:length(criterion)
+        plot_criterion(criterion(i).(field{1}),config);
+    end
+    
+    return
 end
 
 if bool_newAx
