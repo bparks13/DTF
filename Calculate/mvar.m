@@ -62,9 +62,8 @@ function [mdl,E,criterion]=mvar(x,config)
 orderRange=1:30;
 crit='bic';
 output=1;
-method='yule';
+method='arfit';
 orderSelection='min';
-estimatorMethod='yule';
 epsilon=0.01;
 pxx_sig=[];
 pxx_ar=[];
@@ -419,7 +418,7 @@ if isempty(mdl.order)
     
     minCritInd=find(criterion==min(criterion));
     
-    [mdl.AR]=estimate_ar_coefficients(x,minCritInd,estimatorMethod);
+    [mdl.AR]=estimate_ar_coefficients(x,minCritInd,method);
     [E,mdl.C]=estimate_residuals(x,mdl.AR);
     mdl.logL=calculate_loglikelihood(E,mdl.C,ll_method);
     mdl.order=minCritInd;
