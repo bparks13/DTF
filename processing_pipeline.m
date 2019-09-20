@@ -45,13 +45,6 @@ filtering.realizations.length=realizationLengthInSeconds*fs_init;
 order_notch=4;
 cutoff_notch=[58,62];
 [filtering.notch.num,filtering.notch.den]=CreateBSF_butter(fs_init,order_notch,cutoff_notch);
-% cutoff_notch=[58,62;118,122];
-% 
-% for i=1:length(cutoff_notch)
-%     [filtering.notch(i).num,filtering.notch(i).den]=CreateBSF_butter(fs_init,order_notch,cutoff_notch(i,:));
-% end
-
-% [filtering.lpf.num,filtering.lpf.den]=CreateLPF_butter(fs_init,8,600);
 [filtering.lpf.num,filtering.lpf.den]=CreateLPF_butter(fs_init,8,round(filtering.downsample/2));
 
 [x_all,fs]=load_data(FILE,channels,[],filtering);
