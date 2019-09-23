@@ -25,7 +25,8 @@ function [pass,h,pVal,cVal]=test_model(E,len,config)
 %   Outputs:
 %    - pass: Boolean denoting whether all models do not reject the null hypothesis of the 
 %       Portmanteau test for whiteness (pass = 1 means the null is not rejected)
-%    - h: Hypothesis rejection values of each series
+%    - h: Hypothesis rejection values of each series. '0' means that the null hypothesis
+%       is not rejected, while '1' means that the null hypothesis is rejected
 %    - pVal: P-value of the test for each series
 %    - cVal: Optional output. Critical values of the hypothesis testing
 %
@@ -126,7 +127,7 @@ end
     
     p=1-chi2cdf(stat,df);
     
-    h=0.05 >= p;
+    h=alpha >= p;
     
     c = chi2inv(1-alpha,df);
         

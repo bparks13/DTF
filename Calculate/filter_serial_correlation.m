@@ -1,5 +1,5 @@
-function [x_filt,filt_values]=filter_serial_correlation(file,config)
-%% [x_filt,filt_values]=filter_serial_correlation(file,config)
+function [x_filt,filt_values]=filter_serial_correlation(x,res,h,config_crit,config)
+%% [x_filt,filt_values]=filter_serial_correlation(x,res,h,config_crit,config)
 %
 %  If the AR model has correlated errors, filter the original signal to get rid of the
 %  correlated errors. Iterates through error model orders sequentially until the signal
@@ -7,8 +7,14 @@ function [x_filt,filt_values]=filter_serial_correlation(file,config)
 %  signal only; need to rerun mvar to reacqure new AR coefficients
 %
 %   Inputs:
-%    - file: String containing the name of the file only, not the path to the file. Can be
-%       empty to open up the uigetfile interface
+%    - x: Original time series data. Size is [n x c], where n is the number of samples
+%       and c is the number of channels
+%    - res: Residuals of the model fit, used for testing the whiteness of the model. Size
+%       is [(n - o) x c], where n is the number of samples, o is the model order, and
+%       c is the number of channels
+%    - h: Hypothesis rejection values of each series. '0' means that the null hypothesis
+%       is not rejected, while '1' means that the null hypothesis is rejected
+%    - config_crit: Struct containing additional parameters, as defined in mvar.m
 %    - config: Optional struct containing additional parameters
 %       maxIterations: Maximum number of times the signal will be filtered at a particular
 %         error model order before the next model order is attempted. Default is 10
@@ -22,24 +28,12 @@ function [x_filt,filt_values]=filter_serial_correlation(file,config)
 %       model order that was filtered, as well as the iteration it was filtered on
 %
 %  See also: filter_signal, test_model, mvar
-
-bool_structGiven=false;
-
-if nargin == 0 || isempty(file)
-    file=uigetfile(fullfile(get_root_path,'Files'));
-    
-    if file == 0
-        x_filt=[];
-        return
-    end
-elseif isstruct(file)
-    bool_structGiven=true;
-end
+%
 
 maxIterations=10;
 errorModelOrders=1:15;
 
-if nargin == 2 && isstruct(config)
+if nargin == 5 && isstruct(config)
     if isfield(config,'maxIterations')
         maxIterations=config.maxIterations;
     end
@@ -49,20 +43,10 @@ if nargin == 2 && isstruct(config)
     end
 end
 
-if ~bool_structGiven
-    data=load(fullfile(get_root_path,'Files',file));
-else
-    data=file;
-end
-
-x=data.x;
-res=data.res;
-h=data.h;
-
-config_e=data.config_crit;
+config_e=config_crit;
 config_e.output=0;
 
-config_filt=data.config_crit;
+config_filt=config_crit;
 config_filt.orderRange=1:15;
 config_filt.output=0;
 
@@ -143,13 +127,7 @@ for i=1:length(fields)
     end
 end
 
-%% Either return the structs, or save the file
-
-if nargout == 0
-    save(fullfile(get_root_path,'Files',file),'-append',x_filt,filt_values);
-    clear x_filt filt_values
-end
-
+% Print a new line to flush the command line output
 fprintf('\n');
 
 end

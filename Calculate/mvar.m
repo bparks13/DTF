@@ -5,9 +5,9 @@ function [mdl,E,criterion]=mvar(x,config)
 %  multi-variate autoregressive model of the signals.
 %
 %   Inputs:
-%    - x: Signals in a matrix format [n x s], where n is the number of samples and s is
-%       the number of series to model
-%    - config: Struct containing optional parameters
+%    - x: Signals in a matrix format [n x c], where n is the number of samples and c is
+%       the number of channels to model
+%    - config: Struct containing additional parameters
 %       orderRange: Vector containing the model orders to consider. Default [1:30]
 %       crit: String defining which information criterion to use, 'aic', 'bic' [default],
 %           'psd', or 'spectra'
@@ -50,8 +50,8 @@ function [mdl,E,criterion]=mvar(x,config)
 %       x_hat: Estimated data from the AR model
 %       pxx: Estimated Power Spectral Density of the x_hat, if crit is defined as 'psd'
 %    - E: Residuals of the model fit, used for testing the whiteness of the model. Size is
-%       [(n - o) x s], where n is the number of samples, o is the model order, and s is
-%       the number of series
+%       [(n - o) x c], where n is the number of samples, o is the model order, and c is
+%       the number of channels
 %    - criterion: Optional output, contains the information criterion chosen in config
 %
 % See also: estimate_ar_coefficients, estimate_residuals, calculate_loglikelihood,
