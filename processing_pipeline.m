@@ -11,19 +11,23 @@ dtf_startup;
 
 %% Load all data
 
-% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET\\OR\\with_DBS';
-% PATIENT_ID='ET_OR_STIM_018';
-% RECORDING_DATE='2018_11_28';
-% RUN_ID='run12';
-PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
-PATIENT_ID='ET_CL_004';
-RECORDING_DATE='2018_06_20';
-RUN_ID='run5';
+PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET\\OR\\with_DBS';
+PATIENT_ID='ET_OR_STIM_018';
+RECORDING_DATE='2018_11_28';
+RUN_ID='run12';
+% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
+% PATIENT_ID='ET_CL_004';
+% RECORDING_DATE='2018_06_20';
+% RUN_ID='run5';
+% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
+% PATIENT_ID='ET_CL_002';
+% RECORDING_DATE='2018_02_01';
+% RUN_ID='run9';
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_Tourette';
 % PATIENT_ID='TS04 Double DBS Implantation';
 MIDPATH='preproc';
-ADDON='_BIC_SAMPLE_SURROGATE';
-NOTES='Trying a longer realization length';
+ADDON='';
+NOTES='Final format';
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
 % config=struct('default',false,'preset',2);
 % [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID,config);
@@ -39,7 +43,7 @@ filtering=struct;
 [filtering.hpf.num,filtering.hpf.den]=CreateHPF_butter(fs_init,3,2);
 filtering.downsample=200;
 filtering.normalize='z-score';
-realizationLengthInSeconds=2.5;
+realizationLengthInSeconds=1;
 filtering.realizations.length=realizationLengthInSeconds*fs_init;
 
 order_notch=4;
@@ -70,7 +74,7 @@ config_crit=struct(...
     'orderSelection','diff1',...
     'crit','bic',...
     'method','arfit',...
-    'orderRange',1:35,...
+    'orderRange',1:20,...
     'fs',fs,...
     'freqRange',freqForAnalysis,...
     'logLikelihoodMethod',2);   % 1 == Matlab, 2 == Ding, 3 == Awareness Paper (see calculate_bic.m)
