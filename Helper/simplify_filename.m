@@ -39,13 +39,13 @@ runID_simp='';
 %         end
 %     end
 
-if strcmp(subjID,'ET_CL_001')
+if strcmp(subjID,'ET_CL_002')
     subjID_simp='S01';
     
-    if strcmp(dateID,'2017_05_17')
+    if strcmp(dateID,'2018_02_01')
         dateID_simp='D01';
         
-        if strcmp(runID,'run12')
+        if strcmp(runID,'run9')
             runID_simp='R01';
         end
     end
@@ -66,6 +66,16 @@ elseif strcmp(subjID,'ET_OR_STIM_018')
         dateID_simp='D01';
         
         if strcmp(runID,'run12')
+            runID_simp='R01';
+        end
+    end
+elseif strcmp(subjID,'TS04 Double DBS Implantation')
+    subjID_simp='S04';
+    
+    if strcmp(dateID,'2017_03_01')
+        dateID_simp='D01';
+        
+        if strcmp(runID,'run16')
             runID_simp='R01';
         end
     end
