@@ -13,12 +13,12 @@ function [surrogate,distribution,pxx]=surrogate_analysis(file,config)
 %       cond: A cell array containing one or more conditions to focus on, running
 %           surrogate on each individual trial with no combining of trials
 %       method: String indicating which method to use. All surrogate analysis uses
-%           trial-shuffling, but this can be constrained to a single condition ['single']
-%           (default), can shuffle trials from all conditions together ['combine'],
-%           randomly shuffle individual time points from within each trial ['sample'], or
-%           shift the whole signal in time ['shift']
-%       signal: String defining if the original signal is used ['original', default], or the
-%           decorrelated signal ['decorr']
+%           trial-shuffling, but this can be constrained to a single condition ['single'],
+%           can shuffle trials from all conditions together ['combine'],
+%           randomly shuffle individual time points from within each trial ['sample',
+%           (default)], or shift the whole signal in time ['shift']
+%       signal: String defining if the original signal is used ['original', default], or
+%           the decorrelated signal ['decorr']
 %       iterations: Int defining the number of times to run through the dataset
 %       numSamples: Int defining how many consecutive samples to randomly select if the
 %           method is defined as 'sample'
@@ -27,9 +27,6 @@ function [surrogate,distribution,pxx]=surrogate_analysis(file,config)
 %    - surrogate: Struct containing all of the values created by the surrogate analysis
 %    - distribution: Struct containing the specific trials used in each condition, to
 %       check that the surrogate analysis has a uniform distribution. 
-%        * For the bivariate use case of 'shift', distribution is comprised of the random
-%          trial chosen in the first column, followed by the random shift of the channel
-%          in the second column
 %    - pxx: Optional output, returns a struct containing all of the PSD values for each
 %       iteration, as well as the averages and standard deviations
 %  
