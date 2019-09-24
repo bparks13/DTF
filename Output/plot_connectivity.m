@@ -117,7 +117,7 @@ plotType='ind';
 figTitle='';
 seriesType=1;
 threshold=0.01;
-yLim=[0 1]; % Y Limits for the connectivity measures
+yLims=[0 1]; % Y Limits for the connectivity measures
 
 bool_showRejectedNull=false;        % whether or not to plot the rejected null hypothesis trials in red
 bool_plotThreshold=false;           % Plot the values given in the surrogate analysis for significance
