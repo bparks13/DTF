@@ -26,7 +26,9 @@ function [pass,h,pVal,cVal]=test_model(E,len,config)
 %    - pass: Boolean denoting whether all models do not reject the null hypothesis of the 
 %       Portmanteau test for whiteness (pass = 1 means the null is not rejected)
 %    - h: Hypothesis rejection values of each series. '0' means that the null hypothesis
-%       is not rejected, while '1' means that the null hypothesis is rejected
+%       is not rejected, while '1' means that the null hypothesis is rejected. Size is
+%       [t x c], where t is the number of trials in that condition and c is the number of
+%       channels
 %    - pVal: P-value of the test for each series
 %    - cVal: Optional output. Critical values of the hypothesis testing
 %
