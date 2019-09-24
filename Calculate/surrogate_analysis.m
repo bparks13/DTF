@@ -1,27 +1,29 @@
-function [surrogate,distribution,pxx]=surrogate_analysis(file,config)
-%% [results,distribution,pxx]=surrogate_analysis(file,config)
+function [surrogate,distribution,pxx]=surrogate_analysis(x,fs,freqRange,config_crit,config)
+%% [results,distribution,pxx]=surrogate_analysis(x,fs,freqRange,config_crit,config)
 %
-%  Performs surrogate analysis on a pre-existing file, creating an empirical distribution
+%  Performs surrogate analysis on the given data, creating an empirical distribution
 %  of samples and then calculating if the values found for connectivity are significant
 %  based on this distribution
 %
 %   Inputs:
-%    - file: String containing the filename to be opened. If this is empty, uigetfile is
-%       called so the user can pick the file to open. Note that this is not the absolute
-%       path, only the filename itself
-%    - config: Optional struct containing additional parameters
-%       cond: A cell array containing one or more conditions to focus on, running
+%    - x: Struct containing the original time series data. The first fields are the
+%       conditions from the runs, and each field is a matrix of size is [n x c], where n
+%       is the number of samples  and c is the number of channels
+%    - fs: Sampling frequency in Hz
+%    - freqRange: Vector of the range of frequencies over which the connectivity is
+%       measured 
+%    - config_crit: Struct containing additional parameters, as defined in mvar.m
+%    - config: Struct containing additional parameters
+%       cond: Optional, a cell array containing one or more conditions to focus on, running
 %           surrogate on each individual trial with no combining of trials
 %       method: String indicating which method to use. All surrogate analysis uses
 %           trial-shuffling, but this can be constrained to a single condition ['single'],
 %           can shuffle trials from all conditions together ['combine'],
 %           randomly shuffle individual time points from within each trial ['sample',
 %           (default)], or shift the whole signal in time ['shift']
-%       signal: String defining if the original signal is used ['original', default], or
-%           the decorrelated signal ['decorr']
 %       iterations: Int defining the number of times to run through the dataset
 %       numSamples: Int defining how many consecutive samples to randomly select if the
-%           method is defined as 'sample'
+%           method is defined as 'sample'. Default is 1
 %
 %   Outputs:
 %    - surrogate: Struct containing all of the values created by the surrogate analysis
@@ -46,54 +48,20 @@ function [surrogate,distribution,pxx]=surrogate_analysis(file,config)
 %  Based on the trial-shuffling procedure for surrogate found in
 %  10.1016/j.neuroimage.2004.09.036 
 
-method='sample';
-bool_original=true;
-bool_structGiven=false;
-
 %% Load file
 
-if nargin==0 || isempty(file)
-    file=uigetfile(fullfile(get_root_path,'Files','*.mat'));
-    
-    if file == 0
-        surrogate=[];
-        return
-    end
-elseif isstruct(file)
-    bool_structGiven=true;
-end
-
-if ~bool_structGiven
-    data=load(fullfile(get_root_path,'Files',file));
-else
-    data=file;
-    
-    [~,name,ext] = fileparts(data.newFile);
-    file=[name,ext];
-end
-
-fs=data.fs;
-freqForAnalysis=data.config_plot.freqLims;
-freqRange=data.freqRange;
-fields=fieldnames(data.x);
+fields=fieldnames(x);
 numIterations=1000;
-numSamplesUsed=nan;
+numSamplesUsed=1;
+method='sample';
 
-if nargin == 2 && isstruct(config)
+if isstruct(config)
     if isfield(config,'cond') && ~isempty(config.cond)
         fields=config.cond;
     end
     
     if isfield(config,'method') && ~isempty(config.method)
         method=config.method;
-    end
-    
-    if isfield(config,'signal') && ~isempty(config.signal)
-        if strcmp(config.signal,'original')
-            bool_original=true;
-        elseif strcmp(config.signal,'decorr') && isfield(data,'x_filt')
-            bool_original=false;
-        end
     end
     
     if isfield(config,'iterations') && ~isempty(config.iterations)
@@ -109,25 +77,10 @@ if nargin == 2 && isstruct(config)
     end
 end
 
-config_crit=struct(...
-    'orderSelection',data.config_crit.orderSelection,...
-    'crit',data.config_crit.crit,...
-    'orderRange',data.config_crit.orderRange,...
-    'method',data.config_crit.method,...
-    'fs',fs,...
-    'freqRange',freqForAnalysis,...
-    'output',0);
+config_crit.output=0;
 
 surrogate=struct;
 distribution=struct;
-
-if bool_original
-    xVar='x';
-    arVar='ar';
-else
-    xVar='x_filt';
-    arVar='ar_filt';
-end
 
 if nargout == 3
     pxx=struct;
@@ -142,12 +95,9 @@ if strcmp(method,'single')
     for k=1:numFields
         currCond=fields{k};
 
-        x=data.(xVar).(currCond);
-        ar=data.(arVar).(currCond);
-
-        numSamples=size(x,1);
-        numChannels=size(x,2);
-        numTrials=size(x,3);
+        numSamples=size(x.(currCond),1);
+        numChannels=size(x.(currCond),2);
+        numTrials=size(x.(currCond),3);
 
         tmp_x=zeros(numSamples,numChannels);
         gamma_dist=zeros(numChannels,numChannels,length(freqRange),numIterations);
@@ -163,7 +113,7 @@ if strcmp(method,'single')
             randomTrials=randperm(numTrials,numChannels);
 
             for j=1:numChannels
-                tmp_x(:,j)=x(:,j,randomTrials(j));
+                tmp_x(:,j)=x.(currCond)(:,j,randomTrials(j));
             end
 
             [tmp_mdl,~,~]=mvar(tmp_x,config_crit);
@@ -190,23 +140,23 @@ if strcmp(method,'single')
 elseif strcmp(method,'combine')
     minLength=inf;
     numTrials=0;
-    numChannels=size(data.(xVar).(fields{1}),2);
+    numChannels=size(x.(fields{1}),2);
     
     for i=1:length(fields)
-        if minLength > size(data.(xVar).(fields{i}),1)
-            minLength=size(data.(xVar).(fields{i}),1);
+        if minLength > size(x.(fields{i}),1)
+            minLength=size(x.(fields{i}),1);
         end
         
-        numTrials=numTrials+size(data.(xVar).(fields{i}),3);
+        numTrials=numTrials+size(x.(fields{i}),3);
     end
     
-    x=nan(minLength,numChannels,numTrials);
+    x_all=nan(minLength,numChannels,numTrials);
     names=cell(numTrials,1);
     count=1;
     
     for i=1:length(fields)
-        for j=1:size(data.(xVar).(fields{i}),3)
-            x(:,:,count)=data.(xVar).(fields{i})(1:minLength,:,j);
+        for j=1:size(x.(fields{i}),3)
+            x_all(:,:,count)=x.(fields{i})(1:minLength,:,j);
             names{count}=sprintf('%s%d',fields{i},j);
             count=count+1;
         end
@@ -226,7 +176,7 @@ elseif strcmp(method,'combine')
         randomTrials=randperm(numTrials,numChannels);
         
         for j=1:numChannels
-            tmp_x(:,j)=x(:,j,randomTrials(j));
+            tmp_x(:,j)=x_all(:,j,randomTrials(j));
             tmp_dist{i,j}=names{randomTrials(j)};
         end
         
@@ -260,17 +210,10 @@ elseif strcmp(method,'sample')
     for k=1:numFields
         currCond=fields{k};
 
-        x=data.(xVar).(currCond);
-        ar=data.(arVar).(currCond);
-
-        numSamples=size(x,1);
-        numChannels=size(x,2);
-        numTrials=size(x,3);
+        numSamples=size(x.(currCond),1);
+        numChannels=size(x.(currCond),2);
+        numTrials=size(x.(currCond),3);
         
-        if nargout == 3
-            sum_pxx=zeros(length(freqRange),numChannels);
-        end
-
         gamma_dist=zeros(numChannels,numChannels,length(freqRange),numIterations);
         distribution.(currCond)=nan(numIterations,numChannels);
 
@@ -288,7 +231,7 @@ elseif strcmp(method,'sample')
             
             if numSamplesUsed == 1
                 for m=1:numChannels
-                    tmp_x=x(:,m,randomTrials(m));
+                    tmp_x=x.(currCond)(:,m,randomTrials(m));
                     for j=1:numSampleIterations
                         randomSample=randi(length(tmp_x),1);
                         tmp_x_shuffled(j,m)=tmp_x(randomSample);
@@ -299,7 +242,7 @@ elseif strcmp(method,'sample')
                 tmp_x=tmp_x_shuffled;
             else
                 for m=1:numChannels
-                    tmp_x=x(:,m,randomTrials(m));
+                    tmp_x=x.(currCond)(:,m,randomTrials(m));
                     for j=1:numSampleIterations
                         randomSample=randi(length(tmp_x)-numSamplesUsed+1,1);
                         tmp_x_shuffled((j-1)*numSamplesUsed+1:j*numSamplesUsed,m)=tmp_x(randomSample:randomSample+numSamplesUsed-1);
@@ -341,12 +284,9 @@ elseif strcmp(method,'shift')
     for k=1:numFields
         currCond=fields{k};
 
-        x=data.(xVar).(currCond);
-        ar=data.(arVar).(currCond);
-
-        numSamples=size(x,1);
-        numChannels=size(x,2);
-        numTrials=size(x,3);
+        numSamples=size(x.(currCond),1);
+        numChannels=size(x.(currCond),2);
+        numTrials=size(x.(currCond),3);
         
         maxShift=numSamples-1;
 
@@ -366,8 +306,8 @@ elseif strcmp(method,'shift')
                 randomShift=randi(maxShift,1);
                 
                 tmp_x=nan(numSamples,numChannels);
-                tmp_x(:,1)=x(:,1,randomTrial);
-                tmp_x(:,2)=wshift('1',x(:,2,randomTrial),randomShift);
+                tmp_x(:,1)=x.(currCond)(:,1,randomTrial);
+                tmp_x(:,2)=wshift('1',x.(currCond)(:,2,randomTrial),randomShift);
                 
                 [tmp_mdl,~,~]=mvar(tmp_x,config_crit);
                 gamma_dist(:,:,:,i)=dtf(tmp_mdl,freqRange,fs);
@@ -393,20 +333,6 @@ elseif strcmp(method,'shift')
             disp('Multivariate time shifting is not implemented yet')
             return
         end
-    end
-end
-
-%% Either save the file, or return the struct
-
-if nargout==0
-    if bool_original
-        save(fullfile(get_root_path,'Files',file),'-append','surrogate','distribution')
-        clear surrogate distribution
-    else
-        surrogate_filt=surrogate; %#ok<*NASGU>
-        distribution_filt=distribution;
-        save(fullfile(get_root_path,'Files',file),'-append','surrogate_filt','distribution_filt')
-        clear surrogate_filt surrogate distribution distribution_filt
     end
 end
 
