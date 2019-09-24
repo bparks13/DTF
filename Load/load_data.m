@@ -1,5 +1,5 @@
-function [x,fs,x_all]=load_data(file,channels,condition,filtering)
-%% [x,fs,x_all]=load_data(file,channels,condition,filtering)
+function [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type)
+%% [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type)
 %
 %  Given a filename and the specific condition to take data from, returns the signal from
 %  all the trials matching that condition, and the sampling frequency used for this file.
@@ -7,9 +7,7 @@ function [x,fs,x_all]=load_data(file,channels,condition,filtering)
 %
 %   Inputs:
 %    - file: Filename specifying the full file path to the file
-%    - condition: Assumed to be the condition in visual_stim, corresponding to different
-%       conditions depending on the specific file opened. Ensure that the value given
-%       matches the file given
+%    - condition: Integer value defining the state matching a specific condition
 %    - channels: Vector of ints defining which channels to extract. If it is a matrix, the
 %       bipolar combination of channels is taken, with the second column channel subtracted
 %       from the first column channel. Size is [c x 2], where c is the number of channels
@@ -41,6 +39,9 @@ function [x,fs,x_all]=load_data(file,channels,condition,filtering)
 %           times the sampling frequency. Note that this is the initial sampling
 %           frequency, but the time of each realization in seconds will remain the same is
 %           'downsample' is specified
+%    - visit_type: String defining what type of recording this file came from, typically
+%       either 'intraop' or 'closed-loop'. Used for determining how to extract the times
+%       of each trial in each condition
 %
 %   Outputs:
 %    - x: Matrix of values for all channels and all trials matching a particular
@@ -56,6 +57,10 @@ function [x,fs,x_all]=load_data(file,channels,condition,filtering)
 
 % example conditions: for ET_CL_04, 2018_06_20, run 5: 1 (rest), 2 (cue right), 3 (cue 
 % left), 4 (move right), 5 (move left)
+
+if nargin == 4
+    visit_type='';
+end
 
 data=load(file);
 
@@ -182,7 +187,13 @@ end
 
 % Extract all trials matching 'condition'
 
-instruct=data.datastorage.src.visual_stim.data;
+if strcmp(visit_type,'intraop') || strcmp(visit_type,'')
+    instruct=data.datastorage.src.visual_stim.data;
+elseif strcmp(visit_type,'closed-loop')
+    instruct=extract_visual_stim_for_closed_loop(file);
+else
+    error('Invalid visit_type variable given')
+end
 
 ind_change_all=find(diff(instruct) ~= 0)+1;
 ind_change_curr=find(diff(instruct) ~= 0 & instruct(2:end) == condition)+1;
