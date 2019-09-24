@@ -1,5 +1,5 @@
-function [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type)
-%% [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type)
+function [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type,cues_only)
+%% [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type,cues_only)
 %
 %  Given a filename and the specific condition to take data from, returns the signal from
 %  all the trials matching that condition, and the sampling frequency used for this file.
@@ -42,6 +42,8 @@ function [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type)
 %    - visit_type: String defining what type of recording this file came from, typically
 %       either 'intraop' or 'closed-loop'. Used for determining how to extract the times
 %       of each trial in each condition
+%    - cues_only: Boolean defining whether or not to use the trials based on acceleration
+%       data (false) or to go based on the cues only (true, default)
 %
 %   Outputs:
 %    - x: Matrix of values for all channels and all trials matching a particular
@@ -60,6 +62,9 @@ function [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type)
 
 if nargin == 4
     visit_type='';
+    cues_only=true;
+elseif nargin == 5
+    cues_only=true;
 end
 
 data=load(file);
@@ -78,6 +83,10 @@ else
     for i=1:numChannels
         x_all(:,i)=data.datastorage.src.LFP.data(1:end-1,channels(i));
     end
+end
+
+if strcmp(visit_type,'closed-loop')
+    x_all=x_all*1e3;    % Medtronic recordings are in µV, convert to mV to be consistent
 end
 
 % Flexible filtering parameters from the filtering struct 
@@ -168,12 +177,6 @@ if isempty(condition) || ~any(condition)
     x=x_all;
     x_all=[];
     
-    if isfield(filtering,'downsample')
-        indToSkip=round(fs/filtering.downsample);
-        x=downsample(x,indToSkip);
-        fs=filtering.downsample;
-    end
-
     if bool_normalize
         if strcmp(filtering.normalize,'z-score')
             for i=1:numChannels
@@ -182,6 +185,25 @@ if isempty(condition) || ~any(condition)
         end
     end
     
+    if isfield(filtering,'downsample')
+        freqRatio=round(fs/filtering.downsample);
+    
+        if freqRatio * filtering.downsample ~= fs % Uneven frequency ratio, need to interpolate data first
+            t=(0:length(x)-1)/fs;
+            t_new=linspace(0,t(end),round(t(end) * freqRatio * filtering.downsample));
+            tmp_x=nan(length(t_new),numChannels);
+            
+            for i=1:numChannels
+                tmp_x(:,i)=interp1(t,x(:,i),t_new); % Test different interpolation methods here
+            end
+            
+            x=tmp_x;
+        end
+    
+        x=downsample(x,freqRatio);
+        fs=filtering.downsample;
+    end
+
     return
 end
 
@@ -190,7 +212,7 @@ end
 if strcmp(visit_type,'intraop') || strcmp(visit_type,'')
     instruct=data.datastorage.src.visual_stim.data;
 elseif strcmp(visit_type,'closed-loop')
-    instruct=extract_visual_stim_for_closed_loop(file);
+    instruct=extract_visual_stim_for_closed_loop(file,cues_only);
 else
     error('Invalid visit_type variable given')
 end
@@ -284,18 +306,23 @@ if bool_normalize
 end
     
 if isfield(filtering,'downsample')
-    indToSkip=round(fs/filtering.downsample);
-    x_all=downsample(x_all,indToSkip);
-    tmp_x=zeros(ceil(size(x,1)/indToSkip),size(x,2),size(x,3));
+    freqRatio=round(fs/filtering.downsample);
     
-    for i=1:size(x,2)
-        for j=1:size(x,3)
-            tmp_x(:,i,j)=downsample(x(:,i,j),indToSkip);
+    if freqRatio * filtering.downsample ~= fs % Uneven frequency ratio, need to interpolate data first
+        t=(0:length(x)-1)/fs;
+        t_new=linspace(0,t(end),round(t(end) * freqRatio * filtering.downsample));
+        tmp_x=nan(length(t_new),numChannels,size(x,3));
+
+        for i=1:numChannels
+            for j=1:size(x,3)
+                tmp_x(:,i,j)=interp1(t,x(:,i,j),t_new); % Test different interpolation methods here
+            end
         end
+        
+        x=tmp_x;
     end
-    
-    x=tmp_x;
-    
+
+    x=downsample(x,freqRatio);
     fs=filtering.downsample;
 end
 
