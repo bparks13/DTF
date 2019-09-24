@@ -16,19 +16,23 @@ dtf_startup;
 % PATIENT_ID='ET_OR_STIM_018';
 % RECORDING_DATE='2018_11_28';
 % RUN_ID='run12';
-PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
-PATIENT_ID='ET_CL_004';
-RECORDING_DATE='2018_06_20';
-RUN_ID='run5';
-% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_Tourette';
-% PATIENT_ID='TS04 Double DBS Implantation';
+% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
+% PATIENT_ID='ET_CL_004';
+% RECORDING_DATE='2018_06_20';
+% RUN_ID='run5';
+% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
+% PATIENT_ID='ET_CL_002';
+% RECORDING_DATE='2018_02_01';
+% RUN_ID='run9';
+PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_Tourette';
+PATIENT_ID='TS04 Double DBS Implantation';
+RECORDING_DATE='2017_03_01';
+RUN_ID='run16';
 MIDPATH='preproc';
-ADDON='_BIC_SAMPLE_SURROGATE';
-NOTES='Trying a longer realization length';
+ADDON='';
+NOTES='Final format';
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
-% config=struct('default',false,'preset',2);
-% [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID,config);
-[channels,labels,conditions,cond_labels]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID);
+[channels,labels,conditions,cond_labels,visit_type]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID);
 
 if isempty(channels) || isempty(labels) || isempty(conditions) || isempty(cond_labels)
     return
@@ -40,7 +44,7 @@ filtering=struct;
 [filtering.hpf.num,filtering.hpf.den]=CreateHPF_butter(fs_init,3,2);
 filtering.downsample=200;
 filtering.normalize='z-score';
-realizationLengthInSeconds=2.5;
+realizationLengthInSeconds=1;
 filtering.realizations.length=realizationLengthInSeconds*fs_init;
 
 order_notch=4;
@@ -65,13 +69,20 @@ avg_psd=struct;
 avg_gamma=struct;
 pass=struct;
 
+ar_filt=struct;
+res_filt=struct;
+crit_filt=struct;
+h_filt=struct;
+pVal_filt=struct;
+gamma_filt=struct;
+
 freqForAnalysis=4:0.5:100;
 
 config_crit=struct(...
     'orderSelection','diff1',...
     'crit','bic',...
     'method','arfit',...
-    'orderRange',1:35,...
+    'orderRange',1:20,...
     'fs',fs,...
     'freqRange',freqForAnalysis,...
     'logLikelihoodMethod',2);   % 1 == Matlab, 2 == Ding, 3 == Awareness Paper (see calculate_bic.m)
@@ -86,6 +97,8 @@ config_surr=struct(...
     'numSamples',1);
 
 %% Main Loop for initial processing
+
+fprintf('First pass beginning...\n');
 
 for j=1:numConditions
     currCond=cond_labels{j};
@@ -123,22 +136,23 @@ for j=1:numConditions
     print_whiteness(h.(currCond),pVal.(currCond),labels);
 end
 
+fprintf('First pass completed.\n');
+
 %% Surrogate Analysis
 
-surrogate_analysis(data,config_surr);
+fprintf('Surrogate analysis of initial pass beginning...\n');
+[surrogate,distribution,pxx]=surrogate_analysis(x,fs,freqRange,config_crit,config_surr);
+fprintf('Surrogate analyis of initial pass completed.\n');
 
 %% Decorrelation
 
+fprintf('Decorrelating time series channels...\n');
 [x_filt,filt_values]=filter_serial_correlation(x,res,h,config_crit);
+fprintf('Decorrelation completed.\n');
 
 %% Main Loop for decorrelated data
 
-ar_filt=struct;
-res_filt=struct;
-crit_filt=struct;
-h_filt=struct;
-pVal_filt=struct;
-gamma_filt=struct;
+fprintf('Decorrelated data connectivity calculations beginning...\n');
 
 for i=1:length(cond_labels)
     currCond=cond_labels{i};
@@ -149,31 +163,50 @@ for i=1:length(cond_labels)
     
     h_filt.(currCond)=nan(numTrials,numChannels);
     pVal_filt.(currCond)=nan(numTrials,numChannels);
-    pass_filt.(currCond)=zeros(numTrials,1);
+    pass_filt.(currCond)=ones(numTrials,1);
 
     gamma_filt.(currCond)=zeros(numChannels,numChannels,length(freqRange),numTrials);
 
     for j=1:numTrials
-        if data.filt_values.(currCond)(j).decorrelated
+        if filt_values.(currCond)(j).decorrelated
             fprintf('%d/%d - ',j,numTrials);
 
-            % Calculate all MVAR models
+            %% Calculate MVAR model
             [ar_filt.(currCond)(j).mdl,res_filt.(currCond)(j).E,crit_filt.(currCond)(j).(config_crit.crit)]=...
-                mvar(squeeze(data.x_filt.(currCond)(:,:,j)),config_crit);
+                mvar(squeeze(x_filt.(currCond)(:,:,j)),config_crit);
 
-            % Test whiteness
-            [pass_filt.(currCond),h_filt.(currCond)(j,:),pVal_filt.(currCond)(j,:)]=...
-                test_model(res_filt.(currCond)(j).E,length(data.x_filt.(currCond)(:,:,j)));
+            %% Test whiteness
+            [pass_filt.(currCond)(j),h_filt.(currCond)(j,:),pVal_filt.(currCond)(j,:)]=...
+                test_model(res_filt.(currCond)(j).E,length(x_filt.(currCond)(:,:,j)));
 
-            % Calculate DTF
+            %% Calculate DTF Connectivity
             gamma_filt.(currCond)(:,:,:,j)=dtf(ar_filt.(currCond)(j).mdl,freqRange,fs);
+        else
+            warning('Trial %d of %d was not properly deocrrelated',j,numTrials)
         end
     end
     
     print_whiteness(h_filt.(currCond),pVal_filt.(currCond),labels);
 end
 
+fprintf('Decorrelated data connectivity calculations completed.\n');
 
+%% Surrogate Analysis on Decorrelated Data
+
+fprintf('Surrogate analysis of decorrelated data beginning...\n');
+[surrogate_filt,distribution_filt,pxx_filt]=surrogate_analysis(x_filt,fs,freqRange,config_crit,config_surr);
+fprintf('Surrogate analyis of decorrelated data completed.\n');
+
+%% Save all relevant variables
+
+newFile=simplify_filename(PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON);
+
+save(newFile,'ADDON','ar','channels','conditions','cond_labels','crit',...
+    'FILE','freqRange','freqForAnalysis','filtering','fs','fs_init','gamma','h','labels',...
+    'newFile','pass','PATIENT_ID','pVal','RECORDING_DATE','res','RUN_ID','x','x_all',...
+    'config_crit','config_plot','config_surr','NOTES','surrogate','distribution','pxx',...
+    'x_filt','filt_values','ar_filt','res_filt','crit_filt','h_filt','pVal_filt',...
+    'gamma_filt','surrogate_filt','distribution_filt','pxx_filt','visit_type');
 
 
 
