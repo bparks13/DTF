@@ -10,27 +10,34 @@
 CCC;
 dtf_startup;
 
-%% Load Data
+%% Definitions
 
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET\\OR\\with_DBS';
 % PATIENT_ID='ET_OR_STIM_018';
 % RECORDING_DATE='2018_11_28';
 % RUN_ID='run12';
-% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
-% PATIENT_ID='ET_CL_004';
+PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
+PATIENT_ID='ET_CL_004';
 % RECORDING_DATE='2018_06_20';
 % RUN_ID='run5';
+RECORDING_DATE='2018_08_23';
+RUN_ID='run1';
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
 % PATIENT_ID='ET_CL_002';
 % RECORDING_DATE='2018_02_01';
 % RUN_ID='run9';
-PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_Tourette';
-PATIENT_ID='TS04 Double DBS Implantation';
-RECORDING_DATE='2017_03_01';
-RUN_ID='run16';
+% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_Tourette';
+% PATIENT_ID='TS04 Double DBS Implantation';
+% RECORDING_DATE='2017_03_01';
+% RUN_ID='run16';
 MIDPATH='preproc';
 ADDON='';
 NOTES='Final format';
+
+cues_only=true;
+
+%% Load Data
+
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
 [channels,labels,conditions,cond_labels,visit_type]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID);
 
@@ -45,14 +52,14 @@ filtering=struct;
 filtering.downsample=200;
 filtering.normalize='z-score';
 realizationLengthInSeconds=1;
-filtering.realizations.length=realizationLengthInSeconds*fs_init;
+filtering.realizations.length=floor(realizationLengthInSeconds*fs_init);
 
 order_notch=4;
 cutoff_notch=[58,62];
 [filtering.notch.num,filtering.notch.den]=CreateBSF_butter(fs_init,order_notch,cutoff_notch);
 [filtering.lpf.num,filtering.lpf.den]=CreateLPF_butter(fs_init,8,round(filtering.downsample/2));
 
-[x_all,fs]=load_data(FILE,channels,[],filtering);
+[x_all,fs]=load_data(FILE,channels,[],filtering,visit_type);
 
 numConditions=length(conditions);
 freqRange=1:(fs/2);
@@ -105,7 +112,7 @@ for j=1:numConditions
     
     fprintf('Beginning condition ''%s''\n',currCond);
     
-    [x.(currCond),~]=load_data(FILE,channels,conditions(j),filtering);
+    [x.(currCond),~]=load_data(FILE,channels,conditions(j),filtering,visit_type,cues_only);
 
     numTrials=size(x.(currCond),3);
     numChannels=length(channels);
@@ -206,7 +213,7 @@ save(newFile,'ADDON','ar','channels','conditions','cond_labels','crit',...
     'newFile','pass','PATIENT_ID','pVal','RECORDING_DATE','res','RUN_ID','x','x_all',...
     'config_crit','config_plot','config_surr','NOTES','surrogate','distribution','pxx',...
     'x_filt','filt_values','ar_filt','res_filt','crit_filt','h_filt','pVal_filt',...
-    'gamma_filt','surrogate_filt','distribution_filt','pxx_filt','visit_type');
+    'gamma_filt','surrogate_filt','distribution_filt','pxx_filt','visit_type','cues_only');
 
 
 
