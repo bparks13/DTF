@@ -58,6 +58,12 @@ elseif strcmp(subjID,'ET_CL_004')
         if strcmp(runID,'run5')
             runID_simp='R01';
         end
+    elseif strcmp(dateID,'2018_08_23')
+        dateID_simp='D02';
+        
+        if strcmp(runID,'run1')
+            runID_simp='R01';
+        end
     end
 elseif strcmp(subjID,'ET_OR_STIM_018')
     subjID_simp='S03';

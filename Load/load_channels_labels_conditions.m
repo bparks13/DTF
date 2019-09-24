@@ -1,5 +1,5 @@
-function [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(patient,record_date,run_id,config)
-%% [channels,labels,conditions,cond_labels]=load_channels_labels_conditions(patient,record_date,run_id,config)
+function [channels,labels,conditions,cond_labels,visit_type]=load_channels_labels_conditions(patient,record_date,run_id,config)
+%% [channels,labels,conditions,cond_labels,visit_type]=load_channels_labels_conditions(patient,record_date,run_id,config)
 %
 %  Given the relevant information, return the channels, labels, and conditions
 %  corresponding to those channels. Additional options can be given using 'config'.
@@ -34,6 +34,7 @@ function [channels,labels,conditions,cond_labels]=load_channels_labels_condition
 %    - conditions: Vector containing all possible conditions available for this specific
 %       set of inputs. Size is [1 x m], where m is the number of conditions returned
 %    - cond_labels: Cell array consisting of strings denoting what each condition is
+%    - visit_type: String defining whether the run is 'intraop' or 'closed-loop'
 %
 %  See also: processing_pipeline
 %
@@ -73,6 +74,7 @@ end
 %             labels={};
 %             conditions=[];
 %             cond_labels={};
+%             visit_type='';
 %             return
 %         else
 %             error('WARNING: Invalid run number given. Please set channels/labels for this combination');
@@ -90,6 +92,7 @@ if bool_default
                 labels={'Vim (3-2)','Vim (1-0)','Cort (3-2)','Cort (1-0)'};
                 conditions=[1,2,3,4];
                 cond_labels={'Rest','MoveRight','MoveLeft','FeelRight'};
+                visit_type='intraop';
                 return
             else
                 error('WARNING: Invalid run number given. Please set channels/labels for this combination');
@@ -104,6 +107,7 @@ if bool_default
                 labels={'Vim (3-2)','Vim (1-0)','Cort (3-2)','Cort (1-0)'};
                 conditions=[1,2,3,4,5];
                 cond_labels={'Rest','CueRight','CueLeft','MoveRight','MoveLeft'};
+                visit_type='intraop';
                 return
             else
                 error('WARNING: Invalid run number given. Please set channels/labels for this combination');
@@ -114,6 +118,7 @@ if bool_default
                 labels={'E1-E3','E9-E11'};
                 conditions=[];
                 cond_labels={};
+                visit_type='device-implantation';
                 warning('Device implantation surgery. Skip this data');
                 return
             elseif strcmp(run_id,'run4')
@@ -121,6 +126,7 @@ if bool_default
                 labels={'E0-E2','E8-E10'};
                 conditions=[];
                 cond_labels={};
+                visit_type='device-implantation';
                 warning('Device implantation surgery. Skip this data');
                 return                
             end
@@ -128,8 +134,9 @@ if bool_default
             if strcmp(run_id,'run1')
                 channels=[1;2];
                 labels={'E1-E3','E9-E11'};
-                conditions=[];
-                cond_labels={};
+                conditions=[1,2,3,4,5];
+                cond_labels={'Rest','CueRight','MoveRight','CueLeft','MoveLeft'};
+                visit_type='closed-loop';
                 return
             end
         else
@@ -142,6 +149,7 @@ if bool_default
                 labels={'VO (3-2)','VO (1-0)','Vim (3-2)','Vim (1-0)','Cort (5-4)','Cort (3-2)','Cort (1-0)'};
                 conditions=[1,2,3,4];
                 cond_labels={'Rest','MoveRight','MoveLeft','Caress'};
+                visit_type='intraop';
                 return
             else
                 error('WARNING: Invalid run number given. Please set channels/labels for this combination');
@@ -157,6 +165,7 @@ if bool_default
                     'R Cort (3-2)','R Cort (1-0)','L Cort (3-2)','L Cort (1-0)'};
                 conditions=[1,2,3];
                 cond_labels={'Rest','MoveRight','MoveLeft'};
+                visit_type='intraop';
                 return
             else
                 error('WARNING: Invalid run number given. Please set channels/labels for this combination');
@@ -171,6 +180,7 @@ if bool_default
                 labels={'Vim (3-2)','Vim (1-0)','Cort (3-2)','Cort (1-0)'};
                 conditions=[1,2,3,4,5];
                 cond_labels={'Rest','CueRight','CueLeft','MoveRight','MoveLeft'};
+                visit_type='intraop';
                 return
             else
                 error('WARNING: Invalid run number given. Please set channels/labels for this combination');
