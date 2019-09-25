@@ -1,5 +1,5 @@
-function [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type,cues_only)
-%% [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type,cues_only)
+function [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type,cues_only,extrap_method)
+%% [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type,cues_only,extrap_method)
 %
 %  Given a filename and the specific condition to take data from, returns the signal from
 %  all the trials matching that condition, and the sampling frequency used for this file.
@@ -44,6 +44,8 @@ function [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type,cue
 %       of each trial in each condition
 %    - cues_only: Boolean defining whether or not to use the trials based on acceleration
 %       data (false) or to go based on the cues only (true, default)
+%    - extrap_method: String defining the method to use for extrapolation. Only used for
+%       PC+S data. Common inputs are 'linear', 'pchip', and 'spline'
 %
 %   Outputs:
 %    - x: Matrix of values for all channels and all trials matching a particular
@@ -63,8 +65,12 @@ function [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type,cue
 if nargin == 4
     visit_type='';
     cues_only=true;
+    extrap_method='';
 elseif nargin == 5
     cues_only=true;
+    extrap_method='';
+elseif nargin == 6
+    extrap_method='';
 end
 
 data=load(file);
@@ -194,7 +200,7 @@ if isempty(condition) || ~any(condition)
             tmp_x=nan(length(t_new),numChannels);
             
             for i=1:numChannels
-                tmp_x(:,i)=interp1(t,x(:,i),t_new); % Test different interpolation methods here
+                tmp_x(:,i)=interp1(t,x(:,i),t_new,extrap_method); % Test different interpolation methods here
             end
             
             x=tmp_x;
@@ -315,7 +321,7 @@ if isfield(filtering,'downsample')
 
         for i=1:numChannels
             for j=1:size(x,3)
-                tmp_x(:,i,j)=interp1(t,x(:,i,j),t_new); % Test different interpolation methods here
+                tmp_x(:,i,j)=interp1(t,x(:,i,j),t_new,extrap_method); % Test different interpolation methods here
             end
         end
         
