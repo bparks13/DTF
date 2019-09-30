@@ -69,7 +69,7 @@ if cues_only
 else
     instruct(events.right_hand_cue)=R_CUE;
     instruct(events.right_hand_go)=R_GO;
-%     instruct=clean_instruct(instruct);
+    instruct=clean_instruct(instruct);
 %     instruct=fill_instruct(instruct,events.right_hand_cue,events.right_hand_go);
     instruct(events.left_hand_cue)=L_CUE;
     instruct(events.left_hand_go)=L_GO;
@@ -88,9 +88,10 @@ end
         
     end
 
-    function instruct=clean_instruct(instruct)
+    function instruct=clean_instruct(instruct) %#ok<INUSD>
     %% Internal function to clean the instruct variable of miscellaneous movements
         
+    error('have not created this function yet');
     end
 
 end
