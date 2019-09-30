@@ -45,7 +45,7 @@ function [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type,cue
 %    - cues_only: Boolean defining whether or not to use the trials based on acceleration
 %       data (false) or to go based on the cues only (true, default)
 %    - extrap_method: String defining the method to use for extrapolation. Only used for
-%       PC+S data. Common inputs are 'linear', 'pchip', and 'spline'
+%       PC+S data. Common inputs are ['linear', default], ['pchip'], and ['spline']
 %
 %   Outputs:
 %    - x: Matrix of values for all channels and all trials matching a particular
@@ -65,12 +65,12 @@ function [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type,cue
 if nargin == 4
     visit_type='';
     cues_only=true;
-    extrap_method='';
+    extrap_method='linear';
 elseif nargin == 5
     cues_only=true;
-    extrap_method='';
+    extrap_method='linear';
 elseif nargin == 6
-    extrap_method='';
+    extrap_method='linear';
 end
 
 data=load(file);

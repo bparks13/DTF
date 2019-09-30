@@ -31,10 +31,11 @@ RUN_ID='run1';
 % RECORDING_DATE='2017_03_01';
 % RUN_ID='run16';
 MIDPATH='preproc';
-ADDON='';
-NOTES='Final format';
+ADDON='_SPLINE';
+NOTES='Spline interpolation for downsampling';
 
 cues_only=true;
+extrap_method='linear';
 
 %% Load Data
 
@@ -59,7 +60,7 @@ cutoff_notch=[58,62];
 [filtering.notch.num,filtering.notch.den]=CreateBSF_butter(fs_init,order_notch,cutoff_notch);
 [filtering.lpf.num,filtering.lpf.den]=CreateLPF_butter(fs_init,8,round(filtering.downsample/2));
 
-[x_all,fs]=load_data(FILE,channels,[],filtering,visit_type);
+[x_all,fs]=load_data(FILE,channels,[],filtering,visit_type,[],extrap_method);
 
 numConditions=length(conditions);
 freqRange=1:(fs/2);
@@ -213,7 +214,8 @@ save(newFile,'ADDON','ar','channels','conditions','cond_labels','crit',...
     'newFile','pass','PATIENT_ID','pVal','RECORDING_DATE','res','RUN_ID','x','x_all',...
     'config_crit','config_plot','config_surr','NOTES','surrogate','distribution','pxx',...
     'x_filt','filt_values','ar_filt','res_filt','crit_filt','h_filt','pVal_filt',...
-    'gamma_filt','surrogate_filt','distribution_filt','pxx_filt','visit_type','cues_only');
+    'gamma_filt','surrogate_filt','distribution_filt','pxx_filt','visit_type','cues_only',...
+    'extrap_method');
 
 
 
