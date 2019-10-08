@@ -7,8 +7,9 @@ function [surrogate,distribution,pxx]=surrogate_analysis(x,fs,freqRange,config_c
 %
 %   Inputs:
 %    - x: Struct containing the original time series data. The first fields are the
-%       conditions from the runs, and each field is a matrix of size is [n x c], where n
-%       is the number of samples  and c is the number of channels
+%       conditions from the runs, and each field is a matrix of size is [n x c x r], where
+%       n is the number of samples, c is the number of channels, and r is the number of
+%       realizations.
 %    - fs: Sampling frequency in Hz
 %    - freqRange: Vector of the range of frequencies over which the connectivity is
 %       measured 
