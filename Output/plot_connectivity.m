@@ -533,7 +533,8 @@ end
             avg_diag=mean(y_diag,4);
             std_diag=std(10*log10(y_diag),0,4);  
         else
-            avg_diag=mean(y_diag,3);
+%             avg_diag=mean(y_diag,3);
+            avg_diag=mean(10*log10(y_diag),3);
             std_diag=std(10*log10(y_diag),0,3);  
         end
         
@@ -567,7 +568,8 @@ end
         elseif bool_plotSpectralMatrix
             yLimits=[0 max(max(avg_diag+std_diag))+2];
         else
-            yLimits=[min(min(10*log10(avg_diag)-std_diag))-5,max(max(10*log10(avg_diag)+std_diag))+5];
+%             yLimits=[min(min(10*log10(avg_diag)-std_diag))-5,max(max(10*log10(avg_diag)+std_diag))+5];
+            yLimits=[min(min(avg_diag-std_diag))-5,max(max(avg_diag+std_diag))+5];
         end
     end
 
@@ -668,7 +670,8 @@ end
                             axis on;
                             xLabel='Frequency [Hz]'; yLabel='Spectral Matrix';
                         else
-                            shadedErrorBar(freqRange,10*log10(pxx(:,k)),pxx_std(:,k),'lineProps',lineprops_diag);
+%                             shadedErrorBar(freqRange,10*log10(pxx(:,k)),pxx_std(:,k),'lineProps',lineprops_diag);
+                            shadedErrorBar(freqRange,pxx(:,k),pxx_std(:,k),'lineProps',lineprops_diag);
                             xLabel='Frequency [Hz]'; yLabel='Power [dB]';
                             axis on;
                         end
