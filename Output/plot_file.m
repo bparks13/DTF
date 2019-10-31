@@ -6,6 +6,7 @@
 %
 
 CCC;
+dtf_startup;
 
 %% Load data
 
