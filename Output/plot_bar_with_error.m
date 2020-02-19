@@ -1,5 +1,5 @@
-function plot_bar_with_error(freqBand,gamma,labels,config)
-%% plot_bar_with_error(freqBand,gamma,labels,config)
+function plot_bar_with_error(freqBand,gamma,labels,significance,config)
+%% plot_bar_with_error(freqBand,gamma,labels,significance,config)
 %
 %  Plots a bar graph, with error bars, of the average connectivity values over the
 %  frequency band(s) given. This function can plot a single condition and a single
@@ -23,6 +23,10 @@ function plot_bar_with_error(freqBand,gamma,labels,config)
 %    - labels: Cell array containing the channel labels. If only one combination of
 %       channels is given, this should only contain one entry, which is the already
 %       formatted string containing the combination (i.e. Ch1 ? Ch2)
+%    - significance: Optional input - Depending on the type specified, the size of
+%       significance can change. For 'invariant', the size is [c x c], where c is the
+%       number of channels. For 'dependent', size is [c x c x f], where f is the number of
+%       frequencies. Significance type is automatically detected from the matrix size
 %    - config: Optional struct containing additional parameters
 %       yLim: Limits of the y-axis. Default is [0 1]
 %       title: String containing the title of the axis
@@ -36,6 +40,7 @@ function plot_bar_with_error(freqBand,gamma,labels,config)
 %    Figure containing the bar plot, with error bars, and the channel labels on the x-axis
 %
 %  See also: plot_connectivity
+%
 
 yLim=[0 1];
 axTitle='Connectivity Values';
@@ -46,6 +51,8 @@ bool_multipleConds=false;
 bool_singleChannel=false;
 bool_newFigure=true;
 bool_newAxis=true;
+bool_useSignificance=false;
+sigType='';
 
 if iscell(freqBand)
     bool_multipleBands=true;
@@ -68,7 +75,18 @@ if bool_multipleBands && bool_multipleConds
     error('Cannot plot multiple frequency bands and multiple conditions simultaneously');
 end
 
-if nargin == 4
+if nargin >= 4 && ~isempty(significance)
+    bool_useSignificance=true;
+    
+    if size(significance.(condLabels{1}),3) > 1
+        sigType='dependent';
+    else
+        sigType='invariant';
+    end
+    
+end
+
+if nargin == 5
     if isstruct(config)
         if isfield(config,'yLim')
             yLim=config.yLim;
@@ -119,12 +137,12 @@ else
 end
     
 if bool_multipleBands
-    numBands=length(freqBand) ;
-    avgGamma_band=zeros(numCombinations,numBands);
-    stdGamma_band=zeros(numCombinations,numBands);
+    numBands=length(freqBand);
+    avgGamma_band=nan(numCombinations,numBands);
+    stdGamma_band=nan(numCombinations,numBands);
     
     for l=1:numBands
-        gamma_band=zeros(numCombinations,numTrials);
+        gamma_band=nan(numCombinations,numTrials);
 
         for i=1:numCombinations
             for j=1:numTrials
@@ -132,19 +150,27 @@ if bool_multipleBands
             end
         end
         
-        avgGamma_band(:,l)=mean(gamma_band,2);
-        stdGamma_band(:,l)=std(gamma_band,[],2);
+        if bool_useSignificance
+            if strcmp(sigType,'invariant')
+                error('not configured yet');
+            else
+                error('''invariant'' is the only type of significance currently programmed');
+            end
+        else
+            avgGamma_band(:,l)=mean(gamma_band,2);
+            stdGamma_band(:,l)=std(gamma_band,[],2);
+        end
     end
     
     internal_plot(avgGamma_band,stdGamma_band);
 elseif bool_multipleConds
     numConds=length(condLabels);
-    avgGamma_band=zeros(numCombinations,numConds);
-    stdGamma_band=zeros(numCombinations,numConds);
+    avgGamma_band=nan(numCombinations,numConds);
+    stdGamma_band=nan(numCombinations,numConds);
     
     for l=1:numConds
         numTrials=size(gamma.(condLabels{l}),4);
-        gamma_band=zeros(numCombinations,numTrials);
+        gamma_band=nan(numCombinations,numTrials);
             
         for i=1:numCombinations
             for j=1:numTrials
@@ -152,13 +178,28 @@ elseif bool_multipleConds
             end
         end
         
-        avgGamma_band(:,l)=mean(gamma_band,2);
-        stdGamma_band(:,l)=std(gamma_band,[],2);
+        if bool_useSignificance
+            if strcmp(sigType,'invariant')
+                for i=1:numCombinations
+                    tmp_mean=mean(squeeze(gamma_band(i,:)));
+
+                    if tmp_mean > significance.(condLabels{l})(combinations(i,1),combinations(i,2))
+                        avgGamma_band(i,l)=tmp_mean;
+                        stdGamma_band(i,l)=std(gamma_band(i,:),[],2);
+                    end
+                end
+            else
+                error('''invariant'' is the only type of significance currently programmed');
+            end
+        else
+            avgGamma_band(:,l)=mean(gamma_band,2);
+            stdGamma_band(:,l)=std(gamma_band,[],2);
+        end
     end
     
     internal_plot(avgGamma_band,stdGamma_band);
 else
-    gamma_band=zeros(numCombinations,numTrials);
+    gamma_band=nan(numCombinations,numTrials);
 
     for i=1:numCombinations
         for j=1:numTrials
@@ -205,12 +246,12 @@ end
         
         ylim(yLim);
 
-        title(axTitle); ylabel('Normalized Connectivity');
+        title(axTitle); ylabel('Normalized Connectivity [DTF]');
 
         tmp_labels=cell(numCombinations,1);
 
         for k=1:numCombinations
-            tmp_labels{k}=sprintf('%s %c %s',labels{combinations(k,1)},8594,labels{combinations(k,2)});
+            tmp_labels{k}=sprintf('%s %c %s',labels{combinations(k,2)},8594,labels{combinations(k,1)});
         end
 
         xticks(pos);
@@ -232,10 +273,11 @@ end
         drawnow;
     end
 
+%%
     function internal_errorbar(avgGamma_band,stdGamma_band,pos)
         
         if bool_multipleConds
-            groupwidth = min(0.8, numCombinations/(numCombinations + 1.5));
+            groupwidth = min(0.8, numConds/(numConds + 1.5));
             colors=linspecer(numConds);
             ax=gca;
             
@@ -255,7 +297,7 @@ end
                 ax.Children(end-k+1).FaceColor=colors(k,:);
             end
         elseif bool_multipleBands
-            groupwidth = min(0.8, numCombinations/(numCombinations + 1.5));
+            groupwidth = min(0.8, numBands/(numBands + 1.5));
             colors=linspecer(numBands);
             ax=gca;
             
