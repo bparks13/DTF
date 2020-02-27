@@ -18,7 +18,7 @@ freqBandLabel={'Theta','Alpha','Low Beta','High Beta','Gamma'};
 
 %% Use the surrogate values to create a significance threshold
 
-significance=calculate_significance_from_surrogate(surrogate,0.01,'invariant');
+significance=calculate_significance_from_surrogate(surrogate_filt,0.01,'invariant');
 
 %% Plot one frequency band per figure, with all conditions in different colors, and reject non-significant values
 
@@ -26,7 +26,16 @@ config=struct;
 
 for i=1:length(freqBands)
     config.title=sprintf('%s Band Connectivity',freqBandLabel{i});
-    plot_bar_with_error(freqBands{i},gamma,labels,significance,config);
+    plot_bar_with_error(freqBands{i},gamma_filt,labels,significance,config);
+end
+
+%% Plot one figure per frequency band, with each conditions plotted in the same bar graph
+
+config=struct;
+
+for i=1:length(freqBands)
+    config.title=sprintf('%s Band Connectivity',freqBandLabel{i});
+    plot_bar_with_error(freqBands{i},gamma_filt,labels,[],config);
 end
 
 %% Plot one figure per condition, with each frequency band plotted in the same bar graph
@@ -36,26 +45,17 @@ config=struct;
 for i=1:numConditions
     currCond=cond_labels{i};
     
-    config.figTitle=sprintf('Band Connectivity During %s',currCond);
+%     config.figTitle=sprintf('Band Connectivity During %s',currCond);
     config.title=sprintf('Band Connectivity During %s',currCond);
     config.legend=freqBandLabel;
-    plot_bar_with_error(freqBands,gamma.(currCond),labels,[],config);
-end
-
-%% Plot one figure per frequency band, with each conditions plotted in the same bar graph
-
-config=struct;
-
-for i=1:length(freqBands)
-    config.figTitle=sprintf('%s Band Connectivity',freqBandLabel{i});
-    plot_bar_with_error(freqBands{i},gamma,labels,[],config);
+    plot_bar_with_error(freqBands,gamma_filt.(currCond),labels,[],config);
 end
 
 %% Plot the bars in the same format as the [d x d] plot of all connectivity values
 
 config=struct;
 
-numChannels=size(gamma.Rest,1);
+numChannels=size(gamma_filt.Rest,1);
 colors=linspecer(length(freqBandLabel));
 
 for k=1:numConditions
@@ -70,12 +70,12 @@ for k=1:numConditions
             if i~=j
                 label=cellstr(sprintf('%s %c %s',labels{i},8594,labels{j}));
                 config.axHandle=subplot(numChannels,numChannels,currSubPlot);
-                plot_bar_with_error(freqBands,gamma.(currCond)(i,j,:,:),label,[],config)
+                plot_bar_with_error(freqBands,gamma_filt.(currCond)(i,j,:,:),label,[],config)
             else
                 subplot(numChannels,numChannels,currSubPlot);
                 axis off; hold on;
                 
-                for l=1:numConditions
+                for l=1:length(freqBandLabel)
                     plot(nan,nan,'LineWidth',10,'Color',colors(l,:)); 
                 end
                 
