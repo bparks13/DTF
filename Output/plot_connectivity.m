@@ -586,31 +586,8 @@ end
         
         if bool_frequencyDependent
             significant_values=calculate_significance_from_surrogate(surrogate,threshold,'dependent');
-%             significant_values=ones(numChannels,numChannels,numFrequencies);
-% 
-%             for k=1:numChannels
-%                 for l=1:numChannels
-%                     if k ~= l
-%                         for m=1:numFrequencies
-%                             orderedConnections=sort(squeeze(surrogate(k,l,m,:)));
-%                             significant_values(k,l,m)=orderedConnections(ceil(length(orderedConnections)*(1-threshold)));
-%                         end
-%                     end
-%                 end
-%             end
         else
             significant_values=calculate_significance_from_surrogate(surrogate,threshold,'invariant');
-%             significant_values=ones(numChannels,numChannels);
-% 
-%             for k=1:numChannels
-%                 for l=1:numChannels
-%                     if k ~= l
-%                         thisChannel=squeeze(surrogate(k,l,:,:));
-%                         orderedConnections=sort(thisChannel(:));
-%                         significant_values(k,l)=orderedConnections(ceil(length(orderedConnections)*(1-threshold)));
-%                     end
-%                 end
-%             end
         end
         
         [ax_diag,ax_offdiag]=plotting(nan(numFrequencies,numChannels),significant_values,[],[],[],lineprops_offdiag);

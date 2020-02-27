@@ -152,7 +152,7 @@ if bool_multipleBands
         
         if bool_useSignificance
             if strcmp(sigType,'invariant')
-                error('not configured yet');
+                error('Multiple bands is not configured yet');
             else
                 error('''invariant'' is the only type of significance currently programmed');
             end
