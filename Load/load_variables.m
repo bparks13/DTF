@@ -1,4 +1,4 @@
-function [channels,labels,conditions,cond_labels,visit_type]=load_channels_labels_conditions(patient,record_date,run_id,config)
+function [channels,labels,conditions,cond_labels,visit_type]=load_variables(patient,record_date,run_id,config)
 %% [channels,labels,conditions,cond_labels,visit_type]=load_channels_labels_conditions(patient,record_date,run_id,config)
 %
 %  Given the relevant information, return the channels, labels, and conditions
@@ -85,7 +85,7 @@ end
 
 if bool_default
     % set all default parameters here for patients/dates/runs
-    if strcmp(patient,'ET_CL_002')
+    if strcmp(patient,'ET_CL_002') % S01
         if strcmp(record_date,'2018_02_01')
             if strcmp(run_id,'run9')
                 channels=[8,7;6,5;4,3;2,1];
@@ -100,7 +100,7 @@ if bool_default
         else
             error('WARNING: Invalid recording date given. Please set channels/labels for this combination');
         end
-    elseif strcmp(patient,'ET_CL_004')
+    elseif strcmp(patient,'ET_CL_004') % S02
         if strcmp(record_date,'2018_06_20')
             if strcmp(run_id,'run5') || strcmp(run_id,'run5_fs600') || strcmp(run_id,'run5_fs300')
                 channels=[8,7;6,5;4,3;2,1];
@@ -142,7 +142,7 @@ if bool_default
         else
             error('WARNING: Invalid recording date given. Please set channels/labels for this combination');
         end
-    elseif strcmp(patient,'ET_OR_STIM_018')
+    elseif strcmp(patient,'ET_OR_STIM_018') % S03
         if strcmp(record_date,'2018_11_28')
             if strcmp(run_id,'run12')
                 channels=[14,13;12,11;10,9;8,7;6,5;4,3;2,1];
@@ -157,7 +157,7 @@ if bool_default
         else
             error('WARNING: Invalid recording date given. Please set channels/labels for this combination');
         end
-    elseif strcmp(patient,'TS04 Double DBS Implantation')
+    elseif strcmp(patient,'TS04 Double DBS Implantation') % S04
         if strcmp(record_date,'2017_03_01')
             if strcmp(run_id,'run16')
                 channels=[16,15;14,13;12,11;10,9;8,7;6,5;4,3;2,1];
@@ -173,7 +173,7 @@ if bool_default
         else
             error('WARNING: Invalid recording date given. Please set channels/labels for this combination');
         end
-    elseif strcmp(patient,'ET_CL_001')
+    elseif strcmp(patient,'ET_CL_001') % S05
         if strcmp(record_date,'2017_05_17')
             if strcmp(run_id,'run12')
                 channels=[8,7;6,5;4,3;2,1];
