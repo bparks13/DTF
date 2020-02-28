@@ -1,9 +1,11 @@
 %#ok<*UNRCH>
+%#ok<*NASGU>
 
 CCC;
 
 print_figures=true;
-PRINT_FOLDER=fullfile(get_root_path,'Pictures','InitialResults');
+PRINT_FOLDER=fullfile(get_root_path,'Pictures','InitialResults'); 
+ADD_ON='';
 
 freqBands={4:8,8:12,12:20,20:30,30:100};
 freqBandLabel={'Theta','Alpha','Low Beta','High Beta','Gamma'};
@@ -13,30 +15,35 @@ freqBandLabel={'Theta','Alpha','Low Beta','High Beta','Gamma'};
 load(fullfile(get_root_path,'Files','S01_D01_R01.mat'));
 
 significance=calculate_significance_from_surrogate(surrogate_filt,0.01,'invariant');
+contactNames=get_structure_names('S01');
 
 %% Plot overall connectivity for Rest only, and resize
 
-config_plot.figTitle=sprintf('%s, %s, %s - %s: Connectivity (Decorrelated)',PATIENT_ID,RECORDING_DATE,RUN_ID,'Rest');
-series=struct('original',x_filt.Rest,'surrogate',surrogate_filt.Rest);
-config_plot.surr_params.highlightSignificance=true;
-plot_connectivity(gamma_filt.Rest,series,freqRange,labels,config_plot);
-hFig=gcf; hFig.Position=[hFig.Position(1:2)-300,1200,700];
+% config_plot.figTitle=sprintf('%s, %s, %s - %s: Connectivity (Decorrelated)',PATIENT_ID,RECORDING_DATE,RUN_ID,'Rest');
+% series=struct('original',x_filt.Rest,'surrogate',surrogate_filt.Rest);
+% config_plot.surr_params.highlightSignificance=true;
+% % plot_connectivity(gamma_filt.Rest,series,freqRange,labels,config_plot);
+% plot_connectivity(gamma_filt.Rest,series,freqRange,contactNames,config_plot);
+% hFig=gcf; hFig.Position=[hFig.Position(1:2)-300,1200,700];
 
-if print_figures
-    PrintFigure(fullfile(PRINT_FOLDER,'S01_CompleteConnectivityMatrix'));
-end
+% if print_figures
+%     PrintFigure(fullfile(PRINT_FOLDER,['S01_CompleteConnectivityMatrix',ADDON]));
+% end
 
 %% Plot bar plots, with only significant results
 
 config=struct;
+% config.hideUselessConnections=true;
+% config.usefulConnections=returnUsefulConnections(freqBands,gamma,significance);
 
 for i=1:length(freqBands)
     config.title=sprintf('%s Band Connectivity',freqBandLabel{i});
-    plot_bar_with_error(freqBands{i},gamma_filt,labels,significance,config);
+%     plot_bar_with_error(freqBands{i},gamma_filt,labels,significance,config);
+    plot_bar_with_error(freqBands{i},gamma_filt,contactNames,significance,config);
     hFig=gcf; hFig.Position=[hFig.Position(1:2),950,350];
     
     if print_figures
-        PrintFigure(fullfile(PRINT_FOLDER,sprintf('S01_BarPlot_%sBand',freqBandLabel{i})));
+        PrintFigure(fullfile(PRINT_FOLDER,sprintf('S01_BarPlot_%sBand%s',freqBandLabel{i},ADD_ON)));
     end
 end
 
@@ -46,6 +53,7 @@ CCC;
 
 print_figures=true;
 PRINT_FOLDER=fullfile(get_root_path,'Pictures','InitialResults');
+ADD_ON='';
 
 freqBands={4:8,8:12,12:20,20:30,30:100};
 freqBandLabel={'Theta','Alpha','Low Beta','High Beta','Gamma'};
@@ -55,18 +63,22 @@ freqBandLabel={'Theta','Alpha','Low Beta','High Beta','Gamma'};
 load(fullfile(get_root_path,'Files','S02_D01_R01.mat'));
 
 significance=calculate_significance_from_surrogate(surrogate_filt,0.01,'invariant');
+contactNames=get_structure_names('S02');
 
 %% Plot bar plots, with only significant results
 
 config=struct;
+% config.hideUselessConnections=true;
+% config.usefulConnections=returnUsefulConnections(freqBands,gamma,significance);
 
 for i=1:length(freqBands)
     config.title=sprintf('%s Band Connectivity',freqBandLabel{i});
-    plot_bar_with_error(freqBands{i},gamma_filt,labels,significance,config);
+%     plot_bar_with_error(freqBands{i},gamma_filt,labels,significance,config);
+    plot_bar_with_error(freqBands{i},gamma_filt,contactNames,significance,config);
     hFig=gcf; hFig.Position=[hFig.Position(1:2),950,350];
     
     if print_figures
-        PrintFigure(fullfile(PRINT_FOLDER,sprintf('S02_BarPlot_%sBand',freqBandLabel{i})));
+        PrintFigure(fullfile(PRINT_FOLDER,sprintf('S02_BarPlot_%sBand%s',freqBandLabel{i},ADD_ON)));
     end
 end
 
@@ -76,6 +88,7 @@ CCC;
 
 print_figures=true;
 PRINT_FOLDER=fullfile(get_root_path,'Pictures','InitialResults');
+ADD_ON='';
 
 freqBands={4:8,8:12,12:20,20:30,30:100};
 freqBandLabel={'Theta','Alpha','Low Beta','High Beta','Gamma'};
@@ -85,18 +98,22 @@ freqBandLabel={'Theta','Alpha','Low Beta','High Beta','Gamma'};
 load(fullfile(get_root_path,'Files','S03_D01_R01.mat'));
 
 significance=calculate_significance_from_surrogate(surrogate_filt,0.01,'invariant');
+contactNames=get_structure_names('S03');
 
 %% Plot bar plots, with only significant results
 
 config=struct;
+% config.hideUselessConnections=true;
+% config.usefulConnections=returnUsefulConnections(freqBands,gamma,significance);
 
 for i=1:length(freqBands)
     config.title=sprintf('%s Band Connectivity',freqBandLabel{i});
-    plot_bar_with_error(freqBands{i},gamma_filt,labels,significance,config);
+%     plot_bar_with_error(freqBands{i},gamma_filt,labels,significance,config);
+    plot_bar_with_error(freqBands{i},gamma_filt,contactNames,significance,config);
     hFig=gcf; hFig.Position=[hFig.Position(1:2),950,350];
     
     if print_figures
-        PrintFigure(fullfile(PRINT_FOLDER,sprintf('S03_BarPlot_%sBand',freqBandLabel{i})));
+        PrintFigure(fullfile(PRINT_FOLDER,sprintf('S03_BarPlot_%sBand%s',freqBandLabel{i},ADD_ON)));
     end
 end
 

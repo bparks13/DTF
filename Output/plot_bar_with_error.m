@@ -23,23 +23,29 @@ function plot_bar_with_error(freqBand,gamma,labels,significance,config)
 %    - labels: Cell array containing the channel labels. If only one combination of
 %       channels is given, this should only contain one entry, which is the already
 %       formatted string containing the combination (i.e. Ch1 ? Ch2)
-%    - significance: Optional input - Depending on the type specified, the size of
+%    - significance: Optional input - Matrix defining what connectivity value is
+%       considered to be significant. Depending on the type specified, the size of
 %       significance can change. For 'invariant', the size is [c x c], where c is the
 %       number of channels. For 'dependent', size is [c x c x f], where f is the number of
 %       frequencies. Significance type is automatically detected from the matrix size
 %    - config: Optional struct containing additional parameters
-%       yLim: Limits of the y-axis. Default is [0 1]
-%       title: String containing the title of the axis
-%       figTitle: String containing the title of the figure window
-%       legend: If the frequency band input is a cell array, this can be used to delineate
-%           which values belong to which frequency bands
-%       figHandle: Figure handle to an existing figure to plot on
-%       axHandle: Axis handle to an existing subplot to plot on
+%    -- yLim: Limits of the y-axis. Default is [0 1]
+%    -- title: String containing the title of the axis
+%    -- figTitle: String containing the title of the figure window
+%    -- legend: Given multiple conditions/frequency bands on the same plot, the legend is
+%           used to name the components of the figure
+%    -- figHandle: Figure handle to an existing figure to plot on
+%    -- axHandle: Axis handle to an existing subplot to plot on
+%    -- hideUselessConnections: Boolean value to denote whether or not to plot all
+%       possible connections (false, default), or to hide the connections that never have
+%       a significant relation in any frequency (true). The significance variable must be
+%       defined for this to have any meaning
+%    -- usefulConnections: Matrix of channel combinations that are useful.
 %
 %   Outputs:
 %    Figure containing the bar plot, with error bars, and the channel labels on the x-axis
 %
-%  See also: plot_connectivity
+%  See also: plot_connectivity.m, returnUsefulConnections.m
 %
 
 yLim=[0 1];
@@ -52,7 +58,9 @@ bool_singleChannel=false;
 bool_newFigure=true;
 bool_newAxis=true;
 bool_useSignificance=false;
+bool_hideUselessConnections=false;
 sigType='';
+plotLegend={};
 
 if iscell(freqBand)
     bool_multipleBands=true;
@@ -88,28 +96,37 @@ end
 
 if nargin == 5
     if isstruct(config)
-        if isfield(config,'yLim')
+        if isfield(config,'yLim') && ~isempty(config.yLim)
             yLim=config.yLim;
         end
         
-        if isfield(config,'title')
+        if isfield(config,'title') && ~isempty(config.title)
             axTitle=config.title;
         end
         
-        if isfield(config,'figTitle')
+        if isfield(config,'figTitle') && ~isempty(config.figTitle)
             figTitle=config.figTitle;
         end
         
-        if isfield(config,'legend')
+        if isfield(config,'legend') && ~isempty(config.legend)
             bool_showLegend=true;
+            plotLegend=config.legend;
         end
         
-        if isfield(config,'figHandle')
+        if isfield(config,'figHandle') && ~isempty(config.figHandle)
             bool_newFigure=false;
         end
         
-        if isfield(config,'axHandle')
+        if isfield(config,'axHandle') && ~isempty(config.axHandle)
             bool_newAxis=false;
+        end
+        
+        if isfield(config,'hideUselessConnections') && ~isempty(config.hideUselessConnections)
+            bool_hideUselessConnections=config.hideUselessConnections;
+        end
+        
+        if isfield(config,'usefulConnections') && ~isempty(config.usefulConnections)
+            bool_hideUselessConnections=true;
         end
     end
 end
@@ -117,7 +134,12 @@ end
 % Extract individual band
 
 if numChannels~=1
-    combinations=[nchoosek(1:numChannels,2);nchoosek(numChannels:-1:1,2)];
+    if bool_hideUselessConnections
+        combinations=config.usefulConnections;
+    else
+        combinations=[nchoosek(1:numChannels,2);nchoosek(numChannels:-1:1,2)];
+    end
+    
     numCombinations=size(combinations,1);
 else
     combinations=[1,1];
@@ -135,7 +157,7 @@ else
         tmp_fig.Name=figTitle;
     end
 end
-    
+
 if bool_multipleBands
     numBands=length(freqBand);
     avgGamma_band=nan(numCombinations,numBands);
@@ -267,7 +289,7 @@ end
         ax.XTickLabelRotation=45;
 
         if bool_showLegend
-            legend(config.legend);
+            legend(plotLegend);
         end
 
         drawnow;
