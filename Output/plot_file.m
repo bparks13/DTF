@@ -16,6 +16,8 @@ file=uigetfile(fullfile(get_root_path,'Files','*.mat'));
 
 load(fullfile(get_root_path,'Files',file));
 
+contactNames=get_structure_names(subjID);
+
 %% Plot connectivity figure - Original
 
 % for i=1:length(cond_labels)
@@ -38,25 +40,44 @@ for i=1:length(cond_labels)
     if exist('surrogate_filt','var') == 1
         series=struct('original',x_filt.(currCond),'surrogate',surrogate_filt.(currCond));
         config_plot.surr_params.highlightSignificance=true;
-        plot_connectivity(gamma_filt.(currCond),series,freqRange,labels,config_plot);
+        plot_connectivity(gamma_filt.(currCond),series,freqForAnalysis,contactNames,config_plot);
     else
         plot_connectivity(gamma_filt.(currCond),x_filt.(currCond),freqRange,labels,config_plot);
     end
 end
 
 %% Plot criterion
+% 
+% config=struct; 
+% config.crit=config_crit.crit;
+% 
+% for i=1:length(cond_labels)
+%     currCond=cond_labels{i};
+%     config.hFig=figure;
+%     
+%     for j=1:length(crit.(currCond))
+%         config.modelOrder=ar.(currCond)(j).mdl.order;
+%         config.figTitle=sprintf('%s, %s, %s - %s: Criterion',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
+%         plot_criterion(crit.(currCond)(j).(config_crit.crit),config);
+%     end
+% end 
+
+%% Plot criterion - decorrelated
 
 config=struct; 
-config.crit=config_crit.crit;
+config.crit=config_mvar.crit;
+% config.average=true; % only plots the average values instead of all of them
 
 for i=1:length(cond_labels)
     currCond=cond_labels{i};
     config.hFig=figure;
+    config.figTitle=sprintf('%s, %s, %s - %s: Criterion',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
+    
+%     plot_criterion(crit_filt.(currCond),config); % Average values only
     
     for j=1:length(crit.(currCond))
-        config.modelOrder=ar.(currCond)(j).mdl.order;
-        config.figTitle=sprintf('%s, %s, %s - %s: Criterion',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
-        plot_criterion(crit.(currCond)(j).(config_crit.crit),config);
+        config.modelOrder=ar_filt.(currCond)(j).mdl.order;
+        plot_criterion(crit_filt.(currCond)(:,j),config);
     end
 end 
 
