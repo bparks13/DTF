@@ -8,21 +8,23 @@ function [x_filt,filt_values]=filter_serial_correlation(x,res,h,config_crit,conf
 %
 %   Inputs:
 %    - x: Struct containing the original time series data. The first fields are the
-%       conditions from the runs, and each field is a matrix of size is [n x c], where n
-%       is the number of samples  and c is the number of channels
+%       conditions from the runs, and each field is a matrix of size is [n x c x r], where
+%       n is the number of samples, c is the number of channels, and r is the number of
+%       realizations
 %    - res: Struct containing the residuals of the model fit, used for testing the
-%       whiteness of the model. Fields are the same as x. Size is [(n - o) x c], where n
-%       is the number of samples, o is the model order, and c is the number of channels
+%       whiteness of the model. Fields are the same as x. Size is [(n - o) x c x r], where
+%       n is the number of samples, o is the model order, c is the number of channels, and
+%       r is the number of realizations
 %    - h: Struct containing the hypothesis rejection values of each series. Fields are the
 %       same as x. '0' means that the null hypothesis is not rejected, while '1' means
 %       that the null hypothesis is rejected . Size is [t x c], where t is the number of
 %       trials in that condition and c is the number of channels
 %    - config_crit: Struct containing additional parameters, as defined in mvar.m
 %    - config: Optional struct containing additional parameters
-%       maxIterations: Maximum number of times the signal will be filtered at a particular
-%         error model order before the next model order is attempted. Default is 10
-%       modelOrders: Vector containing the model orders to be attempted for the error AR
-%         model. Default is 1:15
+%    -- maxIterations: Maximum number of times the signal will be filtered at a particular
+%        error model order before the next model order is attempted. Default is 10
+%    -- modelOrders: Vector containing the model orders to be attempted for the error AR
+%        model. Default is 1:15
 %
 %   Outputs:
 %    - x_filt: Filtered signal as a struct, in the same format as the struct 'x'.
@@ -48,6 +50,10 @@ end
 
 config_e=config_crit;
 config_e.output=0;
+
+if isfield(config_e,'modelOrder')
+    config_e=rmfield(config_e,'modelOrder');
+end
 
 config_filt=config_crit;
 config_filt.orderRange=1:15;
