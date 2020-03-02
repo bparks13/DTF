@@ -8,47 +8,51 @@ function [mdl,E,criterion]=mvar(x,config)
 %    - x: Signals in a matrix format [n x c], where n is the number of samples and c is
 %       the number of channels to model
 %    - config: Struct containing additional parameters
-%       orderRange: Vector containing the model orders to consider. Default [1:30]
-%       crit: String defining which information criterion to use, 'aic', 'bic' [default],
-%           'psd', or 'spectra'
-%       output: Int defining level of verbosity for output. 0 (none), 1 (model number)
-%           [default], 2 (model order and criterion tested)
-%       method: String defining which method to use; Matlab's varm ('varm') or Yule-Walker
-%           equations ('yule') [default]. Additionally can use the Signal Processing for
-%           Neuroscientists method ('arfit')
-%       orderSelection: String defining how to algorithmically choose the model order.
-%           'min' [default] uses the minimum information criterion found, while 'diff1'
-%           uses the first model order that the abs(difference) between successive ICs is
-%           smaller than some epsilon, which is either 0.01 or user specified. 'diff2'
-%           uses the same criteria as 'diff1', but chooses the model order (m-1) from when
-%           the criteria is met; this is the difference betweeen choosing the first bend
-%           in the criterion and the second point after the bend
-%       epsilon: Can be specified if orderSelection is set to 'diff', where epsilon is the
-%           threshold for defining when differences have decreased to a small enough
-%           degree to select the model order, defined as a percentage (i.e. 0.01 == 1%).
-%           Default value is 0.1% (= 0.001)
-%       fs: If crit is defined as 'psd', the sampling frequency is required
-%       freqRange: If crit is defined as 'psd', the PSD will be calculated up to half the
-%           sampling frequency. freqRange can be defined to restrict the analysis of the
-%           PSD to a smaller range
-%       logLikelihoodMethod: Int defining which equation to use for calculating the log
-%           likelihood of the model. 1 is for Matlab [default], 2 for Ding, 3 for
-%           Awareness paper (see calculate_loglikelihood)
-%       simulated: Additional struct subfield, which defines certain aspects of the
-%           simulated data for testing purposes. 
-%         a: Matrix of coefficients that are simulated for the AR model (ground truth)
-%         C: Matrix of the original covariance matrix used to defined the model
-%       spectral_range: Vector of frequencies over which to calculate the spectrum
+%    -- orderRange: Vector containing the model orders to consider. Default [1:30]
+%    -- modelOrder: Scalar defining the optimal model order as calculated by
+%        calculate_optimal_model_order.m. This will override the orderRange if given
+%    -- crit: String defining which information criterion to use, 'aic', 'bic' [default],
+%        'psd', or 'spectra'
+%    -- output: Int defining level of verbosity for output. 0 (none), 1 (model number)
+%        [default], 2 (model order and criterion tested)
+%    -- method: String defining which method to use; Matlab's varm ('varm') or Yule-Walker
+%        equations ('yule') [default]. Additionally can use the Signal Processing for
+%        Neuroscientists method ('arfit')
+%    -- orderSelection: String defining how to algorithmically choose the model order.
+%        'min' [default] uses the minimum information criterion found, while 'diff1'
+%        uses the first model order that the abs(difference) between successive ICs is
+%        smaller than some epsilon, which is either 0.01 or user specified. 'diff2'
+%        uses the same criteria as 'diff1', but chooses the model order (m-1) from when
+%        the criteria is met; this is the difference betweeen choosing the first bend
+%        in the criterion and the second point after the bend
+%    -- epsilon: Can be specified if orderSelection is set to 'diff', where epsilon is the
+%        threshold for defining when differences have decreased to a small enough
+%        degree to select the model order, defined as a percentage (i.e. 0.01 == 1%).
+%        Default value is 0.1% (= 0.001)
+%    -- fs: If crit is defined as 'psd', the sampling frequency is required
+%    -- freqRange: If crit is defined as 'psd', the PSD will be calculated up to half the
+%        sampling frequency. freqRange can be defined to restrict the analysis of the
+%        PSD to a smaller range
+%    -- logLikelihoodMethod: Int defining which equation to use for calculating the log
+%        likelihood of the model. 1 is for Matlab [default], 2 for Ding, 3 for
+%        Awareness paper (see calculate_loglikelihood)
+%    -- simulated: Additional struct subfield, which defines certain aspects of the
+%        simulated data for testing purposes. 
+%    --- a: Matrix of coefficients that are simulated for the AR model (ground truth)
+%    --- C: Matrix of the original covariance matrix used to defined the model
+%    -- spectral_range: Vector of frequencies over which to calculate the spectrum
+%    -- normalizeSpectra: Boolean defining whether or not to normalize the spectra, for
+%        spectra calculations (calculate_ar_spectra) or for fft calulcations (calculate_fft)
 %
 %   Outputs:
 %    - mdl: Struct containing the AR model fit for the data given
-%       AR: Autoregressive coefficients as found by estimate_ar_coefficients
-%       C: Covariance matrx as calculated by the Yule-Walker equations
-%       logL: Log-likelihood of the model fit, used for calculating information criterion
-%       order: Model order that is found to have the lowest information criterion
-%       numSeries: Number of series in the model
-%       x_hat: Estimated data from the AR model
-%       pxx: Estimated Power Spectral Density of the x_hat, if crit is defined as 'psd'
+%    -- AR: Autoregressive coefficients as found by estimate_ar_coefficients
+%    -- C: Covariance matrx as calculated by the Yule-Walker equations
+%    -- logL: Log-likelihood of the model fit, used for calculating information criterion
+%    -- order: Model order that is found to have the lowest information criterion
+%    -- numSeries: Number of series in the model
+%    -- x_hat: Estimated data from the AR model
+%    -- pxx: Estimated Power Spectral Density of the x_hat, if crit is defined as 'psd'
 %    - E: Residuals of the model fit, used for testing the whiteness of the model. Size is
 %       [(n - o) x c], where n is the number of samples, o is the model order, and c is
 %       the number of channels
@@ -71,15 +75,19 @@ ll_method=1; % Log-Likelihood method; 1 == Matlab, 2 == Ding
 normalize_spectra=true;
 
 if nargin > 1 && isstruct(config)
-    if isfield(config,'orderRange')
+    if isfield(config,'orderRange') && ~isempty(config.orderRange)
         orderRange=config.orderRange;
     end
     
-    if isfield(config,'normalizeSpectra')
+    if isfield(config,'modelOrder') && ~isempty(config.modelOrder)
+        orderRange=config.modelOrder; % Override the Range above, and only use the optimal value
+    end
+    
+    if isfield(config,'normalizeSpectra') && ~isempty(config.normalizeSpectra)
         normalize_spectra=config.normalizeSpectra;
     end
     
-    if isfield(config,'crit')
+    if isfield(config,'crit') && ~isempty(config.crit)
         crit=config.crit;
         
         if strcmp(crit,'psd')
@@ -89,20 +97,20 @@ if nargin > 1 && isstruct(config)
             freqRange=1:round(fs/2);
             pxx_sig=pwelch(x,window,overlap,freqRange,fs);
             
-            if isfield(config,'freqRange')
+            if isfield(config,'freqRange') && ~isempty(config.freqRange)
                 freqForAnalysis=config.freqRange;
             else
                 freqForAnalysis=freqRange;
             end
         elseif strcmp(crit,'spectra')
-            if isfield(config,'simulated')
+            if isfield(config,'simulated') && ~isempty(config.simulated)
                 if isfield(config,'fs')
                     fs=config.fs;
                 else
                     fs=1;
                 end
                 
-                if isfield(config,'spectral_range')
+                if isfield(config,'spectral_range') && ~isempty(config.spectral_range)
                     spectral_range=config.spectral_range;
                 else
                     N=length(x);
@@ -113,7 +121,7 @@ if nargin > 1 && isstruct(config)
                 
                 P1=resize_spectra(S_orig);
             else
-                if isfield(config,'fs')
+                if isfield(config,'fs') && ~isempty(config.fs)
                     fs=config.fs;
                 else
                     fs=1;
@@ -121,7 +129,7 @@ if nargin > 1 && isstruct(config)
                 
                 [P1,spectral_range]=calculate_fft(x,fs,normalize_spectra);
                 
-                if isfield(config,'freqRange')
+                if isfield(config,'freqRange') && ~isempty(config.freqRange)
                     freqForAnalysis=config.freqRange;
                 else
                     freqForAnalysis=spectral_range;
@@ -144,31 +152,31 @@ if nargin > 1 && isstruct(config)
         end 
     end
     
-    if isfield(config,'output')
+    if isfield(config,'output') && ~isempty(config.output)
         output=config.output;
     end
     
-    if isfield(config,'method')
+    if isfield(config,'method') && ~isempty(config.method)
         method=config.method;
         
-        if strcmp(method,'arfit')
-            addpath(fullfile(get_root_path,'ExternalFunctions'));
-        end
+%         if strcmp(method,'arfit')
+%             addpath(fullfile(get_root_path,'ExternalFunctions'));
+%         end
     end
     
-    if isfield(config,'orderSelection')
+    if isfield(config,'orderSelection') && ~isempty(config.orderSelection)
         orderSelection=config.orderSelection;
         
         if strcmp(orderSelection,'diff')
             orderSelection='diff1';
         end
         
-        if isfield(config,'epsilon')
+        if isfield(config,'epsilon') && ~isempty(config.epsilon)
             epsilon=config.epsilon;
         end
     end
     
-    if isfield(config,'logLikelihoodMethod')
+    if isfield(config,'logLikelihoodMethod') && ~isempty(config.logLikelihoodMethod)
         ll_method=config.logLikelihoodMethod;
     end
 end
@@ -212,9 +220,11 @@ for i=1:numOrders
             if result
                 minCrit=results.BIC;
                 mdl.AR=zeros(numSeries,numSeries,orderRange(i));
+                
                 for j=1:orderRange(i)
                     mdl.AR(:,:,j)=estMdl.AR{j};
                 end
+                
                 mdl.C=estMdl.Covariance;
                 mdl.logL=logL;
                 mdl.order=orderRange(i);
@@ -359,7 +369,7 @@ for i=1:numOrders
         if strcmp(orderSelection,'min')
             result = criterion(i) < minCrit;
         elseif strcmp(orderSelection,'diff1')
-            if i>1 && ~bool_minDiffFound
+            if i > 1 && ~bool_minDiffFound
                 result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
                     criterion(i) - criterion(i-1) > 0;
             elseif numOrders == 1 % In surrogate_analysis, one model order is given only, not a range
@@ -368,7 +378,7 @@ for i=1:numOrders
                 result=false;
             end
         elseif strcmp(orderSelection,'diff2')
-            if i>1 && ~bool_minDiffFound
+            if i > 1 && ~bool_minDiffFound
                 result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
                     criterion(i) - criterion(i-1) > 0;
                 
@@ -426,6 +436,10 @@ end
 
 if output ~= 0
     fprintf('\nDone: Minimum %s found at model order %d\n',crit,mdl.order);
+end
+
+if nargout < 3
+    clear criterion
 end
 
 end
