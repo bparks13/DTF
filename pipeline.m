@@ -18,10 +18,12 @@ dtf_startup;
 % RUN_ID='run12';
 PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
 PATIENT_ID='ET_CL_004';
-% RECORDING_DATE='2018_06_20';
-% RUN_ID='run5';
-RECORDING_DATE='2018_08_23';
-RUN_ID='run1';
+RECORDING_DATE='2018_06_20';
+RUN_ID='run5';
+ADDON='_DELETEME_SAME_MODEL_ORDER';
+NOTES='Calculating optimal model order first, then only using that for all calculations';
+% RECORDING_DATE='2018_08_23';
+% RUN_ID='run1';
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
 % PATIENT_ID='ET_CL_002';
 % RECORDING_DATE='2018_02_01';
@@ -31,16 +33,16 @@ RUN_ID='run1';
 % RECORDING_DATE='2017_03_01';
 % RUN_ID='run16';
 MIDPATH='preproc';
-ADDON='_SPLINE';
-NOTES='Spline interpolation for downsampling';
+% ADDON='_ARTIFACT';
+% NOTES='Run through with the same settings as other subjects; expecting large artifacts, and spurious DTF';
 
 cues_only=true;
-extrap_method='linear';
+extrap_method='';
 
 %% Load Data
 
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
-[channels,labels,conditions,cond_labels,visit_type]=load_channels_labels_conditions(PATIENT_ID,RECORDING_DATE,RUN_ID);
+[channels,labels,conditions,cond_labels,visit_type]=load_variables(PATIENT_ID,RECORDING_DATE,RUN_ID);
 
 if isempty(channels) || isempty(labels) || isempty(conditions) || isempty(cond_labels)
     return
@@ -63,7 +65,6 @@ cutoff_notch=[58,62];
 [x_all,fs]=load_data(FILE,channels,[],filtering,visit_type,[],extrap_method);
 
 numConditions=length(conditions);
-freqRange=1:(fs/2);
 
 x=struct;
 ar=struct;
@@ -72,10 +73,14 @@ crit=struct;
 h=struct;
 pVal=struct;
 gamma=struct;
-H=struct;
+% H=struct;
 avg_psd=struct;
 avg_gamma=struct;
 pass=struct;
+
+surrogate=nan;
+distribution=nan;
+pxx=nan;
 
 ar_filt=struct;
 res_filt=struct;
@@ -86,13 +91,16 @@ gamma_filt=struct;
 
 freqForAnalysis=4:0.5:100;
 
-config_crit=struct(...
+config_mvar=struct(...
     'orderSelection','diff1',...
     'crit','bic',...
     'method','arfit',...
-    'orderRange',1:20,...
+    'orderRange',1:20,...   % Used to find the optimal model order
+    'modelOrder',[],...     % This is the optimal model order
     'fs',fs,...
+    'epsilon',0.001,...
     'freqRange',freqForAnalysis,...
+    'output',0,...          % Since I'm using the optimal model order, don't output the search in mvar
     'logLikelihoodMethod',2);   % 1 == Matlab, 2 == Ding, 3 == Awareness Paper (see calculate_bic.m)
 config_plot=struct(...
     'hFig',[],...
@@ -123,39 +131,47 @@ for j=1:numConditions
     pVal.(currCond)=nan(numTrials,numChannels);
     pass.(currCond)=nan(numTrials,1);
 
-    gamma.(currCond)=nan(numChannels,numChannels,length(freqRange),numTrials);
-    H.(currCond)=nan(numChannels,numChannels,length(freqRange),numTrials);
+%     gamma.(currCond)=nan(numChannels,numChannels,length(freqRange),numTrials);
+    gamma.(currCond)=nan;
+%     H.(currCond)=nan(numChannels,numChannels,length(freqRange),numTrials);
+    
+    fprintf('Calculating optimal order...');
+
+    [config_mvar.modelOrder,crit.(currCond)]=calculate_optimal_model_order(x.(currCond), config_mvar);
+    
+    fprintf('Optimal Model Order = %d\n',config_mvar.modelOrder);
 
     for i=1:numTrials
-        fprintf('%d/%d - ',i,numTrials);
+        fprintf('%d/%d\n',i,numTrials);
         
         %% Calculate MVAR model
-        [ar.(currCond)(i).mdl, res.(currCond)(i).E, crit.(currCond)(i).(config_crit.crit)]=...
-            mvar(squeeze(x.(currCond)(:,:,i)), config_crit);
+%         [ar.(currCond)(i).mdl, res.(currCond)(i).E, crit.(currCond)(i).(config_mvar.crit)]=...
+%             mvar(squeeze(x.(currCond)(:,:,i)), config_mvar);
+        [ar.(currCond)(i).mdl, res.(currCond)(i).E] = mvar(squeeze(x.(currCond)(:,:,i)), config_mvar);
         
         %% Test Whiteness
         [pass.(currCond)(i), h.(currCond)(i,:), pVal.(currCond)(i,:)]=...
             test_model(res.(currCond)(i).E,length(x.(currCond)(:,:,i)));
         
-        %% Calculate DTF Connectivity
-        [gamma.(currCond)(:,:,:,i), H.(currCond)(:,:,:,i)]=dtf(ar.(currCond)(i).mdl,freqRange,fs);
+        %% Calculate DTF Connectivity (No DTF for correlated data)
+%         [gamma.(currCond)(:,:,:,i), H.(currCond)(:,:,:,i)]=dtf(ar.(currCond)(i).mdl,freqRange,fs);
     end
     
-    print_whiteness(h.(currCond),pVal.(currCond),labels);
+%     print_whiteness(h.(currCond),pVal.(currCond),labels);
 end
 
 fprintf('First pass completed.\n');
 
-%% Surrogate Analysis
+%% Surrogate Analysis (No surrogate for correlated data)
 
-fprintf('Surrogate analysis of initial pass beginning...\n');
-[surrogate,distribution,pxx]=surrogate_analysis(x,fs,freqRange,config_crit,config_surr);
-fprintf('Surrogate analyis of initial pass completed.\n');
+% fprintf('Surrogate analysis of initial pass beginning...\n');
+% [surrogate,distribution,pxx]=surrogate_analysis(x,fs,freqRange,config_mvar,config_surr);
+% fprintf('Surrogate analyis of initial pass completed.\n');
 
 %% Decorrelation
 
 fprintf('Decorrelating time series channels...\n');
-[x_filt,filt_values]=filter_serial_correlation(x,res,h,config_crit);
+[x_filt,filt_values]=filter_serial_correlation(x,res,h,config_mvar);
 fprintf('Decorrelation completed.\n');
 
 %% Main Loop for decorrelated data
@@ -173,24 +189,30 @@ for i=1:length(cond_labels)
     pVal_filt.(currCond)=nan(numTrials,numChannels);
     pass_filt.(currCond)=ones(numTrials,1);
 
-    gamma_filt.(currCond)=zeros(numChannels,numChannels,length(freqRange),numTrials);
+    gamma_filt.(currCond)=zeros(numChannels,numChannels,length(freqForAnalysis),numTrials);
+
+    [config_mvar.modelOrder,crit_filt.(currCond)]=calculate_optimal_model_order(x_filt.(currCond), config_mvar);
+
+    fprintf('Optimal Model Order = %d\n',config_mvar.modelOrder);
 
     for j=1:numTrials
         if filt_values.(currCond)(j).decorrelated
-            fprintf('%d/%d - ',j,numTrials);
+            fprintf('%d/%d\n',j,numTrials);
 
             %% Calculate MVAR model
-            [ar_filt.(currCond)(j).mdl,res_filt.(currCond)(j).E,crit_filt.(currCond)(j).(config_crit.crit)]=...
-                mvar(squeeze(x_filt.(currCond)(:,:,j)),config_crit);
+%             [ar_filt.(currCond)(j).mdl,res_filt.(currCond)(j).E,crit_filt.(currCond)(j).(config_mvar.crit)]=...
+%                 mvar(squeeze(x_filt.(currCond)(:,:,j)),config_mvar);
+            [ar_filt.(currCond)(j).mdl,res_filt.(currCond)(j).E]=mvar(squeeze(x_filt.(currCond)(:,:,j)),config_mvar);
 
             %% Test whiteness
             [pass_filt.(currCond)(j),h_filt.(currCond)(j,:),pVal_filt.(currCond)(j,:)]=...
                 test_model(res_filt.(currCond)(j).E,length(x_filt.(currCond)(:,:,j)));
 
             %% Calculate DTF Connectivity
-            gamma_filt.(currCond)(:,:,:,j)=dtf(ar_filt.(currCond)(j).mdl,freqRange,fs);
+%             gamma_filt.(currCond)(:,:,:,j)=dtf(ar_filt.(currCond)(j).mdl,freqRange,fs);
+            gamma_filt.(currCond)(:,:,:,j)=dtf(ar_filt.(currCond)(j).mdl,freqForAnalysis,fs);
         else
-            warning('Trial %d of %d was not properly deocrrelated',j,numTrials)
+            warning('Trial %d of %d was not properly decorrelated',j,numTrials)
         end
     end
     
@@ -202,7 +224,7 @@ fprintf('Decorrelated data connectivity calculations completed.\n');
 %% Surrogate Analysis on Decorrelated Data
 
 fprintf('Surrogate analysis of decorrelated data beginning...\n');
-[surrogate_filt,distribution_filt,pxx_filt]=surrogate_analysis(x_filt,fs,freqRange,config_crit,config_surr);
+[surrogate_filt,distribution_filt,pxx_filt]=surrogate_analysis(x_filt,fs,freqForAnalysis,config_mvar,config_surr);
 fprintf('Surrogate analyis of decorrelated data completed.\n');
 
 %% Save all relevant variables
@@ -210,9 +232,9 @@ fprintf('Surrogate analyis of decorrelated data completed.\n');
 [newFile,subjID,dateID,runID]=simplify_filename(PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON);
 
 save(newFile,'ADDON','ar','channels','conditions','cond_labels','crit',...
-    'FILE','freqRange','freqForAnalysis','filtering','fs','fs_init','gamma','h','labels',...
+    'FILE','freqForAnalysis','filtering','fs','fs_init','gamma','h','labels',...
     'newFile','pass','PATIENT_ID','pVal','RECORDING_DATE','res','RUN_ID','x','x_all',...
-    'config_crit','config_plot','config_surr','NOTES','surrogate','distribution','pxx',...
+    'config_mvar','config_plot','config_surr','NOTES','surrogate','distribution','pxx',...
     'x_filt','filt_values','ar_filt','res_filt','crit_filt','h_filt','pVal_filt',...
     'gamma_filt','surrogate_filt','distribution_filt','pxx_filt','visit_type','cues_only',...
     'extrap_method','subjID','dateID','runID');
