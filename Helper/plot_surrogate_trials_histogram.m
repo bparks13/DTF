@@ -1,5 +1,5 @@
-function plot_surrogate_trials_histogram(distribution)
-%% plot_surrogate_trials_histogram(distribution)
+function plot_surrogate_trials_histogram(distribution,condition)
+%% plot_surrogate_trials_histogram(distribution,condition)
 %
 %  For surrogate analysis that is done between conditions (i.e. method == 'combine'), the
 %  distribution returned is a cell array. This function puts the distribution into a
@@ -7,9 +7,10 @@ function plot_surrogate_trials_histogram(distribution)
 %
 %   Inputs:
 %    - distribution: Either a cell array or a struct containing cell arrays for each
-%       condition (each condition is assumed to be the same cell array, and only the first
-%       condition will be plotted). Size of the cell array is [n x c], where n is the
+%       condition. Size of the cell array is [n x c], where n is the
 %       number of iterations run, and c is the number of channels
+%    - condition: String defining the condition of the current surrogate; used for the
+%       title
 %
 %   Outputs:
 %    Figure containing a histogram of the distribution of trials that were randomly chosen
@@ -20,21 +21,17 @@ function plot_surrogate_trials_histogram(distribution)
 
 if isstruct(distribution)
     fields=fieldnames(distribution);
-    distribution=distribution.(fields{1});
+    
+    for i=1:length(fields)
+        plot_surrogate_trials_histogram(distribution.(fields{i}),fields{i});
+    end
+    
+    return
 end
 
 C=categorical(distribution(:));
 figure; histogram(C);
 xlabel('Trial #'); ylabel('# of Times Used');
-title('Trials Used for Surrogate Analysis');
-
-% trialNames=unique(distribution);
-% numTrials=length(trialNames);
-
-% trialCount=nan(numTrials,1);
-
-% for i=1:numTrials
-%     trialCount(i)=sum(sum(strcmp(distribution,trialNames{i})));
-% end
+title(sprintf('Trials Used for Surrogate Analysis - %s',condition));
 
 end
