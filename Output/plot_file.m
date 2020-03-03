@@ -12,25 +12,11 @@ dtf_startup;
 
 % FILE='ET_CL_004__2018_06_20__run5__200Hz__Z_SCORE__BIC_(1).mat';
 
-file=uigetfile(fullfile(get_root_path,'Files','*.mat'));
-
-load(fullfile(get_root_path,'Files',file));
+% file=uigetfile(fullfile(get_root_path,'Files','*.mat'));
+% 
+% load(fullfile(get_root_path,'Files',file));
 
 contactNames=get_structure_names(subjID);
-
-%% Plot connectivity figure - Original
-
-% for i=1:length(cond_labels)
-%     currCond=cond_labels{i};
-%     config_plot.figTitle=sprintf('%s, %s, %s - %s: Connectivity',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
-%     if exist('surrogate','var') == 1
-%         series=struct('original',x.(currCond),'surrogate',surrogate.(currCond));
-%         config_plot.surr_params.highlightSignificance=true;
-%         plot_connectivity(gamma.(currCond),series,freqRange,labels,config_plot);
-%     else
-%         plot_connectivity(gamma.(currCond),x.(currCond),freqRange,labels,config_plot);
-%     end
-% end
 
 %% Plot connectivity figure - Decorrelated
 
@@ -45,6 +31,20 @@ for i=1:length(cond_labels)
         plot_connectivity(gamma_filt.(currCond),x_filt.(currCond),freqRange,labels,config_plot);
     end
 end
+
+%% Plot connectivity figure - Original
+
+% for i=1:length(cond_labels)
+%     currCond=cond_labels{i};
+%     config_plot.figTitle=sprintf('%s, %s, %s - %s: Connectivity',PATIENT_ID,RECORDING_DATE,RUN_ID,currCond);
+%     if exist('surrogate','var') == 1
+%         series=struct('original',x.(currCond),'surrogate',surrogate.(currCond));
+%         config_plot.surr_params.highlightSignificance=true;
+%         plot_connectivity(gamma.(currCond),series,freqRange,labels,config_plot);
+%     else
+%         plot_connectivity(gamma.(currCond),x.(currCond),freqRange,labels,config_plot);
+%     end
+% end
 
 %% Plot criterion
 % 
