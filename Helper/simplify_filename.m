@@ -50,6 +50,10 @@ if strcmp(subjID,'ET_CL_002')
         
         if strcmp(runID,'run9')
             runID_simple='R01';
+        elseif strcmp(runID,'run10')
+            runID_simple='R02';
+        elseif strcmp(runID,'run11')
+            runID_simple='R03';
         end
     end
 elseif strcmp(subjID,'ET_CL_004')
@@ -86,6 +90,22 @@ elseif strcmp(subjID,'TS04 Double DBS Implantation')
         
         if strcmp(runID,'run16')
             runID_simple='R01';
+        end
+    end
+elseif strcmp(subjID,'ET_CL_001')
+    subjID_simple='S05';
+    
+    if strcmp(dateID,'2017_05_17')
+        dateID_simple='D01';
+        
+        if strcmp(runID,'run12')
+            runID_simple='R01';
+        elseif strcmp(runID,'run13')
+            runID_simple='R02';
+        elseif strcmp(runID,'run15')
+            runID_simple='R03';
+        elseif strcmp(runID,'run17')
+            runID_simple='R04';
         end
     end
 end
