@@ -7,32 +7,38 @@
 %   simplify_filename, surrogate_analysis, filter_serial_correlation, test_model
 %
 
+% Make sure that the parallel pool is initialized
+
 CCC;
 dtf_startup;
 
 %% Definitions
 
+PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
+PATIENT_ID='ET_CL_002';
+RECORDING_DATE='2018_02_01';
+RUN_ID='run12';
+% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
+% PATIENT_ID='ET_CL_004';
+% RECORDING_DATE='2018_06_20';
+% RUN_ID='run5';
+% RECORDING_DATE='2018_08_23';
+% RUN_ID='run1';
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET\\OR\\with_DBS';
 % PATIENT_ID='ET_OR_STIM_018';
 % RECORDING_DATE='2018_11_28';
 % RUN_ID='run12';
-PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
-PATIENT_ID='ET_CL_004';
-RECORDING_DATE='2018_06_20';
-RUN_ID='run5';
-ADDON='_DELETEME_SAME_MODEL_ORDER';
-NOTES='Calculating optimal model order first, then only using that for all calculations';
-% RECORDING_DATE='2018_08_23';
-% RUN_ID='run1';
-% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
-% PATIENT_ID='ET_CL_002';
-% RECORDING_DATE='2018_02_01';
-% RUN_ID='run9';
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_Tourette';
 % PATIENT_ID='TS04 Double DBS Implantation';
 % RECORDING_DATE='2017_03_01';
 % RUN_ID='run16';
+% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
+% PATIENT_ID='ET_CL_001';
+% RECORDING_DATE='2017_05_17';
+% RUN_ID='run17';
 MIDPATH='preproc';
+ADDON='';
+NOTES='';
 % ADDON='_ARTIFACT';
 % NOTES='Run through with the same settings as other subjects; expecting large artifacts, and spurious DTF';
 
@@ -81,6 +87,7 @@ pass=struct;
 surrogate=nan;
 distribution=nan;
 pxx=nan;
+pxx_filt=nan;
 
 ar_filt=struct;
 res_filt=struct;
@@ -125,7 +132,7 @@ for j=1:numConditions
 
     numTrials=size(x.(currCond),3);
     numChannels=length(channels);
-    numSamples=length(x.Rest(:,1));
+    numSamples=length(x.(currCond)(:,1));
 
     h.(currCond)=nan(numTrials,numChannels);
     pVal.(currCond)=nan(numTrials,numChannels);
@@ -224,7 +231,7 @@ fprintf('Decorrelated data connectivity calculations completed.\n');
 %% Surrogate Analysis on Decorrelated Data
 
 fprintf('Surrogate analysis of decorrelated data beginning...\n');
-[surrogate_filt,distribution_filt,pxx_filt]=surrogate_analysis(x_filt,fs,freqForAnalysis,config_mvar,config_surr);
+[surrogate_filt,distribution_filt]=surrogate_analysis(x_filt,fs,freqForAnalysis,config_mvar,config_surr);
 fprintf('Surrogate analyis of decorrelated data completed.\n');
 
 %% Save all relevant variables
