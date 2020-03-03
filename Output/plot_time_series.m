@@ -25,13 +25,21 @@ colors=linspecer(3);
 modelOrder=numSamples-length(e);
 ax=zeros(numChannels,1);
 
-for i=1:numChannels
-    ax(i)=subplot(numChannels,1,i);
-    plot(t,x(:,i),'Color',colors(1,:)); hold on;
-    plot(t(modelOrder+1:end),x_hat(:,i),'Color',colors(2,:));
-    plot(t(modelOrder+1:end),e(:,i),'Color',colors(3,:));
-    xlim([t(1) t(end)])
-    legend('x','x\_hat','error');
+if ~isempty(x_hat) && ~isempty(e)
+    for i=1:numChannels
+        ax(i)=subplot(numChannels,1,i);
+        plot(t,x(:,i),'Color',colors(1,:)); hold on;
+        plot(t(modelOrder+1:end),x_hat(:,i),'Color',colors(2,:));
+        plot(t(modelOrder+1:end),e(:,i),'Color',colors(3,:));
+        xlim([t(1) t(end)])
+        legend('x','x\_hat','error');
+    end
+else
+    for i=1:numChannels
+        ax(i)=subplot(numChannels,1,i);
+        plot(t,x(:,i),'Color',colors(1,:)); 
+        xlim([t(1) t(end)])
+    end    
 end
 
 linkaxes(ax,'x');
