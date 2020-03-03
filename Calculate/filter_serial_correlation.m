@@ -48,11 +48,8 @@ if nargin == 5 && isstruct(config)
     end
 end
 
-config_e=config_crit;
-config_e.output=0;
-
-if isfield(config_e,'modelOrder')
-    config_e=rmfield(config_e,'modelOrder');
+if isfield(config_crit,'modelOrder')
+    config_crit=rmfield(config_crit,'modelOrder');
 end
 
 config_filt=config_crit;
@@ -60,30 +57,42 @@ config_filt.orderRange=1:15;
 config_filt.output=0;
 
 fields=fieldnames(x);
-c=cell(length(fields),1);
+% c=cell(length(fields),1);
 
-x_filt=cell2struct(c,fields,1);
-filt_values=cell2struct(c,fields,1);
+numFields=length(fields);
+
+% x_filt=cell2struct(c,fields,1);
+% filt_values=cell2struct(c,fields,1);
+x_filt_cell=cell(numFields,1);
+filt_values_cell=cell(numFields,1);
+res_cell=struct2cell(res);
+h_cell=struct2cell(h);
 
 numChannels=size(x.(fields{1}),2);
 
-for i=1:length(fields)
-    numTrials=size(x.(fields{i}),3);
-    filt_values.(fields{i})=struct('decorrelated',nan,'order',nan,'iteration',nan);
+x_cell=struct2cell(x);
+
+parfor i=1:numFields
+    numTrials=size(x_cell{i},3);
+    filt_values_cell{i}=struct('decorrelated',nan,'order',nan,'iteration',nan);
+    x_filt_cell{i}=nan(size(x_cell{i}));
+    
+    config_e=config_crit;
+    config_e.output=0;
     
     for j=1:numTrials
-        sig_orig=x.(fields{i})(:,:,j);
-        E_orig=res.(fields{i})(j).E;
+        sig_orig=x_cell{i}(:,:,j);
+        E_orig=res_cell{i}(j).E;
         
-        tmp_h=h.(fields{i})(j,:);
+        tmp_h=h_cell{i}(j,:);
         tmp_pass=all(tmp_h==0);
         
         bool_decorrelated=false;
         
         if tmp_pass
-            x_filt.(fields{i})(:,:,j)=sig_orig;
-            filt_values.(fields{i})(j).decorrelated=true;
-            fprintf('\n%s: Trial %d already uncorrelated',fields{i},j);
+            x_filt_cell{i}(:,:,j)=sig_orig;
+            filt_values_cell{i}(j).decorrelated=true;
+            fprintf('%s: Trial %d uncorrelated\n',fields{i},j);
         else
             for k=1:length(errorModelOrders)
                 currModelOrder=errorModelOrders(k);
@@ -91,10 +100,8 @@ for i=1:length(fields)
                 sig=sig_orig;
                 tmp_E=E_orig;
                 
-                fprintf('\n%s: Trial %d; Error model order %d - ',fields{i},j,k);
-                
                 for l=1:maxIterations
-                    fprintf('%d, ',l);
+%                     fprintf('%d, ',l);
                     
                     [e_mdl,~,~]=mvar(tmp_E,config_e);
                     order=e_mdl.order;
@@ -112,11 +119,11 @@ for i=1:length(fields)
                     sig=sig_filt;
                     
                     if tmp_pass
-                        x_filt.(fields{i})(:,:,j)=sig;
-                        filt_values.(fields{i})(j).decorrelated=true;
-                        filt_values.(fields{i})(j).order=currModelOrder;
-                        filt_values.(fields{i})(j).iteration=l;
-                        fprintf('\n%s: Trial %d decorrelated',fields{i},j);
+                        x_filt_cell{i}(:,:,j)=sig;
+                        filt_values_cell{i}(j).decorrelated=true;
+                        filt_values_cell{i}(j).order=currModelOrder;
+                        filt_values_cell{i}(j).iteration=l;
+                        fprintf('%s: Trial %d decorrelated\n',fields{i},j);
                         bool_decorrelated=true;
                         break
                     end
@@ -128,15 +135,18 @@ for i=1:length(fields)
             end
                 
             if ~bool_decorrelated
-                fprintf('\nWARNING: %s Trial %d was not decorrelated\n',fields{i},j);
-                x_filt.(fields{i})(:,:,j)=nan(size(sig));
-                filt_values.(fields{i})(j).decorrelated=false;
+                fprintf('WARNING: %s Trial %d was not decorrelated\n',fields{i},j);
+                x_filt_cell{i}(:,:,j)=nan(size(sig));
+                filt_values_cell{i}(j).decorrelated=false;
             end
         end
     end
 end
 
+filt_values=cell2struct(filt_values_cell,fields,1);
+x_filt=cell2struct(x_filt_cell,fields,1);
+
 % Print a new line to flush the command line output
-fprintf('\n');
+% fprintf('\n');
 
 end

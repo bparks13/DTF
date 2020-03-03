@@ -208,20 +208,30 @@ elseif strcmp(method,'sample')
     numFields=length(fields);
     totalOperations=numFields*numIterations;
     
-    for k=1:numFields
-        currCond=fields{k};
+%     bool_savePSD = nargout == 3;
+    
+%     if bool_savePSD
+%         pxx_cell=cell(numfields,1);
+%     end
+    
+    x_cell=struct2cell(x);
+    dist_cell=cell(numFields,1);
+    surr_cell=cell(numFields,1);
+    
+    parfor k=1:numFields
+%         currCond=fields{k};
 
-        numSamples=size(x.(currCond),1);
-        numChannels=size(x.(currCond),2);
-        numTrials=size(x.(currCond),3);
+        numSamples=size(x_cell{k},1);
+        numChannels=size(x_cell{k},2);
+        numTrials=size(x_cell{k},3);
         
         gamma_dist=zeros(numChannels,numChannels,length(freqRange),numIterations);
-        distribution.(currCond)=nan(numIterations,numChannels);
+        dist_cell{k}=nan(numIterations,numChannels);
 
-        if nargout == 3
-            pxx.(currCond)=struct('all',nan(length(freqRange),numChannels,numIterations),...
-                'avg',nan(length(freqRange),numChannels),'std',nan(length(freqRange),numChannels));
-        end
+%         if bool_savePSD
+%             pxx_cell{k}=struct('all',nan(length(freqRange),numChannels,numIterations),...
+%                 'avg',nan(length(freqRange),numChannels),'std',nan(length(freqRange),numChannels));
+%         end
 
         for i=1:numIterations
             randomTrials=randperm(numTrials,numChannels);
@@ -232,7 +242,7 @@ elseif strcmp(method,'sample')
             
             if numSamplesUsed == 1
                 for m=1:numChannels
-                    tmp_x=x.(currCond)(:,m,randomTrials(m));
+                    tmp_x=x_cell{k}(:,m,randomTrials(m));
                     for j=1:numSampleIterations
                         randomSample=randi(length(tmp_x),1);
                         tmp_x_shuffled(j,m)=tmp_x(randomSample);
@@ -243,7 +253,7 @@ elseif strcmp(method,'sample')
                 tmp_x=tmp_x_shuffled;
             else
                 for m=1:numChannels
-                    tmp_x=x.(currCond)(:,m,randomTrials(m));
+                    tmp_x=x_cell{k}(:,m,randomTrials(m));
                     for j=1:numSampleIterations
                         randomSample=randi(length(tmp_x)-numSamplesUsed+1,1);
                         tmp_x_shuffled((j-1)*numSamplesUsed+1:j*numSamplesUsed,m)=tmp_x(randomSample:randomSample+numSamplesUsed-1);
@@ -261,24 +271,31 @@ elseif strcmp(method,'sample')
             [tmp_mdl,~,~]=mvar(tmp_x,config_crit);
             gamma_dist(:,:,:,i)=dtf(tmp_mdl,freqRange,fs);
 
-            distribution.(currCond)(i,:)=randomTrials;
+            dist_cell{k}(i,:)=randomTrials;
             
-            if nargout == 3
-                pxx.(currCond).all(:,:,i)=periodogram(tmp_x,[],freqRange,fs);
-            end
+%             if bool_savePSD
+%                 pxx.(currCond).all(:,:,i)=periodogram(tmp_x,[],freqRange,fs);
+%             end
 
-            if mod((k-1)*numIterations+i,floor(totalOperations/100)) == 0
-                fprintf('%d%%\n',floor(((k-1)*numIterations+i)/totalOperations*100));
+            if mod(i,floor(numIterations/20)) == 0
+                fprintf('%s - %d%%\n',fields{k},floor(i/numIterations*100));
             end
         end
         
-        if nargout == 3
-            pxx.(currCond).avg=mean(pxx.(currCond).all,3);
-            pxx.(currCond).std=std(pxx.(currCond).all,[],3);
-        end
+%         if bool_savePSD == 3
+%             pxx.(currCond).avg=mean(pxx.(currCond).all,3);
+%             pxx.(currCond).std=std(pxx.(currCond).all,[],3);
+%         end
 
-        surrogate.(currCond)=gamma_dist;
+        surr_cell{k}=gamma_dist;
     end
+    
+    distribution=cell2struct(dist_cell,fields,1);
+    surrogate=cell2struct(surr_cell,fields,1);
+    
+%     if bool_savePSD
+%         pxx=cell2struct(pxx_cell,fields,2);
+%     end
 elseif strcmp(method,'shift')
     numFields=length(fields);
     
