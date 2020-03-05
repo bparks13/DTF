@@ -6,7 +6,8 @@ function [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type,cue
 %  Filters the data before it is separated into its constitutent trials
 %
 %   Inputs:
-%    - file: Filename specifying the full file path to the file
+%    - file: Filename specifying the full file path to the file. OR Struct containing the
+%       datastorage field that would have been found in the file. 
 %    - condition: Integer value defining the state matching a specific condition
 %    - channels: Vector of ints defining which channels to extract. If it is a matrix, the
 %       bipolar combination of channels is taken, with the second column channel subtracted
@@ -75,7 +76,17 @@ elseif nargin == 7 && isempty(extrap_method)
     extrap_method='linear';
 end
 
-data=load(file);
+if ischar(file)
+    data=load(file);
+elseif isstruct(file)
+    if isfield(file,'datastorage')
+        data=file;
+    else
+        error('Wrong struct given.');
+    end
+else
+    error('Invalid input.');
+end
 
 fs=data.datastorage.src.LFP.Fs;
 
@@ -95,6 +106,12 @@ end
 
 if strcmp(visit_type,'closed-loop')
     x_all=x_all*1e3;    % Medtronic recordings are in µV, convert to mV to be consistent
+end
+
+% Check that all filtering parameters are stable
+
+if ~check_stability(filtering)
+    error('A filter is unstable. Check warnings for specifics.');
 end
 
 % Flexible filtering parameters from the filtering struct 

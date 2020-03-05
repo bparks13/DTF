@@ -54,7 +54,8 @@ if isempty(channels) || isempty(labels) || isempty(conditions) || isempty(cond_l
     return
 end
 
-fs_init=extract_sampling_frequency(FILE);
+datastorage=load(FILE,'datastorage');
+fs_init=extract_sampling_frequency(datastorage);
 
 filtering=struct;
 [filtering.hpf.num,filtering.hpf.den]=CreateHPF_butter(fs_init,3,2);
@@ -63,12 +64,12 @@ filtering.normalize='z-score';
 realizationLengthInSeconds=1;
 filtering.realizations.length=floor(realizationLengthInSeconds*fs_init);
 
-order_notch=4;
+order_notch=3;
 cutoff_notch=[58,62];
 [filtering.notch.num,filtering.notch.den]=CreateBSF_butter(fs_init,order_notch,cutoff_notch);
 [filtering.lpf.num,filtering.lpf.den]=CreateLPF_butter(fs_init,8,round(filtering.downsample/2));
 
-[x_all,fs]=load_data(FILE,channels,[],filtering,visit_type,[],extrap_method);
+[x_all,fs]=load_data(datastorage,channels,[],filtering,visit_type,[],extrap_method);
 
 numConditions=length(conditions);
 
@@ -128,7 +129,7 @@ for j=1:numConditions
     
     fprintf('Beginning condition ''%s''\n',currCond);
     
-    [x.(currCond),~]=load_data(FILE,channels,conditions(j),filtering,visit_type,cues_only);
+    [x.(currCond),~]=load_data(datastorage,channels,conditions(j),filtering,visit_type,cues_only);
 
     numTrials=size(x.(currCond),3);
     numChannels=length(channels);
