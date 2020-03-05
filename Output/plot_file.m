@@ -16,7 +16,7 @@ dtf_startup;
 % 
 % load(fullfile(get_root_path,'Files',file));
 
-contactNames=get_structure_names(subjID);
+% contactNames=get_structure_names(subjID);
 
 %% Plot connectivity figure - Decorrelated
 
@@ -26,7 +26,9 @@ for i=1:length(cond_labels)
     if exist('surrogate_filt','var') == 1
         series=struct('original',x_filt.(currCond),'surrogate',surrogate_filt.(currCond));
         config_plot.surr_params.highlightSignificance=true;
+        config_plot.surr_params.threshold=alpha;
         plot_connectivity(gamma_filt.(currCond),series,freqForAnalysis,contactNames,config_plot);
+%         plot_connectivity(gamma_filt.(currCond),series,freqRange,contactNames,config_plot);
     else
         plot_connectivity(gamma_filt.(currCond),x_filt.(currCond),freqRange,labels,config_plot);
     end
