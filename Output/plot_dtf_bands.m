@@ -13,15 +13,17 @@ CCC;
 % load(fullfile(get_root_path(),'Files',FILE));
 
 numConditions=length(cond_labels);
-freqBands={4:8,8:12,12:20,20:30,30:100}; % Define the frequency values
-freqBandIndices={1:9,9:17,17:33,33:53,53:193};
-freqBandLabel={'Theta','Alpha','Low Beta','High Beta','Gamma'};
+% freqBands={4:8,8:12,12:20,20:30,30:100}; % Define the frequency values
+freqBands=[4,8;8,12;12,20;20,30;30,45;45,70;70,100];
+freqBandIndices=convert_from_hertz_to_indices(freqBands,freqForAnalysis);
+% freqBandIndices={1:9,9:17,17:33,33:53,53:193};
+freqBandLabel={'Theta','Alpha','Low Beta','High Beta','Low Gamma','Mid Gamma','High Gamma'};
 
-contactNames=get_structure_names(subjID);
+% contactNames=get_structure_names(subjID);
 
 %% Use the surrogate values to create a significance threshold
 
-significance=calculate_significance_from_surrogate(surrogate_filt,0.01,'invariant');
+significance=calculate_significance_from_surrogate(surrogate_filt,alpha,'invariant');
 % significance=calculate_significance_from_surrogate(surrogate_filt,0.01,'dependent');
 
 %% Plot one frequency band per figure, with all conditions in different colors, and reject non-significant values
@@ -30,11 +32,11 @@ config=struct;
 config.hideUselessConnections=true;
 config.usefulConnections=returnUsefulConnections(freqBandIndices,gamma_filt,significance);
 
-for i=1:length(freqBands)
+for i=1:size(freqBands,1)
     config.title=sprintf('%s Band Connectivity',freqBandLabel{i});
-    freqIndStart=find(freqForAnalysis==freqBands{i}(1),1);
-    freqIndEnd=find(freqForAnalysis==freqBands{i}(end),1);
-    plot_bar_with_error(freqIndStart:freqIndEnd,gamma_filt,contactNames,significance,config);
+%     freqIndStart=find(freqForAnalysis==freqBands{i}(1),1);
+%     freqIndEnd=find(freqForAnalysis==freqBands{i}(end),1);
+    plot_bar_with_error(freqBandIndices{i},gamma_filt,contactNames,significance,config);
 end
 
 %% Plot one figure per frequency band, with each conditions plotted in the same bar graph
