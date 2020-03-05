@@ -52,7 +52,8 @@ function [surrogate,distribution,pxx]=surrogate_analysis(x,fs,freqRange,config_c
 %% Load file
 
 fields=fieldnames(x);
-numIterations=1000;
+numFields=length(fields);
+numIterations=0;
 numSamplesUsed=1;
 method='sample';
 
@@ -66,7 +67,19 @@ if isstruct(config)
     end
     
     if isfield(config,'iterations') && ~isempty(config.iterations)
-        numIterations=config.iterations;
+        if isstruct(config.iterations)
+            numIterations=cell(numFields,1);
+            
+            for i=1:numFields
+                numIterations{i}=config.iterations.(fields{i});
+            end
+        else
+            numIterations=cell(numFields,1);
+            
+            for i=1:numFields
+                numIterations{i}=config.iterations;
+            end
+        end
     end
     
     if isfield(config,'numSamples') && ~isempty(config.numSamples)
@@ -75,6 +88,14 @@ if isstruct(config)
         else
             warning('Cannot define the number of samples for any method other than ''sample''');
         end
+    end
+end
+
+if ~iscell(numIterations)
+    numIterations=cell(numFields,1);
+    
+    for i=1:numFields
+        numIterations{i}=1000;
     end
 end
 
@@ -90,7 +111,6 @@ end
 %% Surrogate analysis
 
 if strcmp(method,'single')
-    numFields=length(fields);
     totalOperations=numFields*numIterations;
 
     for k=1:numFields
@@ -205,35 +225,19 @@ elseif strcmp(method,'combine')
     
     pxx=rmfield(pxx,'all');
 elseif strcmp(method,'sample')
-    numFields=length(fields);
-    totalOperations=numFields*numIterations;
-    
-%     bool_savePSD = nargout == 3;
-    
-%     if bool_savePSD
-%         pxx_cell=cell(numfields,1);
-%     end
-    
     x_cell=struct2cell(x);
     dist_cell=cell(numFields,1);
     surr_cell=cell(numFields,1);
     
     parfor k=1:numFields
-%         currCond=fields{k};
-
         numSamples=size(x_cell{k},1);
         numChannels=size(x_cell{k},2);
         numTrials=size(x_cell{k},3);
         
-        gamma_dist=zeros(numChannels,numChannels,length(freqRange),numIterations);
-        dist_cell{k}=nan(numIterations,numChannels);
+        gamma_dist=zeros(numChannels,numChannels,length(freqRange),numIterations{k});
+        dist_cell{k}=nan(numIterations{k},numChannels);
 
-%         if bool_savePSD
-%             pxx_cell{k}=struct('all',nan(length(freqRange),numChannels,numIterations),...
-%                 'avg',nan(length(freqRange),numChannels),'std',nan(length(freqRange),numChannels));
-%         end
-
-        for i=1:numIterations
+        for i=1:numIterations{k}
             randomTrials=randperm(numTrials,numChannels);
 
             tmp_x_shuffled=nan(numSamples,numChannels);
@@ -243,11 +247,15 @@ elseif strcmp(method,'sample')
             if numSamplesUsed == 1
                 for m=1:numChannels
                     tmp_x=x_cell{k}(:,m,randomTrials(m));
-                    for j=1:numSampleIterations
-                        randomSample=randi(length(tmp_x),1);
-                        tmp_x_shuffled(j,m)=tmp_x(randomSample);
-                        tmp_x(randomSample)=[];
-                    end
+                    randPerm=randperm(size(tmp_x,1));
+                    
+                    tmp_x_shuffled(:,m)=tmp_x(randPerm); % Randomly shuffle the time domain data
+                    
+%                     for j=1:numSampleIterations
+%                         randomSample=randi(length(tmp_x),1);
+%                         tmp_x_shuffled(j,m)=tmp_x(randomSample);
+%                         tmp_x(randomSample)=[];
+%                     end
                 end
                 
                 tmp_x=tmp_x_shuffled;
@@ -273,32 +281,17 @@ elseif strcmp(method,'sample')
 
             dist_cell{k}(i,:)=randomTrials;
             
-%             if bool_savePSD
-%                 pxx.(currCond).all(:,:,i)=periodogram(tmp_x,[],freqRange,fs);
-%             end
-
-            if mod(i,floor(numIterations/20)) == 0
-                fprintf('%s - %d%%\n',fields{k},floor(i/numIterations*100));
+            if mod(i,floor(numIterations{k}/20)) == 0
+                fprintf('%s - %d%%\n',fields{k},floor(i/numIterations{k}*100));
             end
         end
         
-%         if bool_savePSD == 3
-%             pxx.(currCond).avg=mean(pxx.(currCond).all,3);
-%             pxx.(currCond).std=std(pxx.(currCond).all,[],3);
-%         end
-
         surr_cell{k}=gamma_dist;
     end
     
     distribution=cell2struct(dist_cell,fields,1);
     surrogate=cell2struct(surr_cell,fields,1);
-    
-%     if bool_savePSD
-%         pxx=cell2struct(pxx_cell,fields,2);
-%     end
 elseif strcmp(method,'shift')
-    numFields=length(fields);
-    
     for k=1:numFields
         currCond=fields{k};
 
