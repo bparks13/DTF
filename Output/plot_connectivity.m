@@ -51,43 +51,42 @@ function [avgPSD,avgConn,stdPSD,stdConn]=plot_connectivity(conn,series,freqRange
 %       used. 
 %    - config: Optional struct containing additional parameters. Not all of them need to
 %       be defined
-%           seriesType: Int defining which type of series is given. Number corresponds
-%             with the series given above. 
-%               NOTE: If series is a struct, '4' does not need to be defined. Rather,
-%               seriesType should define how the values inside the struct are to be
-%               treated 
-%           fs: Sampling frequency in Hz. If not defined, assumed to be 2400 Hz
-%           hFig: Handle to an existing figure, does not create a new figure anymore
-%           figTitle: String containing a figure title, containing for example the
-%             condition being tested, or the patient/date/run combo, or all of the above
-%           plotType: String denoting what to plot. 
-%             'ind' plot all individual traces [Default]
-%             'avg' plot averages
-%             'avgerr' plot averages with shaded error bars
-%               NOTE: If plotType is 'avg' or 'avgerr', can return the average PSDs and the
-%                 average gamma values
-%           h: Only applicable for plotType = 'ind'; denotes whether the null hypothesis
-%             of no autocorrelation among the residuals is kept (h = 0) or rejected
-%             (h = 1). Plots individual traces where the null hypothesis is rejected in
-%             red. Size is [t x c], where t is the number of trials, and c is the number
-%             of channels 
-%           freqLims: If defined, changes the limits of the plots to only show the
-%             frequency range specified. Can be a vector of the entire range, or just the
-%             min and max values to be used
-%           surr_params: Additional struct that can be defined to modify how the surrogate
-%             data is shown. However, this is not a necessary field, as all defaults are
-%             defined
-%               threshold: Float defining what percentage of the distribution is
-%                 considered to be a significant amount of connection. Default is 0.01, or
-%                 1%
-%               highlightSignificance: Boolean denoting whether or not to show the shaded
-%                 error bars at all times [false], or to only show error bars when the
-%                 mean values are above significance as defined by the surrogate values
-%               binning: String denoting how to bin together the surrogate values to
-%                   create a threshold. Can be frequency-dependent ['dependent'] where
-%                   each frequency receives a unique threshold, or frequency-invariant
-%                   ['invariant'] where a single threshold is used for the entire
-%                   frequency range
+%    -- seriesType: Int defining which type of series is given. Number corresponds
+%        with the series given above. 
+%         NOTE: If series is a struct, '4' does not need to be defined. Rather,
+%          seriesType should define how the values inside the struct are to be
+%          treated 
+%    -- fs: Sampling frequency in Hz. If not defined, assumed to be 2400 Hz
+%    -- hFig: Handle to an existing figure, does not create a new figure anymore
+%    -- figTitle: String containing a figure title, containing for example the
+%        condition being tested, or the patient/date/run combo, or all of the above
+%    -- plotType: String denoting what to plot. 
+%        'ind' plot all individual traces [Default]
+%        'avg' plot averages
+%        'avgerr' plot averages with shaded error bars
+%          NOTE: If plotType is 'avg' or 'avgerr', can return the average PSDs and the
+%           average gamma values
+%    -- h: Only applicable for plotType = 'ind'; denotes whether the null hypothesis
+%        of no autocorrelation among the residuals is kept (h = 0) or rejected
+%        (h = 1). Plots individual traces where the null hypothesis is rejected in
+%        red. Size is [t x c], where t is the number of trials, and c is the number
+%        of channels 
+%    -- freqLims: If defined, changes the limits of the plots to only show the
+%        frequency range specified. Can be a vector of the entire range, or just the
+%        min and max values to be used
+%    -- surr_params: Additional struct that can be defined to modify how the surrogate
+%        data is shown. However, this is not a necessary field, as all defaults are
+%        defined
+%    --- threshold: Float defining what percentage of the distribution is
+%         considered to be a significant amount of connection. Default is 0.01, or 1%
+%    --- highlightSignificance: Boolean denoting whether or not to show the shaded
+%         error bars at all times [false], or to only show error bars when the
+%         mean values are above significance as defined by the surrogate values
+%    --- binning: String denoting how to bin together the surrogate values to
+%         create a threshold. Can be frequency-dependent ['dependent'] where
+%         each frequency receives a unique threshold, or frequency-invariant
+%         ['invariant'] where a single threshold is used for the entire
+%         frequency range
 %
 %   Outputs:
 %    Figure containing subplots with PSD on the diagonal, and DTF connectivity
