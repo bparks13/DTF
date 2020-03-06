@@ -21,6 +21,8 @@ elseif strcmp(subjID,'ET_CL_004') || strcmp(subjID,'S02')
     names={'L Thal','L Vim','L M1/S1','L S2'};
 elseif strcmp(subjID,'ET_OR_STIM_018') || strcmp(subjID,'S03')
     names={'L VOp','L VOp/PSA','L Vim','L PSA','L M1','L M1/S1','L S1/S2'};
+elseif strcmp(subjID,'TS04 Double DBS Implantation') || strcmp(subjID,'S04')
+    names={'R Vim','R PSA','L Vim','L PSA','R PM/M1','R M1/S1','L M1','L S1/S2'};
 elseif strcmp(subjID,'ET_CL_001') || strcmp(subjID,'S05')
     names={'R Vim','R PSA','R M1/S1','R S1/S2'};
 else

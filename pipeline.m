@@ -14,31 +14,29 @@ dtf_startup;
 
 %% Definitions
 
-PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
-PATIENT_ID='ET_CL_002';
-RECORDING_DATE='2018_02_01';
-RUN_ID='run12';
+% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
+% PATIENT_ID='ET_CL_002';
+% RECORDING_DATE='2018_02_01';
+% RUN_ID='run12';
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
 % PATIENT_ID='ET_CL_004';
 % RECORDING_DATE='2018_06_20';
 % RUN_ID='run5';
-% RECORDING_DATE='2018_08_23';
-% RUN_ID='run1';
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET\\OR\\with_DBS';
 % PATIENT_ID='ET_OR_STIM_018';
 % RECORDING_DATE='2018_11_28';
 % RUN_ID='run12';
-% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_Tourette';
-% PATIENT_ID='TS04 Double DBS Implantation';
-% RECORDING_DATE='2017_03_01';
-% RUN_ID='run16';
+PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_Tourette';
+PATIENT_ID='TS04 Double DBS Implantation';
+RECORDING_DATE='2017_03_01';
+RUN_ID='run16';
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
 % PATIENT_ID='ET_CL_001';
 % RECORDING_DATE='2017_05_17';
 % RUN_ID='run17';
 MIDPATH='preproc';
-ADDON='';
-NOTES='';
+ADDON='_FILTERED';
+NOTES='Tried a higher high pass filter to get rid of noise';
 
 cues_only=true;
 extrap_method='';
@@ -57,7 +55,11 @@ datastorage=load(FILE,'datastorage');
 fs_init=extract_sampling_frequency(datastorage);
 
 filtering=struct;
-[filtering.hpf.num,filtering.hpf.den]=CreateHPF_butter(fs_init,3,2);
+
+order_hp=3;
+cutoff_hp=6;
+[filtering.hpf.num,filtering.hpf.den]=CreateHPF_butter(fs_init,order_hp,cutoff_hp);
+
 filtering.downsample=200;
 filtering.normalize='z-score';
 realizationLengthInSeconds=1;
@@ -235,7 +237,7 @@ save(newFile,'ADDON','ar','channels','conditions','cond_labels','crit',...
     'config_mvar','config_plot','config_surr','NOTES','surrogate','distribution','pxx',...
     'x_filt','filt_values','ar_filt','res_filt','crit_filt','h_filt','pVal_filt',...
     'gamma_filt','surrogate_filt','distribution_filt','pxx_filt','visit_type','cues_only',...
-    'extrap_method','subjID','dateID','runID','minIterationsPerRealization','contactNames',...
+    'extrap_method','subjID','dateID','runID','contactNames','alpha',...
     'numChannels','numRealizations');
 
 

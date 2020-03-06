@@ -1,5 +1,5 @@
 function [channels,labels,conditions,cond_labels,visit_type]=load_variables(patient,record_date,run_id,config)
-%% [channels,labels,conditions,cond_labels,visit_type]=load_channels_labels_conditions(patient,record_date,run_id,config)
+%% [channels,labels,conditions,cond_labels,visit_type]=load_variables(patient,record_date,run_id,config)
 %
 %  Given the relevant information, return the channels, labels, and conditions
 %  corresponding to those channels. Additional options can be given using 'config'.

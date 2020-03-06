@@ -191,6 +191,15 @@ if nargin > 4 && isstruct(config)
     end
 end
 
+if isempty(labels)
+    warning('Labels variable is empty; using channel numbers instead');
+    labels=cell(numChannels,1);
+    
+    for i=1:numChannels
+        labels{i}=sprintf('Ch %d',i);
+    end
+end
+
 % Create a new figure, or focus on an existing one
 
 if bool_newFig

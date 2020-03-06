@@ -54,6 +54,8 @@ if strcmp(subjID,'ET_CL_002')
             runID_simple='R02';
         elseif strcmp(runID,'run11')
             runID_simple='R03';
+        elseif strcmp(runID,'run12')
+            runID_simple='R04';
         end
     end
 elseif strcmp(subjID,'ET_CL_004')
