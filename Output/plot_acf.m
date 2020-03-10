@@ -30,7 +30,9 @@ numSTD=2;
 numMA=0;
 bool_newAxis=true;
 
-if nargin==2
+if nargin==1
+    
+elseif nargin==2
     maxLag=lag;
 elseif nargin==3
     maxLag=lag;

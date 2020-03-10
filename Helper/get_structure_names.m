@@ -18,7 +18,7 @@ function names=get_structure_names(subjID)
 if strcmp(subjID,'ET_CL_002') || strcmp(subjID,'S01')
     names={'L Vim','L PSA','L M1/S1','L S1/S2'};
 elseif strcmp(subjID,'ET_CL_004') || strcmp(subjID,'S02')
-    names={'L Thal','L Vim','L M1/S1','L S2'};
+    names={'L Thal','L VOp','L M1/S1','L S2'};
 elseif strcmp(subjID,'ET_OR_STIM_018') || strcmp(subjID,'S03')
     names={'L VOp','L VOp/PSA','L Vim','L PSA','L M1','L M1/S1','L S1/S2'};
 elseif strcmp(subjID,'TS04 Double DBS Implantation') || strcmp(subjID,'S04')
