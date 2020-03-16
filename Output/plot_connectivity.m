@@ -3,7 +3,7 @@ function [avgPSD,avgConn,stdPSD,stdConn]=plot_connectivity(conn,series,freqRange
 %
 %  Given the DTF values of connectivity, plot the connectivities across all frequencies in
 %  the off-diagonal subplots, and the individual power spectra of the channels on the
-%  diagonal. 
+%  diagonal. If error bars are plotted, all spacings are 2 Standard Errors +/-
 %
 %   Inputs:
 %    - conn: DTF values of connectivity (either gamma (normalized) or theta) for
@@ -522,7 +522,7 @@ end
         end
     end
 
-%% Internal function to plot averages with shaded error bars
+%% Internal function to plot averages (STE) with shaded error bars
 
     function [ax_diag,ax_offdiag,yLimits,avg_diag,avg_offdiag,std_diag,std_offdiag]=plot_avgerr(y_diag,y_offdiag,lineprops_offdiag,lineprops_diag,threshold)
         
@@ -539,15 +539,17 @@ end
             
         if (bool_plotTransferFunction || bool_plotSpectralMatrix) && size(y_diag,4) > 1
             avg_diag=mean(y_diag,4);
-            std_diag=std(10*log10(y_diag),0,4);  
+%             std_diag=std(10*log10(y_diag),0,4);  
+            std_diag=2*ste(10*log10(y_diag));  
         else
-%             avg_diag=mean(y_diag,3);
             avg_diag=mean(10*log10(y_diag),3);
-            std_diag=std(10*log10(y_diag),0,3);  
+%             std_diag=std(10*log10(y_diag),0,3);  
+            std_diag=2*ste(10*log10(y_diag));  
         end
         
         avg_offdiag=mean(y_offdiag,4);
-        std_offdiag=std(y_offdiag,0,4); 
+%         std_offdiag=std(y_offdiag,0,4); 
+        std_offdiag=2*ste(y_offdiag);
         
         if bool_highlightSignificance
             for k=1:size(avg_offdiag,1)

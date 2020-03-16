@@ -43,7 +43,8 @@ function plot_bar_with_error(freqBand,gamma,labels,significance,config)
 %    -- usefulConnections: Matrix of channel combinations that are useful.
 %
 %   Outputs:
-%    Figure containing the bar plot, with error bars, and the channel labels on the x-axis
+%    Figure containing the bar plot, with error bars, and the channel labels on the
+%     x-axis. The error bars are 2 times the standard error
 %
 %  See also: plot_connectivity.m, returnUsefulConnections.m
 %
@@ -180,7 +181,8 @@ if bool_multipleBands
             end
         else
             avgGamma_band(:,l)=mean(gamma_band,2);
-            stdGamma_band(:,l)=std(gamma_band,[],2);
+%             stdGamma_band(:,l)=std(gamma_band,[],2);
+            stdGamma_band(:,l)=2*ste(gamma_band);
         end
     end
     
@@ -207,7 +209,8 @@ elseif bool_multipleConds
 
                     if tmp_mean > significance.(condLabels{l})(combinations(i,1),combinations(i,2))
                         avgGamma_band(i,l)=tmp_mean;
-                        stdGamma_band(i,l)=std(gamma_band(i,:),[],2);
+%                         stdGamma_band(i,l)=std(gamma_band(i,:),[],2);
+                        stdGamma_band(i,l)=2*ste(gamma_band(i,:));
                     end
                 end
             else
@@ -215,7 +218,8 @@ elseif bool_multipleConds
             end
         else
             avgGamma_band(:,l)=mean(gamma_band,2);
-            stdGamma_band(:,l)=std(gamma_band,[],2);
+%             stdGamma_band(:,l)=std(gamma_band,[],2);
+            stdGamma_band(:,l)=2*ste(gamma_band);
         end
     end
     
@@ -230,7 +234,8 @@ else
     end
 
     avgGamma_band=mean(gamma_band,2);
-    stdGamma_band=std(gamma_band,[],2);
+%     stdGamma_band=std(gamma_band,[],2);
+    stdGamma_band=2*ste(gamma_band);
 
     internal_plot(avgGamma_band,stdGamma_band);
 end
