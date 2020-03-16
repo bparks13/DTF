@@ -129,6 +129,10 @@ numChannels=size(conn,1);
 numTrials=size(conn,4);
 numFrequencies=length(freqRange);
 
+if numChannels ~= length(labels)
+    warning('There is a different number of channels than the labels given.');
+end
+
 h=zeros(numTrials,numChannels);
 
 freqLims=[];

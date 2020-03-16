@@ -35,8 +35,8 @@ RUN_ID='run16';
 % RECORDING_DATE='2017_05_17';
 % RUN_ID='run17';
 MIDPATH='preproc';
-ADDON='_FILTERED';
-NOTES='Tried a higher high pass filter to get rid of noise';
+ADDON='_NO_PSA';
+NOTES='Same HPF as previously used, but no Right PSA to cloud the results';
 
 cues_only=true;
 extrap_method='';
@@ -45,6 +45,10 @@ alpha=0.05;
 %% Load Data
 
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
+
+% config_load=struct('preset',1);
+% [channels,labels,conditions,cond_labels,visit_type]=load_variables(PATIENT_ID,RECORDING_DATE,RUN_ID,config_load);
+
 [channels,labels,conditions,cond_labels,visit_type]=load_variables(PATIENT_ID,RECORDING_DATE,RUN_ID);
 
 if isempty(channels) || isempty(labels) || isempty(conditions) || isempty(cond_labels)

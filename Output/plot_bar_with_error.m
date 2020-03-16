@@ -80,6 +80,10 @@ else
     numTrials=size(gamma,4);
 end
 
+if numChannels ~= length(labels)
+    warning('There is a different number of channels than the labels given.');
+end
+
 if bool_multipleBands && bool_multipleConds
     error('Cannot plot multiple frequency bands and multiple conditions simultaneously');
 end

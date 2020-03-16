@@ -9,19 +9,19 @@ function [channels,labels,conditions,cond_labels,visit_type]=load_variables(pati
 %    - record_date: String containing the recording date in yyyy_mm_dd
 %    - run_id: String containing the run ID, without the file extension appended
 %    - config: Optional struct input that allows for additional parameters to be given
-%       default: Bool denoting whether to use the predetermined set of channels and labels
-%           or not. Default value is true; if true, overrides all following fields even if
-%           they exist. Must be defined as false for any preset/custom inputs to be used
-%       preset: Int defining a preset channels/labels combination. Will have a different
-%           meaning depending on the specific patient/date/run combination used. If this
-%           is defined it will override the following fields even if they exist. 
-%           Example may be for ET_CL_004/2018_06_20/run5, where '1' == bipolar channels
-%           Vim (1-0) and Cort (3-2).
-%       custom: Matrix/vector defining the specific channels to use, and then returns the
-%           corresponding labels. Vector should contain monopolar combinations requested
-%           (not recommended), while a matrix [c x 2] contains the bipolar combinations
-%           where the channel in the second column is subtracted from the channel in the
-%           first column.
+%    -- default: Bool denoting whether to use the predetermined set of channels and labels
+%        or not. Default value is true; if true, overrides all following fields even if
+%        they exist. Must be defined as false for any preset/custom inputs to be used
+%    -- preset: Int defining a preset channels/labels combination. Will have a different
+%        meaning depending on the specific patient/date/run combination used. If this
+%        is defined it will override the following fields even if they exist. 
+%        Example may be for ET_CL_004/2018_06_20/run5, where '1' == bipolar channels
+%        Vim (1-0) and Cort (3-2).
+%    -- custom: Matrix/vector defining the specific channels to use, and then returns the
+%        corresponding labels. Vector should contain monopolar combinations requested
+%        (not recommended), while a matrix [c x 2] contains the bipolar combinations
+%        where the channel in the second column is subtracted from the channel in the
+%        first column.
 %       
 %   Outputs:
 %    - channels: Depending on the inputs given, is either a vector of monopolar channels,
@@ -45,19 +45,20 @@ if nargin == 3
     bool_custom=false;
 else
     if isstruct(config)
-        if isfield(config,'default')
+        if isfield(config,'default') && ~isempty(config.default)
             bool_default=config.default;
         else
             bool_default=true;
         end
         
-        if isfield(config,'preset')
+        if isfield(config,'preset') && ~isempty(config.preset)
             preset_value=config.preset;
+            bool_default=false;
         else
             preset_value=[];
         end
         
-        if isfield(config,'custom')
+        if isfield(config,'custom') && ~isempty(config.custom)
             bool_custom=any(config.custom);
             channels=config.custom; %#ok<NASGU>
         else
@@ -234,6 +235,26 @@ elseif ~isempty(preset_value)
                     labels={'Vim 0','Cort 3'};
                     conditions=1;
                     cond_labels={'Rest'};
+                    return
+                end
+            else
+                error('WARNING: Invalid run number given. Please set channels/labels for this combination');
+            end
+        else
+            error('WARNING: Invalid recording date given. Please set channels/labels for this combination');
+        end
+        
+    elseif strcmp(patient,'TS04 Double DBS Implantation') % S04
+        if strcmp(record_date,'2017_03_01')
+            if strcmp(run_id,'run16')
+                if preset_value == 1
+                    % This is the same as the default, just without the Right PSA (R Thal (1-0))
+                    channels=[16,15;12,11;10,9;8,7;6,5;4,3;2,1];
+                    labels={'R Thal (3-2)','L Thal (3-2)','L Thal (1-0)',...
+                        'R Cort (3-2)','R Cort (1-0)','L Cort (3-2)','L Cort (1-0)'};
+                    conditions=[1,2,3];
+                    cond_labels={'Rest','MoveRight','MoveLeft'};
+                    visit_type='intraop';
                     return
                 end
             else
