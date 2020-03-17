@@ -156,17 +156,17 @@ if nargin > 3 && isstruct(filtering)
         end
     end
 
-    if isfield(filtering,'lpf')
-        for i=1:numChannels
-            x_all(:,i)=filtfilt(filtering.lpf.num,filtering.lpf.den,x_all(:,i));
-        end
-    end
-
     if isfield(filtering,'notch')
         for i=1:length(filtering.notch)
             for j=1:numChannels
                 x_all(:,j)=filtfilt(filtering.notch(i).num,filtering.notch(i).den,x_all(:,j));
             end
+        end
+    end
+
+    if isfield(filtering,'lpf')
+        for i=1:numChannels
+            x_all(:,i)=filtfilt(filtering.lpf.num,filtering.lpf.den,x_all(:,i));
         end
     end
 
