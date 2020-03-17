@@ -268,9 +268,9 @@ if ind_curr_start(end) == 0
     numTrials=numTrials-1;
 end
 
-minLength=min(ind_curr_end-ind_curr_start);
-
 if ~bool_realizations
+    minLength=min(ind_curr_end-ind_curr_start);
+
     x=zeros(minLength,numChannels,numTrials);
 
     for i=1:numTrials
@@ -283,14 +283,14 @@ if ~bool_realizations
     x(:,:,trialsToDrop)=[];
     numTrials=numTrials-length(trialsToDrop);
 else
-    numRealizations=floor(minLength/realizationLength);
+    numRealizations=floor((ind_curr_end-ind_curr_start)./realizationLength);
     
-    x=zeros(realizationLength,numChannels,numTrials * numRealizations);
+    x=zeros(realizationLength,numChannels,sum(numRealizations));
     
     currNum=1;
     
     for i=1:numTrials
-        for j=1:numRealizations
+        for j=1:numRealizations(i)
             currStart=ind_curr_start(i)+(j-1)*realizationLength;
             currEnd=currStart+realizationLength-1;
             x(:,:,currNum)=x_all(currStart:currEnd,:);
@@ -300,9 +300,9 @@ else
     
     % Manually drop certain trials based on artifacts
 
-    trialsToDrop=drop_trials(file,condition,numRealizations);
+    trialsToDrop=drop_trials(file,condition,sum(numRealizations));
     x(:,:,trialsToDrop)=[];
-    numTrials=numTrials-length(trialsToDrop);
+    numTrials=sum(numRealizations)-length(trialsToDrop);
 end
 
 % If filtering.normalize is defined, normalize the individual trials by the average std of
@@ -313,20 +313,26 @@ if bool_normalize
         for i=1:numChannels
             x_all(:,i) = x_all(:,i) / std(x_all(:,i));
         end
-
-        avgStd=zeros(numChannels,1);
-
+        
         for i=1:numTrials
             for j=1:numChannels
-                avgStd(j)=avgStd(j)+std(x(:,j,i));
+                x(:,j,i)=x(:,j,i) / std(x(:,j,i));
             end
         end
 
-        avgStd=avgStd / numTrials;
-
-        for i=1:numChannels
-            x(:,i,:)=x(:,i,:)/avgStd(i);
-        end
+%         avgStd=zeros(numChannels,1);
+% 
+%         for i=1:numTrials
+%             for j=1:numChannels
+%                 avgStd(j)=avgStd(j)+std(x(:,j,i));
+%             end
+%         end
+% 
+%         avgStd=avgStd / numTrials;
+% 
+%         for i=1:numChannels
+%             x(:,i,:)=x(:,i,:)/avgStd(i);
+%         end
     end
 end
     
