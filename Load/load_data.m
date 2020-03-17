@@ -105,7 +105,7 @@ else
 end
 
 if strcmp(visit_type,'closed-loop')
-    x_all=x_all*1e3;    % Medtronic recordings are in µV, convert to mV to be consistent
+    x_all=x_all*1e-3;    % Medtronic recordings are in µV, convert to mV to be consistent
 end
 
 % Check that all filtering parameters are stable
