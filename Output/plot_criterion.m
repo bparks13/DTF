@@ -20,8 +20,8 @@ function plot_criterion(criterion,config)
 %        overrides manual selection of the model order based on criterion and method
 %    -- figTitle: String containing a figure title, containing for example the condition
 %        being tested, or the patient/date/run combo, or all of the above
-%    -- average: Boolean defining whether or not to only plot the average values. Default
-%        is false.
+%    -- average: Boolean defining whether or not to plot the average values over the
+%        individual values. Default is false.
 %
 %   Outputs:
 %    Figure containing the plot of the criterion
@@ -34,10 +34,10 @@ bool_newFig=true;
 bool_newAx=true;
 bool_plotModelOrder=false;
 bool_criteriaKnown=false;
+bool_average=false;
 yLabel='';
 epsilon=0.001;
 figTitle='';
-average=false;
 
 if nargin > 1 
     if isstruct(config)
@@ -84,59 +84,41 @@ if nargin > 1
         end
         
         if isfield(config,'average') && ~isempty(config.average)
-            average=config.average;
+            bool_average=config.average;
         end
     end
+else
+    config=struct;
 end
 
+if isstruct(criterion)
+    fields=fieldnames(criterion);
+    
+    for i=1:length(fields)
+        config.hFig=figure;
+        config.figTitle=fields{i};
+        plot_criterion(criterion.(fields{i}),config);
+    end
+    
+    return
+end
+    
 if bool_newFig
     figure;
 else
     figure(config.hFig);
 end
 
-if isstruct(criterion)
-    field=fieldnames(criterion);
-    
-    if length(field) > 1
-        warning('Unexpected number of fields given.');
+if bool_average
+    avg_crit=zeros(size(criterion,1),1);
+
+    for i=1:size(criterion,2)
+        avg_crit=avg_crit+criterion(:,i);
     end
-    
-    if nargin == 1
-        config.hFig=gcf;
-    end
-    
-    if average
-        tmp_crit=zeros(length(criterion(1).(field{1})),1);
-        
-        for i=1:length(criterion)
-            tmp_crit=tmp_crit+criterion(i).(field{1});
-        end
-        
-        tmp_crit=tmp_crit/length(criterion);
-        
-        config.figTitle=[figTitle,'_Average'];
-        plot_criterion(tmp_crit,config);
-    else
-        for i=1:length(criterion)
-            plot_criterion(criterion(i).(field{1}),config);
-        end
-    end
-    
-    return
-else
-    if average
-        tmp_crit=zeros(size(criterion,1),1);
-        
-        for i=1:size(criterion,2)
-            tmp_crit=tmp_crit+criterion(:,i);
-        end
-        
-        tmp_crit=tmp_crit/size(criterion,2);
-        criterion=tmp_crit;
-        
-        config.figTitle=[figTitle,'_Average'];
-    end
+
+    avg_crit=avg_crit/size(criterion,2);
+
+    config.figTitle=[figTitle,'_Average'];
 end
 
 if bool_newAx
@@ -151,6 +133,10 @@ else
     if bool_plotModelOrder
         plot(config.hAx,critInd,criterion(critInd),'r*');
     end
+end
+
+if bool_average
+    plot(avg_crit,'r-','LineWidth',2);
 end
 
 xlabel('Model Order'); 

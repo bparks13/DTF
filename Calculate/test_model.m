@@ -45,17 +45,18 @@ dof=lags;
 
 if nargin > 2
     if isstruct(config)
-        if isfield(config,'overrideLags')
+        if isfield(config,'overrideLags') && ~isempty(config.overrideLags)
             if config.overrideLags
-                if isfield(config,'lags')
+                if isfield(config,'lags') && ~isempty(config.lags)
                     lags=config.lags;
+                    dof=lags;
                 end
             end
         end
         
-        if isfield(config,'changeDOF')
+        if isfield(config,'changeDOF') && ~isempty(config.changeDOF)
             if config.changeDOF
-                if isfield(config,'numParameters')
+                if isfield(config,'numParameters') && ~isempty(config.numParameters)
                     dof=lags-config.numParameters;
                 else
                     disp('WARNING: To implement a new DOF value, numParameters must be defined in config.')
@@ -116,7 +117,7 @@ end
         df=lags;
     end
     
-    if nargin == 3
+    if nargin == 3 || nargin == 4
         lag=lags;
         df=dof;
     end

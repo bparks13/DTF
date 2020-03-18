@@ -311,11 +311,11 @@ for i=1:numOrders
                     result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
                         criterion(i) - criterion(i-1) > 0;
                     
-                    [AR]=estimate_ar_coefficients(x,orderRange(i-1),method);
-                    [tmp_E,C,x_hat]=estimate_residuals(x,AR);
-                    logL=calculate_loglikelihood(tmp_E,C,ll_method);
-                    S_ar=calculate_ar_spectra(AR,spectral_range,fs,C,normalize_spectra);
-                    pxx_ar=resize_spectra(S_ar);
+%                     [AR]=estimate_ar_coefficients(x,orderRange(i-1),method);
+%                     [tmp_E,C,x_hat]=estimate_residuals(x,AR);
+%                     logL=calculate_loglikelihood(tmp_E,C,ll_method);
+%                     S_ar=calculate_ar_spectra(AR,spectral_range,fs,C,normalize_spectra);
+%                     pxx_ar=resize_spectra(S_ar);
                 else
                     result=false;
                 end
@@ -344,7 +344,7 @@ for i=1:numOrders
             end
         end
     elseif strcmp(method,'arfit')
-        [~,AR_tmp,~,sbc,fpe,~]=arfit(x,orderRange(i),orderRange(i));
+        [~,AR_tmp,~,sbc,fpe,~]=arfit(x,orderRange(i),orderRange(i),'zero');
         
         AR=zeros(numSeries,numSeries,i);
     
@@ -382,11 +382,11 @@ for i=1:numOrders
                 result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
                     criterion(i) - criterion(i-1) > 0;
                 
-                [AR]=estimate_ar_coefficients(x,orderRange(i-1),method);
-                [tmp_E,C_yule,x_hat]=estimate_residuals(x,AR);
-                logL=calculate_loglikelihood(tmp_E,C_yule,ll_method);
-                S_ar=calculate_ar_spectra(AR,spectral_range,fs,C_yule,normalize_spectra);
-                pxx_ar=resize_spectra(S_ar);
+%                 [AR]=estimate_ar_coefficients(x,orderRange(i-1),method);
+%                 [tmp_E,C_yule,x_hat]=estimate_residuals(x,AR);
+%                 logL=calculate_loglikelihood(tmp_E,C_yule,ll_method);
+%                 S_ar=calculate_ar_spectra(AR,spectral_range,fs,C_yule,normalize_spectra);
+%                 pxx_ar=resize_spectra(S_ar);
             elseif numOrders == 1
                 result=true;
             else

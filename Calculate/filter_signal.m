@@ -59,7 +59,7 @@ else
     I=eye(numChannels);
     
     for i=1:order
-        sig_filt(i,:)=sig(i,:)*sqrt(abs(I-phi(:,:,i).^2));
+        sig_filt(i,:)=sig(i,:)*sqrt(I-phi(:,:,i).^2);
         
         for j=i-1:-1:1
             sig_filt(i,:)=sig_filt(i,:)-sig(j,:)*phi(:,:,j);

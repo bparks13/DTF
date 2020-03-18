@@ -18,25 +18,25 @@ dtf_startup;
 % PATIENT_ID='ET_CL_002';
 % RECORDING_DATE='2018_02_01';
 % RUN_ID='run12';
-% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
-% PATIENT_ID='ET_CL_004';
-% RECORDING_DATE='2018_06_20';
-% RUN_ID='run5';
+PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
+PATIENT_ID='ET_CL_004';
+RECORDING_DATE='2018_06_20';
+RUN_ID='run5';
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET\\OR\\with_DBS';
 % PATIENT_ID='ET_OR_STIM_018';
 % RECORDING_DATE='2018_11_28';
 % RUN_ID='run12';
-PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_Tourette';
-PATIENT_ID='TS04 Double DBS Implantation';
-RECORDING_DATE='2017_03_01';
-RUN_ID='run16';
+% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_Tourette';
+% PATIENT_ID='TS04 Double DBS Implantation';
+% RECORDING_DATE='2017_03_01';
+% RUN_ID='run16';
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
 % PATIENT_ID='ET_CL_001';
 % RECORDING_DATE='2017_05_17';
-% RUN_ID='run17';
+% RUN_ID='run15';
 MIDPATH='preproc';
-ADDON='_NO_PSA';
-NOTES='Same HPF as previously used, but no Right PSA to cloud the results';
+ADDON='_TESTING';
+NOTES='TESTING VARIOUS SETTINGS FOR WRITING THE METHODS - IGNORE ALL DATA HERE';
 
 cues_only=true;
 extrap_method='';
@@ -66,7 +66,7 @@ cutoff_hp=6;
 
 filtering.downsample=200;
 filtering.normalize='z-score';
-realizationLengthInSeconds=1;
+realizationLengthInSeconds=1.5;
 filtering.realizations.length=floor(realizationLengthInSeconds*fs_init);
 
 order_notch=3;
@@ -106,7 +106,7 @@ gamma_filt=struct;
 freqForAnalysis=4:0.5:100;
 
 config_mvar=struct(...
-    'orderSelection','diff1',...
+    'orderSelection','diff2',...
     'crit','bic',...
     'method','arfit',...
     'orderRange',1:20,...   % Used to find the optimal model order
@@ -151,7 +151,7 @@ for j=1:numConditions
     
     fprintf('Calculating optimal order...');
 
-    [config_mvar.modelOrder,crit.(currCond)]=calculate_optimal_model_order(x.(currCond), config_mvar);
+    [config_mvar.modelOrder,crit.(currCond)]=calculate_optimal_model_order(x.(currCond),config_mvar);
     
     fprintf('Optimal Model Order = %d\n',config_mvar.modelOrder);
 
@@ -205,11 +205,11 @@ for i=1:length(cond_labels)
             fprintf('%d/%d\n',j,numTrials);
 
             %% Calculate MVAR model
-            [ar_filt.(currCond)(j).mdl,res_filt.(currCond)(j).E]=mvar(squeeze(x_filt.(currCond)(:,:,j)),config_mvar);
+            [ar_filt.(currCond)(j).mdl,res_filt.(currCond)(j).E]=mvar(x_filt.(currCond)(:,:,j),config_mvar);
 
             %% Test whiteness
             [pass_filt.(currCond)(j),h_filt.(currCond)(j,:),pVal_filt.(currCond)(j,:)]=...
-                test_model(res_filt.(currCond)(j).E,length(x_filt.(currCond)(:,:,j)));
+                test_model(res_filt.(currCond)(j).E,length(res_filt.(currCond)(j).E));
 
             %% Calculate DTF Connectivity
             gamma_filt.(currCond)(:,:,:,j)=dtf(ar_filt.(currCond)(j).mdl,freqForAnalysis,fs);
@@ -236,7 +236,7 @@ fprintf('Surrogate analyis of decorrelated data completed.\n');
 contactNames=get_structure_names(subjID);
 
 save(newFile,'ADDON','ar','channels','conditions','cond_labels','crit',...
-    'FILE','freqForAnalysis','filtering','fs','fs_init','gamma','h','labels',...
+    'FILE','freqForAnalysis','filtering','filt_values','fs','fs_init','gamma','h','labels',...
     'newFile','pass','PATIENT_ID','pVal','RECORDING_DATE','res','RUN_ID','x','x_all',...
     'config_mvar','config_plot','config_surr','NOTES','surrogate','distribution','pxx',...
     'x_filt','filt_values','ar_filt','res_filt','crit_filt','h_filt','pVal_filt',...

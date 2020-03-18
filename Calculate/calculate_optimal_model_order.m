@@ -47,7 +47,7 @@ criterion=zeros(length(config.orderRange),numRealizations);
 if strcmp(config.method,'arfit')
     if strcmp(config.crit,'bic')
         for i=1:numRealizations
-            [~,~,~,criterion(:,i),~,~]=arfit(x(:,:,i),config.orderRange(1),config.orderRange(end)); % SBC (BIC)
+            [~,~,~,criterion(:,i),~,~]=arfit(x(:,:,i),config.orderRange(1),config.orderRange(end),'sbc','zero'); % SBC (BIC)
         end
     elseif strcmp(config.crit,'aic')
         for i=1:numRealizations
@@ -59,7 +59,8 @@ end
 crit=mean(criterion,2);
 
 if strcmp(config.orderSelection,'min')
-    [~,modelOrder]=min(crit);
+    [~,ind]=min(crit);
+    modelOrder=config.orderRange(ind);
 elseif strcmp(config.orderSelection,'diff1')
     ind=find(abs((crit(2:end) - crit(1:end-1)) ./ crit(2:end)) < config.epsilon | crit(2:end) - crit(1:end-1) > 0,1)+1;
     modelOrder=config.orderRange(ind);

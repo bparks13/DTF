@@ -4,7 +4,7 @@ function [x_filt,filt_values]=filter_serial_correlation(x,res,h,config_crit,conf
 %  If the AR model has correlated errors, filter the original signal to get rid of the
 %  correlated errors. Iterates through error model orders sequentially until the signal
 %  passes the Portmanteau Ljung Box Test for serial correlation. Returns the filtered
-%  signal only; need to rerun mvar to reacqure new AR coefficients
+%  signal only; need to rerun mvar to acquire new AR coefficients
 %
 %   Inputs:
 %    - x: Struct containing the original time series data. The first fields are the
@@ -48,21 +48,18 @@ if nargin == 5 && isstruct(config)
     end
 end
 
-if isfield(config_crit,'modelOrder')
-    config_crit=rmfield(config_crit,'modelOrder');
-end
-
 config_filt=config_crit;
 config_filt.orderRange=1:15;
 config_filt.output=0;
 
+% if isfield(config_filt,'modelOrder')
+%     config_filt=rmfield(config_filt,'modelOrder');
+% end
+
 fields=fieldnames(x);
-% c=cell(length(fields),1);
 
 numFields=length(fields);
 
-% x_filt=cell2struct(c,fields,1);
-% filt_values=cell2struct(c,fields,1);
 x_filt_cell=cell(numFields,1);
 filt_values_cell=cell(numFields,1);
 res_cell=struct2cell(res);
@@ -72,7 +69,8 @@ numChannels=size(x.(fields{1}),2);
 
 x_cell=struct2cell(x);
 
-parfor i=1:numFields
+% parfor i=1:numFields
+for i=1:numFields
     numTrials=size(x_cell{i},3);
     filt_values_cell{i}=struct('decorrelated',nan,'order',nan,'iteration',nan);
     x_filt_cell{i}=nan(size(x_cell{i}));
@@ -96,13 +94,11 @@ parfor i=1:numFields
         else
             for k=1:length(errorModelOrders)
                 currModelOrder=errorModelOrders(k);
-                config_e.orderRange=currModelOrder;
+                config_e.modelOrder=currModelOrder;
                 sig=sig_orig;
                 tmp_E=E_orig;
                 
                 for l=1:maxIterations
-%                     fprintf('%d, ',l);
-                    
                     [e_mdl,~,~]=mvar(tmp_E,config_e);
                     order=e_mdl.order;
                     phi_hat=zeros(numChannels,numChannels,order);
@@ -114,7 +110,7 @@ parfor i=1:numFields
                     sig_filt=filter_signal(sig,phi_hat);
                     
                     [~,tmp_E,~]=mvar(sig_filt,config_filt);
-                    [tmp_pass,~,~]=test_model(tmp_E,length(tmp_E));
+                    [tmp_pass,~,~]=test_model(tmp_E,size(tmp_E,1));
                     
                     sig=sig_filt;
                     
@@ -123,7 +119,7 @@ parfor i=1:numFields
                         filt_values_cell{i}(j).decorrelated=true;
                         filt_values_cell{i}(j).order=currModelOrder;
                         filt_values_cell{i}(j).iteration=l;
-                        fprintf('%s: Trial %d decorrelated\n',fields{i},j);
+                        fprintf('%s: Trial %d decorrelated with order = %d on iteration = %d\n',fields{i},j,errorModelOrders(k),l);
                         bool_decorrelated=true;
                         break
                     end
@@ -145,8 +141,5 @@ end
 
 filt_values=cell2struct(filt_values_cell,fields,1);
 x_filt=cell2struct(x_filt_cell,fields,1);
-
-% Print a new line to flush the command line output
-% fprintf('\n');
 
 end

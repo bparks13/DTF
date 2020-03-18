@@ -148,6 +148,8 @@ if nargin > 4 && isstruct(config)
         
     if isstruct(series)
         seriesType=8;
+    elseif isempty(series)
+        seriesType=0;
     end
     
     if isfield(config,'hFig') && ~isempty(config.hFig)
@@ -748,7 +750,13 @@ end
         
         linkaxes(ax_diag); 
         xlim([xLimits(1),xLimits(2)]); 
-        ylim([yLimits(1),yLimits(2)]);
+        
+        if any(isnan(yLimits))
+            ylim([0 1])
+        else
+            ylim([yLimits(1),yLimits(2)]);
+        end
+        
         subplot(numChannels,numChannels,numChannels); 
 
         linkaxes(ax_offdiag); 

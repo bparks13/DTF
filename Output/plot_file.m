@@ -89,15 +89,15 @@ figure;
 numChannels=size(x_all,2);
 currCond='Rest';
 trialNum=1;
-t=(0:(length(x.(currCond))-1))/fs;
+t=(0:(length(x_filt.(currCond))-1))/fs;
 colors=linspecer(3);
-modelOrder=ar.(currCond)(trialNum).mdl.order;
+modelOrder=ar_filt.(currCond)(trialNum).mdl.order;
 
 for i=1:numChannels
     subplot(numChannels,1,i);
-    plot(t,x.(currCond)(:,i,trialNum),'Color',colors(1,:)); hold on;
-    plot(t(modelOrder+1:end),ar.(currCond)(trialNum).mdl.x_hat(:,i),'Color',colors(2,:));
-    plot(t(modelOrder+1:end),res.(currCond)(trialNum).E(:,i),'Color',colors(3,:));
+    plot(t,x_filt.(currCond)(:,i,trialNum),'Color',colors(1,:)); hold on;
+    plot(t(modelOrder+1:end),ar_filt.(currCond)(trialNum).mdl.x_hat(:,i),'Color',colors(2,:));
+    plot(t(modelOrder+1:end),res_filt.(currCond)(trialNum).E(:,i),'Color',colors(3,:));
     xlim([t(1) t(end)]); xlabel('Time [s]'); ylabel('Z-Score'); 
     legend('x','x\_hat','error');
 end
