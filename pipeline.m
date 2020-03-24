@@ -102,6 +102,7 @@ crit_filt=struct;
 h_filt=struct;
 pVal_filt=struct;
 gamma_filt=struct;
+optimal_order=struct;
 
 freqForAnalysis=4:0.5:100;
 
@@ -151,9 +152,10 @@ for j=1:numConditions
     
     fprintf('Calculating optimal order...');
 
-    [config_mvar.modelOrder,crit.(currCond)]=calculate_optimal_model_order(x.(currCond),config_mvar);
+    [optimal_order.(currCond),crit.(currCond)]=calculate_optimal_model_order(x.(currCond),config_mvar);
+    config_mvar.modelOrder=optimal_order.(currCond);
     
-    fprintf('Optimal Model Order = %d\n',config_mvar.modelOrder);
+    fprintf('Optimal Model Order = %d\n',optimal_order.(currCond));
 
     for i=1:numTrials
         fprintf('%d/%d\n',i,numTrials);
@@ -196,9 +198,10 @@ for i=1:length(cond_labels)
 
     gamma_filt.(currCond)=zeros(numChannels,numChannels,length(freqForAnalysis),numTrials);
 
-    [config_mvar.modelOrder,crit_filt.(currCond)]=calculate_optimal_model_order(x_filt.(currCond), config_mvar);
+    [optimal_order.filt.(currCond),crit_filt.(currCond)]=calculate_optimal_model_order(x_filt.(currCond), config_mvar);
+    config_mvar.modelOrder=optimal_order.filt.(currCond);
 
-    fprintf('Optimal Model Order = %d\n',config_mvar.modelOrder);
+    fprintf('Optimal Model Order = %d\n',optimal_order.filt.(currCond));
 
     for j=1:numTrials
         if filt_values.(currCond)(j).decorrelated
@@ -235,7 +238,7 @@ fprintf('Surrogate analyis of decorrelated data completed.\n');
 
 contactNames=get_structure_names(subjID);
 
-save(newFile,'ADDON','ar','channels','conditions','cond_labels','crit',...
+save(newFile,'ADDON','ar','channels','conditions','cond_labels','crit','optimal_order',...
     'FILE','freqForAnalysis','filtering','filt_values','fs','fs_init','gamma','h','labels',...
     'newFile','pass','PATIENT_ID','pVal','RECORDING_DATE','res','RUN_ID','x','x_all',...
     'config_mvar','config_plot','config_surr','NOTES','surrogate','distribution','pxx',...
