@@ -158,10 +158,6 @@ if nargin > 1 && isstruct(config)
     
     if isfield(config,'method') && ~isempty(config.method)
         method=config.method;
-        
-%         if strcmp(method,'arfit')
-%             addpath(fullfile(get_root_path,'ExternalFunctions'));
-%         end
     end
     
     if isfield(config,'orderSelection') && ~isempty(config.orderSelection)
@@ -310,12 +306,6 @@ for i=1:numOrders
                 if i>1 && ~bool_minDiffFound
                     result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
                         criterion(i) - criterion(i-1) > 0;
-                    
-%                     [AR]=estimate_ar_coefficients(x,orderRange(i-1),method);
-%                     [tmp_E,C,x_hat]=estimate_residuals(x,AR);
-%                     logL=calculate_loglikelihood(tmp_E,C,ll_method);
-%                     S_ar=calculate_ar_spectra(AR,spectral_range,fs,C,normalize_spectra);
-%                     pxx_ar=resize_spectra(S_ar);
                 else
                     result=false;
                 end
@@ -372,7 +362,7 @@ for i=1:numOrders
             if i > 1 && ~bool_minDiffFound
                 result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
                     criterion(i) - criterion(i-1) > 0;
-            elseif numOrders == 1 % In surrogate_analysis, one model order is given only, not a range
+            elseif numOrders == 1 
                 result=true;
             else
                 result=false;
@@ -381,12 +371,6 @@ for i=1:numOrders
             if i > 1 && ~bool_minDiffFound
                 result = abs((criterion(i) - criterion(i-1)) / criterion(i)) < epsilon || ...
                     criterion(i) - criterion(i-1) > 0;
-                
-%                 [AR]=estimate_ar_coefficients(x,orderRange(i-1),method);
-%                 [tmp_E,C_yule,x_hat]=estimate_residuals(x,AR);
-%                 logL=calculate_loglikelihood(tmp_E,C_yule,ll_method);
-%                 S_ar=calculate_ar_spectra(AR,spectral_range,fs,C_yule,normalize_spectra);
-%                 pxx_ar=resize_spectra(S_ar);
             elseif numOrders == 1
                 result=true;
             else
@@ -398,6 +382,18 @@ for i=1:numOrders
             if strcmp(orderSelection,'diff2') && numOrders ~= 1
                 minCrit=criterion(i-1);
                 mdl.order=orderRange(i-1);
+                
+                [~,AR_tmp,~,~,~,~]=arfit(x,mdl.order,mdl.order,'zero');
+        
+                AR=zeros(numSeries,numSeries,mdl.order);
+
+                for j=1:mdl.order
+                    AR(:,:,j)=AR_tmp(:,(j-1)*numSeries+1:j*numSeries);
+                end
+
+                [tmp_E,C_yule,x_hat]=estimate_residuals(x,AR); 
+                logL=calculate_loglikelihood(tmp_E,C_yule,ll_method);
+
             else
                 minCrit=criterion(i);
                 mdl.order=orderRange(i);                
