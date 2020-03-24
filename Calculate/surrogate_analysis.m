@@ -101,6 +101,10 @@ end
 
 config_crit.output=0;
 
+if isfield(config_crit,'modelOrder')
+    config_crit=rmfield(config_crit,'modelOrder');
+end
+
 surrogate=struct;
 distribution=struct;
 
@@ -230,6 +234,7 @@ elseif strcmp(method,'sample')
     surr_cell=cell(numFields,1);
     
     parfor k=1:numFields
+%     for k=1:numFields
         numSamples=size(x_cell{k},1);
         numChannels=size(x_cell{k},2);
         numTrials=size(x_cell{k},3);
@@ -250,12 +255,6 @@ elseif strcmp(method,'sample')
                     randPerm=randperm(size(tmp_x,1));
                     
                     tmp_x_shuffled(:,m)=tmp_x(randPerm); % Randomly shuffle the time domain data
-                    
-%                     for j=1:numSampleIterations
-%                         randomSample=randi(length(tmp_x),1);
-%                         tmp_x_shuffled(j,m)=tmp_x(randomSample);
-%                         tmp_x(randomSample)=[];
-%                     end
                 end
                 
                 tmp_x=tmp_x_shuffled;
