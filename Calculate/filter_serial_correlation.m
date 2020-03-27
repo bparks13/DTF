@@ -69,8 +69,8 @@ numChannels=size(x.(fields{1}),2);
 
 x_cell=struct2cell(x);
 
-% parfor i=1:numFields
-for i=1:numFields
+parfor i=1:numFields
+% for i=1:numFields
     numTrials=size(x_cell{i},3);
     filt_values_cell{i}=struct('decorrelated',nan,'order',nan,'iteration',nan);
     x_filt_cell{i}=nan(size(x_cell{i}));

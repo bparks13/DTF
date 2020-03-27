@@ -1,5 +1,5 @@
-function [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type,cues_only,extrap_method)
-%% [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type,cues_only,extrap_method)
+function [x,fs,instruct]=load_data(file,channels,condition,filtering,visit_type,cues_only,data_postacq,extrap_method)
+%% [x,fs,instruct]=load_data(file,channels,condition,filtering,visit_type,cues_only,data_postacq,extrap_method)
 %
 %  Given a filename and the specific condition to take data from, returns the signal from
 %  all the trials matching that condition, and the sampling frequency used for this file.
@@ -45,6 +45,10 @@ function [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type,cue
 %       of each trial in each condition
 %    - cues_only: Boolean defining whether or not to use the trials based on acceleration
 %       data (false) or to go based on the cues only (true, default)
+%    - data_postacq: Struct containing two fields; one is the datastorage_postacq struct,
+%       for aligning data according to acceleration, and the other is the postacq_type
+%       string defining the types of tasks run, as well as the corresponding value of that
+%       task for creating an instruct variable not based on cues 
 %    - extrap_method: String defining the method to use for extrapolation. Only used for
 %       PC+S data. Common inputs are ['linear', default], ['pchip'], and ['spline']
 %
@@ -54,10 +58,11 @@ function [x,fs,x_all]=load_data(file,channels,condition,filtering,visit_type,cue
 %       shortest length trial, c is the number of channels, and t is the number of trials
 %       for that particular condition
 %    - fs: Sampling frequency in Hz
-%    - x_all: Optional output, which is the entire timeline of the signal for the entire
-%       run
+%    - instruct: Variable that contains either the cues for each event (cues_only == true)
+%       or the time points of when the hands moved based on acceleration data (false)
 %
-%  See also: varm, estimate, mvar, dtf, test_model, plot_connectivity
+%  See also: varm, estimate, mvar, dtf, test_model, plot_connectivity, load_variables,
+%  extract_visual_stim_for_intraop, extract_visual_stim_for_closed_loop
 %
 
 % example conditions: for ET_CL_04, 2018_06_20, run 5: 1 (rest), 2 (cue right), 3 (cue 
@@ -72,7 +77,9 @@ elseif nargin == 5
     extrap_method='linear';
 elseif nargin == 6
     extrap_method='linear';
-elseif nargin == 7 && isempty(extrap_method)
+elseif nargin == 7
+    extrap_method='linear';
+elseif nargin == 8 && isempty(extrap_method)
     extrap_method='linear';
 end
 
@@ -196,11 +203,20 @@ if nargin > 3 && isstruct(filtering)
     end
 end
 
+% Load the visual_stim (in whatever form) in case it is being returned for x_all
+
+if strcmp(visit_type,'intraop') || strcmp(visit_type,'')
+    instruct=extract_visual_stim_for_intraop(file,cues_only,data_postacq,realizationLength);
+elseif strcmp(visit_type,'closed-loop')
+    instruct=extract_visual_stim_for_closed_loop(data_postacq,cues_only);
+else
+    error('Invalid visit_type variable given')
+end
+
 % If no condition is given (condition is empty), return the whole signal
 
 if isempty(condition) || ~any(condition)
     x=x_all;
-    x_all=[];
     
     if bool_normalize
         if strcmp(filtering.normalize,'z-score')
@@ -228,45 +244,43 @@ if isempty(condition) || ~any(condition)
         x=downsample(x,freqRatio);
         fs=filtering.downsample;
     end
+    
+    if nargout==2
+        clear instruct;
+    end
 
     return
 end
 
-% Extract all trials matching 'condition'
+% Extract all trials matching 'condition' from instruct
 
-if strcmp(visit_type,'intraop') || strcmp(visit_type,'')
-    instruct=data.datastorage.src.visual_stim.data;
-elseif strcmp(visit_type,'closed-loop')
-    instruct=extract_visual_stim_for_closed_loop(file,cues_only);
-else
-    error('Invalid visit_type variable given')
-end
+[ind_curr_start,ind_curr_end,numTrials]=extract_trials_from_instruct(instruct,condition);
 
-ind_change_all=find(diff(instruct) ~= 0)+1;
-ind_change_curr=find(diff(instruct) ~= 0 & instruct(2:end) == condition)+1;
-
-numTrials=length(ind_change_curr);
-
-ind_curr_start=zeros(numTrials,1);
-ind_curr_end=zeros(numTrials,1);
-
-currTrial=1;
-
-for i=1:length(ind_change_all)
-    if instruct(ind_change_all(i)) == condition
-        if i ~= length(ind_change_all)
-            ind_curr_start(currTrial)=ind_change_all(i);
-            ind_curr_end(currTrial)=ind_change_all(i+1);
-        end
-        currTrial=currTrial+1;
-    end
-end
-
-if ind_curr_start(end) == 0
-    ind_curr_start(end)=[];
-    ind_curr_end(end)=[];
-    numTrials=numTrials-1;
-end
+% ind_change_all=find(diff(instruct) ~= 0)+1;
+% ind_change_curr=find(diff(instruct) ~= 0 & instruct(2:end) == condition)+1;
+% 
+% numTrials=length(ind_change_curr);
+% 
+% ind_curr_start=zeros(numTrials,1);
+% ind_curr_end=zeros(numTrials,1);
+% 
+% currTrial=1;
+% 
+% for i=1:length(ind_change_all)
+%     if instruct(ind_change_all(i)) == condition
+%         if i ~= length(ind_change_all)
+%             ind_curr_start(currTrial)=ind_change_all(i);
+%             ind_curr_end(currTrial)=ind_change_all(i+1);
+%         end
+%         currTrial=currTrial+1;
+%     end
+% end
+% 
+% if ind_curr_start(end) == 0
+%     ind_curr_start(end)=[];
+%     ind_curr_end(end)=[];
+%     numTrials=numTrials-1;
+% end
 
 if ~bool_realizations
     minLength=min(ind_curr_end-ind_curr_start);
@@ -305,34 +319,16 @@ else
     numTrials=sum(numRealizations)-length(trialsToDrop);
 end
 
-% If filtering.normalize is defined, normalize the individual trials by the average std of
-% the conditions, and normalize the overall signal by the std of the entire signal
+% If filtering.normalize is defined, normalize the individual trials by the std of
+% that realization
 
 if bool_normalize
     if strcmp(filtering.normalize,'z-score')
-        for i=1:numChannels
-            x_all(:,i) = x_all(:,i) / std(x_all(:,i));
-        end
-        
         for i=1:numTrials
             for j=1:numChannels
                 x(:,j,i)=x(:,j,i) / std(x(:,j,i));
             end
         end
-
-%         avgStd=zeros(numChannels,1);
-% 
-%         for i=1:numTrials
-%             for j=1:numChannels
-%                 avgStd(j)=avgStd(j)+std(x(:,j,i));
-%             end
-%         end
-% 
-%         avgStd=avgStd / numTrials;
-% 
-%         for i=1:numChannels
-%             x(:,i,:)=x(:,i,:)/avgStd(i);
-%         end
     end
 end
     
@@ -355,6 +351,10 @@ if isfield(filtering,'downsample')
 
     x=downsample(x,freqRatio);
     fs=filtering.downsample;
+end
+
+if nargout==2
+    clear instruct;
 end
 
 end

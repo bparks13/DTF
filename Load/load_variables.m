@@ -1,5 +1,5 @@
-function [channels,labels,conditions,cond_labels,visit_type]=load_variables(patient,record_date,run_id,config)
-%% [channels,labels,conditions,cond_labels,visit_type]=load_variables(patient,record_date,run_id,config)
+function [channels,labels,conditions,cond_labels,visit_type,postacq_type]=load_variables(patient,record_date,run_id,config)
+%% [channels,labels,conditions,cond_labels,visit_type,postacq_type]=load_variables(patient,record_date,run_id,config)
 %
 %  Given the relevant information, return the channels, labels, and conditions
 %  corresponding to those channels. Additional options can be given using 'config'.
@@ -35,8 +35,12 @@ function [channels,labels,conditions,cond_labels,visit_type]=load_variables(pati
 %       set of inputs. Size is [1 x m], where m is the number of conditions returned
 %    - cond_labels: Cell array consisting of strings denoting what each condition is
 %    - visit_type: String defining whether the run is 'intraop' or 'closed-loop'
+%    - postacq_type: String used as a regular expression of the order/numbering of conditions,
+%       where the string R_CR_CL_MR_ML means there is Rest, Cue Right/Left, Move
+%       Right/Left, and the corresponding condition values are 1,2,3,4,5, respectively. 
 %
-%  See also: processing_pipeline
+%  See also: processing_pipeline, extract_visual_stim_for_intraop,
+%   extract_visual_stim_for_closed_loop, simplify_filename, get_structure_names
 %
 
 if nargin == 3
@@ -68,45 +72,53 @@ else
 end
 
 % Template
-% elseif strcmp(patient,'')
-%     if strcmp(record_date,'')
-%         if strcmp(run_id,'')
-%             channels=[];
-%             labels={};
-%             conditions=[];
-%             cond_labels={};
-%             visit_type='';
-%             return
-%         else
-%             error('WARNING: Invalid run number given. Please set channels/labels for this combination');
-%         end
-%     else
-%         error('WARNING: Invalid recording date given. Please set channels/labels for this combination');
-%     end
+%{
+elseif strcmp(patient,'')
+    if strcmp(record_date,'')
+        visit_type='';
+        channels=[];
+        labels={};
+
+        if strcmp(run_id,'')
+            conditions=[];
+            cond_labels={};
+            postacq_type='';
+            return
+        else
+            error('WARNING: Invalid run number given. Please set channels/labels for this combination');
+        end
+    else
+        error('WARNING: Invalid recording date given. Please set channels/labels for this combination');
+    end
+%}
 
 if bool_default
     % set all default parameters here for patients/dates/runs
     if strcmp(patient,'ET_CL_002') % S01
-        if strcmp(record_date,'2018_02_01')
+        if strcmp(record_date,'2018_02_01') % D01
             visit_type='intraop';
             channels=[8,7;6,5;4,3;2,1];
             labels={'Vim (3-2)','Vim (1-0)','Cort (3-2)','Cort (1-0)'};
             
-            if strcmp(run_id,'run9')
+            if strcmp(run_id,'run9') % R01
                 conditions=[1,2,3,4];
                 cond_labels={'Rest','MoveRight','MoveLeft','FeelRight'};
+                postacq_type='R_MR_ML_FR';
                 return
-            elseif strcmp(run_id,'run10')
+            elseif strcmp(run_id,'run10') % R02
                 conditions=[1,2,3];
                 cond_labels={'Rest','CupReachRight','CupReachLeft'};
+                postacq_type='R_CuR_CuL';
                 return
-            elseif strcmp(run_id,'run11')
+            elseif strcmp(run_id,'run11') % R03
                 conditions=[1,2,3];
                 cond_labels={'Rest','MoveRight','MoveLeft'};
+                postacq_type='R_MR_ML';
                 return
-            elseif strcmp(run_id,'run12')
+            elseif strcmp(run_id,'run12') % R04
                 conditions=[1,2,3,4,5];
                 cond_labels={'Rest','MoveRight','MoveLeft','ImagineRight','ImagineLeft'};
+                postacq_type='R_MR_ML_IR_IL';
                 return
             else
                 error('WARNING: Invalid run number given. Please set channels/labels for this combination');
@@ -115,49 +127,54 @@ if bool_default
             error('WARNING: Invalid recording date given. Please set channels/labels for this combination');
         end
     elseif strcmp(patient,'ET_CL_004') % S02
-        if strcmp(record_date,'2018_06_20')
+        if strcmp(record_date,'2018_06_20') % D01
             visit_type='intraop';
             channels=[8,7;6,5;4,3;2,1];
             labels={'Vim (3-2)','Vim (1-0)','Cort (3-2)','Cort (1-0)'};
                 
-            if strcmp(run_id,'run5') || strcmp(run_id,'run5_fs600') || strcmp(run_id,'run5_fs300')
+            if strcmp(run_id,'run5') % R01
                 conditions=[1,2,3,4,5];
                 cond_labels={'Rest','CueRight','CueLeft','MoveRight','MoveLeft'};
+                postacq_type='R_CR_CL_MR_ML';
                 return
             else
                 error('WARNING: Invalid run number given. Please set channels/labels for this combination');
             end
-        elseif strcmp(record_date,'2018_07_26')
+        elseif strcmp(record_date,'2018_07_26') % NOT LISTED
             if strcmp(run_id,'run3') || strcmp(run_id,'run4')
                 channels=[1;2];
                 labels={'E1-E3','E9-E11'};
                 conditions=[];
                 cond_labels={};
                 visit_type='device-implantation';
+                postacq_type='';
                 warning('Device implantation surgery. Skip this data');
                 return             
             end
-        elseif strcmp(record_date,'2018_08_23')
-            visit_type='closed-loop';
+        elseif strcmp(record_date,'2018_08_23') % D02
+            visit_type='closed-loop'; 
             channels=[1;2];
             labels={'E1-E3','E9-E11'};
             
-            if strcmp(run_id,'run1')
+            if strcmp(run_id,'run1') % R01
                 conditions=[1,2,3,4,5];
                 cond_labels={'Rest','CueRight','MoveRight','CueLeft','MoveLeft'};
+                postacq_type='R_CR_CL_MR_ML';
                 return
             end
         else
             error('WARNING: Invalid recording date given. Please set channels/labels for this combination');
         end
     elseif strcmp(patient,'ET_OR_STIM_018') % S03
-        if strcmp(record_date,'2018_11_28')
-            if strcmp(run_id,'run12')
-                channels=[14,13;12,11;10,9;8,7;6,5;4,3;2,1];
-                labels={'VO (3-2)','VO (1-0)','Vim (3-2)','Vim (1-0)','Cort (5-4)','Cort (3-2)','Cort (1-0)'};
+        if strcmp(record_date,'2018_11_28') % D01
+            channels=[14,13;12,11;10,9;8,7;6,5;4,3;2,1];
+            labels={'VO (3-2)','VO (1-0)','Vim (3-2)','Vim (1-0)','Cort (5-4)','Cort (3-2)','Cort (1-0)'};
+            visit_type='intraop';
+            
+            if strcmp(run_id,'run12') % R01
                 conditions=[1,2,3,4];
-                cond_labels={'Rest','MoveRight','MoveLeft','Caress'};
-                visit_type='intraop';
+                cond_labels={'Rest','MoveRight','MoveLeft','FeelRight'};
+                postacq_type='R_MR_ML_FR';
                 return
             else
                 error('WARNING: Invalid run number given. Please set channels/labels for this combination');
@@ -166,14 +183,16 @@ if bool_default
             error('WARNING: Invalid recording date given. Please set channels/labels for this combination');
         end
     elseif strcmp(patient,'TS04 Double DBS Implantation') % S04
-        if strcmp(record_date,'2017_03_01')
-            if strcmp(run_id,'run16')
-                channels=[16,15;14,13;12,11;10,9;8,7;6,5;4,3;2,1];
-                labels={'R Thal (3-2)','R Thal (1-0)','L Thal (3-2)','L Thal (1-0)',...
-                    'R Cort (3-2)','R Cort (1-0)','L Cort (3-2)','L Cort (1-0)'};
+        if strcmp(record_date,'2017_03_01') % D01
+            channels=[16,15;14,13;12,11;10,9;8,7;6,5;4,3;2,1];
+            labels={'R Thal (3-2)','R Thal (1-0)','L Thal (3-2)','L Thal (1-0)',...
+                'R Cort (3-2)','R Cort (1-0)','L Cort (3-2)','L Cort (1-0)'};
+            visit_type='intraop';
+            
+            if strcmp(run_id,'run16') % R01
                 conditions=[1,2,3];
                 cond_labels={'Rest','MoveRight','MoveLeft'};
-                visit_type='intraop';
+                postacq_type='R_MR_ML';
                 return
             else
                 error('WARNING: Invalid run number given. Please set channels/labels for this combination');
@@ -182,26 +201,30 @@ if bool_default
             error('WARNING: Invalid recording date given. Please set channels/labels for this combination');
         end
     elseif strcmp(patient,'ET_CL_001') % S05
-        if strcmp(record_date,'2017_05_17')
+        if strcmp(record_date,'2017_05_17') % D01
             visit_type='intraop';
             channels=[8,7;6,5;4,3;2,1];
             labels={'Vim (3-2)','Vim (1-0)','Cort (3-2)','Cort (1-0)'};
             
-            if strcmp(run_id,'run12')
+            if strcmp(run_id,'run12') % R01
                 conditions=[1,2,3,4,5];
                 cond_labels={'Rest','CueRight','CueLeft','MoveRight','MoveLeft'};
+                postacq_type='R_CR_CL_MR_ML';
                 return
-            elseif strcmp(run_id,'run13')
+            elseif strcmp(run_id,'run13') % R02
                 conditions=[1,2];
                 cond_labels={'CupReachRight','CupReachLeft'};
+                postacq_type='CuR_CuL';
                 return
-            elseif strcmp(run_id,'run15')
+            elseif strcmp(run_id,'run15') % R03
                 conditions=[1,2];
                 cond_labels={'Finger_CupToNoseRight','Finger_CupToNoseLeft'};
+                postacq_type='CuR_CuL';
                 return
-            elseif strcmp(run_id,'run17')
+            elseif strcmp(run_id,'run17') % R04
                 conditions=[1,2,3,4,5];
                 cond_labels={'Rest','MoveRight','MoveLeft','ImagineRight','ImagineLeft'};
+                postacq_type='R_MR_ML_IR_IL';
                 return
             else
                 error('WARNING: Invalid run number given. Please set channels/labels for this combination');

@@ -20,6 +20,7 @@ dtf_startup;
 % RUN_ID='run12';
 PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
 PATIENT_ID='ET_CL_004';
+PATIENT_ID_postacq='ET04';
 RECORDING_DATE='2018_06_20';
 RUN_ID='run5';
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET\\OR\\with_DBS';
@@ -35,6 +36,7 @@ RUN_ID='run5';
 % RECORDING_DATE='2017_05_17';
 % RUN_ID='run15';
 MIDPATH='preproc';
+MIDPATH_postacq='process';
 ADDON='_TESTING';
 NOTES='TESTING VARIOUS SETTINGS FOR WRITING THE METHODS - IGNORE ALL DATA HERE';
 
@@ -44,19 +46,26 @@ alpha=0.05;
 
 %% Load Data
 
+% Original data
 FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
+
+% Postacquisition data
+FILE_postacq=fullfile(PREPATH,MIDPATH_postacq,PATIENT_ID_postacq,RECORDING_DATE,['postacq_' RUN_ID]);
 
 % config_load=struct('preset',1);
 % [channels,labels,conditions,cond_labels,visit_type]=load_variables(PATIENT_ID,RECORDING_DATE,RUN_ID,config_load);
 
-[channels,labels,conditions,cond_labels,visit_type]=load_variables(PATIENT_ID,RECORDING_DATE,RUN_ID);
+[channels,labels,conditions,cond_labels,visit_type,postacq_type]=load_variables(PATIENT_ID,RECORDING_DATE,RUN_ID);
 
 if isempty(channels) || isempty(labels) || isempty(conditions) || isempty(cond_labels)
     return
 end
 
-datastorage=load(FILE,'datastorage');
-fs_init=extract_sampling_frequency(datastorage);
+data_postacq=load(FILE_postacq,'datastorage_postacq');
+data_postacq.postacq_type=postacq_type;
+
+data=load(FILE,'datastorage');
+fs_init=extract_sampling_frequency(data);
 
 filtering=struct;
 
@@ -74,7 +83,7 @@ cutoff_notch=[58,62];
 [filtering.notch.num,filtering.notch.den]=CreateBSF_butter(fs_init,order_notch,cutoff_notch);
 [filtering.lpf.num,filtering.lpf.den]=CreateLPF_butter(fs_init,8,round(filtering.downsample/2));
 
-[x_all,fs]=load_data(datastorage,channels,[],filtering,visit_type,[],extrap_method);
+[x_all,fs,instruct]=load_data(data,channels,[],filtering,visit_type,[],data_postacq,extrap_method);
 
 numChannels=size(x_all,2);
 numConditions=length(conditions);
@@ -137,7 +146,7 @@ for j=1:numConditions
     
     fprintf('Beginning condition ''%s''\n',currCond);
     
-    [x.(currCond),~]=load_data(datastorage,channels,conditions(j),filtering,visit_type,cues_only);
+    [x.(currCond),~]=load_data(data,channels,conditions(j),filtering,visit_type,postacq_type,cues_only);
     numRealizations(j)=size(x.(currCond),3);
     
     numTrials=size(x.(currCond),3);
@@ -242,10 +251,10 @@ save(newFile,'ADDON','ar','channels','conditions','cond_labels','crit','optimal_
     'FILE','freqForAnalysis','filtering','filt_values','fs','fs_init','gamma','h','labels',...
     'newFile','pass','PATIENT_ID','pVal','RECORDING_DATE','res','RUN_ID','x','x_all',...
     'config_mvar','config_plot','config_surr','NOTES','surrogate','distribution','pxx',...
-    'x_filt','filt_values','ar_filt','res_filt','crit_filt','h_filt','pVal_filt',...
+    'x_filt','filt_values','ar_filt','res_filt','crit_filt','h_filt','pVal_filt','instruct',...
     'gamma_filt','surrogate_filt','distribution_filt','pxx_filt','visit_type','cues_only',...
-    'extrap_method','subjID','dateID','runID','contactNames','alpha',...
-    'numChannels','numRealizations');
+    'extrap_method','subjID','dateID','runID','contactNames','alpha','data_postacq',...
+    'numChannels','numRealizations','FILE_postacq');
 
 
 
