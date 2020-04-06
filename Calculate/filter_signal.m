@@ -47,9 +47,9 @@ if bool_isUnivariate
         prevSig=-phi(1:i-1)*sig(1:i-1);
         
         if isempty(prevSig)
-            sig_filt(i)=sig(i)*sqrt(1-phi(i)^2);
+            sig_filt(i)=sig(i)*abs(sqrt(1-phi(i)^2));
         else
-            sig_filt(i)=sig(i)*sqrt(1-phi(i)^2)+prevSig;
+            sig_filt(i)=sig(i)*abs(sqrt(1-phi(i)^2))+prevSig;
         end
     end
     
@@ -59,7 +59,7 @@ else
     I=eye(numChannels);
     
     for i=1:order
-        sig_filt(i,:)=sig(i,:)*sqrt(I-phi(:,:,i).^2);
+        sig_filt(i,:)=sig(i,:)*abs(sqrt(I-phi(:,:,i).^2));
         
         for j=i-1:-1:1
             sig_filt(i,:)=sig_filt(i,:)-sig(j,:)*phi(:,:,j);
