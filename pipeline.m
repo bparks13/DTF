@@ -14,16 +14,24 @@ dtf_startup;
 
 %% Definitions
 
+% See file "\\gunduz-lab.bme.ufl.edu\Lab\Brandon\DTF\Conditionss.xlsx" for a list of all
+% available conditions in each trial
+
+% Give the simplified subject ID, date ID, and run ID to get all relevant patient specific
+% variables
+
+[PREPATH, PATIENT_ID, PATIENT_ID_postacq, RECORDING_DATE, RUN_ID]=get_path_variables(5,1,4);
+
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
 % PATIENT_ID='ET_CL_002';
 % PATIENT_ID_postacq='ET02';
 % RECORDING_DATE='2018_02_01';
 % RUN_ID='run12';
-PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
-PATIENT_ID='ET_CL_004';
-PATIENT_ID_postacq='ET04';
-RECORDING_DATE='2018_06_20';
-RUN_ID='run5';
+% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
+% PATIENT_ID='ET_CL_004';
+% PATIENT_ID_postacq='ET04';
+% RECORDING_DATE='2018_06_20';
+% RUN_ID='run5';
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET\\OR\\with_DBS';
 % PATIENT_ID='ET_OR_STIM_018';
 % RECORDING_DATE='2018_11_28';
@@ -36,12 +44,13 @@ RUN_ID='run5';
 % PATIENT_ID='ET_CL_001';
 % RECORDING_DATE='2017_05_17';
 % RUN_ID='run15';
+
 MIDPATH='preproc';
 MIDPATH_postacq='process';
-ADDON='';
-NOTES='Using the methods as written up in the Methods document. Using cues, since there is no postacq for this file yet';
+ADDON='_CUE';
+NOTES='Using the methods as written up in the Methods document. Only cues are available for this run';
 
-cues_only=false;
+cues_only=true;
 extrap_method='';
 alpha=0.05;
 
