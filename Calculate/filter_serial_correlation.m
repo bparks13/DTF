@@ -69,11 +69,14 @@ numChannels=size(x.(fields{1}),2);
 
 x_cell=struct2cell(x);
 
+removeFromAnalysis=cell(numFields,1);
+
 parfor i=1:numFields
 % for i=1:numFields
     numTrials=size(x_cell{i},3);
     filt_values_cell{i}=struct('decorrelated',nan,'order',nan,'iteration',nan);
     x_filt_cell{i}=nan(size(x_cell{i}));
+    removeFromAnalysis{i}=false(numTrials,1);
     
     config_e=config_crit;
     config_e.output=0;
@@ -131,11 +134,19 @@ parfor i=1:numFields
             end
                 
             if ~bool_decorrelated
-                fprintf('WARNING: %s Trial %d was not decorrelated\n',fields{i},j);
+                warning('%s Trial %d was not decorrelated. Removing from future analyses\n',fields{i},j);
                 x_filt_cell{i}(:,:,j)=nan(size(sig));
                 filt_values_cell{i}(j).decorrelated=false;
+                removeFromAnalysis{i}(j)=true;
             end
         end
+    end
+end
+
+for i=1:numFields
+    if any(removeFromAnalysis{i})
+        filt_values_cell{i}(removeFromAnalysis{i})=[];
+        x_filt_cell{i}(:,:,removeFromAnalysis{i})=[];
     end
 end
 
