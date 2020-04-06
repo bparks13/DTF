@@ -41,11 +41,11 @@ for i=1:length(tasks)
             
         case 'FR'
             field{i}='right_feel_go';
-            warning('Check if there is a feel_gocue here')
+%             warning('Check if there is a feel_gocue here')
             
         case 'FL'
             field{i}='left_feel_go';
-            warning('Check if there is a feel_gocue here')
+%             warning('Check if there is a feel_gocue here')
             
         case 'CuR'
             field{i}='right_hand_go';   % Cup Right
