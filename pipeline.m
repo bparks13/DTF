@@ -16,6 +16,7 @@ dtf_startup;
 
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
 % PATIENT_ID='ET_CL_002';
+% PATIENT_ID_postacq='ET02';
 % RECORDING_DATE='2018_02_01';
 % RUN_ID='run12';
 PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
@@ -37,10 +38,10 @@ RUN_ID='run5';
 % RUN_ID='run15';
 MIDPATH='preproc';
 MIDPATH_postacq='process';
-ADDON='_TESTING';
-NOTES='TESTING VARIOUS SETTINGS FOR WRITING THE METHODS - IGNORE ALL DATA HERE';
+ADDON='';
+NOTES='Using the methods as written up in the Methods document. Using cues, since there is no postacq for this file yet';
 
-cues_only=true;
+cues_only=false;
 extrap_method='';
 alpha=0.05;
 
@@ -61,8 +62,12 @@ if isempty(channels) || isempty(labels) || isempty(conditions) || isempty(cond_l
     return
 end
 
-data_postacq=load(FILE_postacq,'datastorage_postacq');
-data_postacq.postacq_type=postacq_type;
+if ~cues_only
+    data_postacq=load(FILE_postacq,'datastorage_postacq');
+    data_postacq.postacq_type=postacq_type;
+else
+    data_postacq=struct;
+end
 
 data=load(FILE,'datastorage');
 fs_init=extract_sampling_frequency(data);
@@ -70,8 +75,9 @@ fs_init=extract_sampling_frequency(data);
 filtering=struct;
 
 order_hp=3;
-cutoff_hp=6;
+cutoff_hp=4;
 [filtering.hpf.num,filtering.hpf.den]=CreateHPF_butter(fs_init,order_hp,cutoff_hp);
+filtering.hpf.note=sprintf('High-Pass Butterworth filter. Order = %d, cutoff = %d Hz',order_hp,cutoff_hp);
 
 filtering.downsample=200;
 filtering.normalize='z-score';
@@ -81,13 +87,19 @@ filtering.realizations.length=floor(realizationLengthInSeconds*fs_init);
 order_notch=3;
 cutoff_notch=[58,62];
 [filtering.notch.num,filtering.notch.den]=CreateBSF_butter(fs_init,order_notch,cutoff_notch);
-[filtering.lpf.num,filtering.lpf.den]=CreateLPF_butter(fs_init,8,round(filtering.downsample/2));
+filtering.notch.note=sprintf('Notch Butterworth filter from %d-%d Hz, order = %d',cutoff_notch(1),cutoff_notch(2),order_notch);
 
-[x_all,fs,instruct]=load_data(data,channels,[],filtering,visit_type,[],data_postacq,extrap_method);
+order_lp=8;
+cutoff_lp=floor(filtering.downsample/2);
+[filtering.lpf.num,filtering.lpf.den]=CreateLPF_butter(fs_init,order_lp,cutoff_lp);
+filtering.lpf.note=sprintf('Low-Pass Butterworth filter. Order = %d, cutoff = %d Hz',order_lp,cutoff_lp);
+
+[x_all,fs,instruct]=load_data(data,channels,[],filtering,visit_type,cues_only,data_postacq,extrap_method);
 
 numChannels=size(x_all,2);
 numConditions=length(conditions);
 numRealizations=nan(numConditions,1);
+numRealizations_filt=nan(numConditions,1);
 
 x=struct;
 ar=struct;
@@ -96,8 +108,8 @@ crit=struct;
 h=struct;
 pVal=struct;
 gamma=struct;
-avg_psd=struct;
-avg_gamma=struct;
+% avg_psd=struct;
+% avg_gamma=struct;
 pass=struct;
 
 surrogate=nan;
@@ -146,7 +158,7 @@ for j=1:numConditions
     
     fprintf('Beginning condition ''%s''\n',currCond);
     
-    [x.(currCond),~]=load_data(data,channels,conditions(j),filtering,visit_type,postacq_type,cues_only);
+    [x.(currCond),~]=load_data(data,channels,conditions(j),filtering,visit_type,cues_only,data_postacq,extrap_method);
     numRealizations(j)=size(x.(currCond),3);
     
     numTrials=size(x.(currCond),3);
@@ -201,6 +213,8 @@ for i=1:length(cond_labels)
     
     numTrials=size(x_filt.(currCond),3);
     
+    numRealizations_filt(j)=numTrials;
+    
     h_filt.(currCond)=nan(numTrials,numChannels);
     pVal_filt.(currCond)=nan(numTrials,numChannels);
     pass_filt.(currCond)=ones(numTrials,1);
@@ -254,7 +268,7 @@ save(newFile,'ADDON','ar','channels','conditions','cond_labels','crit','optimal_
     'x_filt','filt_values','ar_filt','res_filt','crit_filt','h_filt','pVal_filt','instruct',...
     'gamma_filt','surrogate_filt','distribution_filt','pxx_filt','visit_type','cues_only',...
     'extrap_method','subjID','dateID','runID','contactNames','alpha','data_postacq',...
-    'numChannels','numRealizations','FILE_postacq');
+    'numChannels','numRealizations','FILE_postacq','pass_filt','numRealizations_filt');
 
 
 
