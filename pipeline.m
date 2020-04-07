@@ -222,7 +222,7 @@ for i=1:length(cond_labels)
     
     numTrials=size(x_filt.(currCond),3);
     
-    numRealizations_filt(j)=numTrials;
+    numRealizations_filt(i)=numTrials;
     
     h_filt.(currCond)=nan(numTrials,numChannels);
     pVal_filt.(currCond)=nan(numTrials,numChannels);
@@ -270,6 +270,8 @@ fprintf('Surrogate analyis of decorrelated data completed.\n');
 
 contactNames=get_structure_names(subjID);
 
+date_pipeline_was_run=datetime;
+
 save(newFile,'ADDON','ar','channels','conditions','cond_labels','crit','optimal_order',...
     'FILE','freqForAnalysis','filtering','filt_values','fs','fs_init','gamma','h','labels',...
     'newFile','pass','PATIENT_ID','pVal','RECORDING_DATE','res','RUN_ID','x','x_all',...
@@ -277,7 +279,8 @@ save(newFile,'ADDON','ar','channels','conditions','cond_labels','crit','optimal_
     'x_filt','filt_values','ar_filt','res_filt','crit_filt','h_filt','pVal_filt','instruct',...
     'gamma_filt','surrogate_filt','distribution_filt','pxx_filt','visit_type','cues_only',...
     'extrap_method','subjID','dateID','runID','contactNames','alpha','data_postacq',...
-    'numChannels','numRealizations','FILE_postacq','pass_filt','numRealizations_filt');
+    'numChannels','numRealizations','FILE_postacq','pass_filt','numRealizations_filt',...
+    'date_pipeline_was_run');
 
 
 
