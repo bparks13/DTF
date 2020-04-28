@@ -20,7 +20,7 @@ dtf_startup;
 % Give the simplified subject ID, date ID, and run ID to get all relevant patient specific
 % variables
 
-[PREPATH, PATIENT_ID, PATIENT_ID_postacq, RECORDING_DATE, RUN_ID]=get_path_variables(5,1,4);
+[PREPATH, PATIENT_ID, PATIENT_ID_postacq, RECORDING_DATE, RUN_ID]=get_path_variables(4,1,1);
 
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
 % PATIENT_ID='ET_CL_002';

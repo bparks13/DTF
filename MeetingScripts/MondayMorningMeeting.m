@@ -1,7 +1,13 @@
 % Monday Morning Meeting - 04/13/2020?
+%#ok<*UNRCH>
+
+CCC;
+
+print_figures=true;
 
 %% Load file
 
+cd(get_root_path);
 load('Files\S02_D01_R01');
 
 %% Plot all connectivity, resize, and print the figure
@@ -14,9 +20,11 @@ config_plot.surr_params.threshold=alpha;
 plot_connectivity(gamma_filt.(currCond),series,freqForAnalysis,contactNames,config_plot);
 
 hFig=gcf;
-hFig.Position=[hFig.Position(1:2),900,650];
+hFig.Position=[hFig.Position(1:2)-300,900,650];
 
-PrintFigure('Pictures\MondayMeeting\S02_D01_R01_Rest_Connectivity');
+if print_figures
+    PrintFigure('Pictures\MondayMeeting\S02_D01_R01_Rest_Connectivity');
+end
 
 %% Setup the barplots, plot them, resize, and print
 
@@ -33,9 +41,13 @@ config.usefulConnections=returnUsefulConnections(freqBandIndices,gamma_filt,sign
 for i=1:size(freqBands,1)
     config.title=sprintf('%s Band Connectivity',freqBandLabel{i});
     plot_bar_with_error(freqBandIndices{i},gamma_filt,contactNames,significance,config);
+    ylim([0 0.54])
     
     hFig=gcf; hFig.Position=[hFig.Position(1:2),900,400];
-    PrintFigure(sprintf('Pictures\\MondayMeeting\\S02_D01_R01_BarPlot_%s',freqBandLabel{i}))
+    
+    if print_figures
+        PrintFigure(sprintf('Pictures\\MondayMeeting\\S02_D01_R01_BarPlot_%s',freqBandLabel{i}))
+    end
 end
 
 
