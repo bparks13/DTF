@@ -20,7 +20,7 @@ dtf_startup;
 % Give the simplified subject ID, date ID, and run ID to get all relevant patient specific
 % variables
 
-[PREPATH, PATIENT_ID, PATIENT_ID_postacq, RECORDING_DATE, RUN_ID]=get_path_variables(4,1,1);
+[PREPATH, PATIENT_ID, PATIENT_ID_postacq, RECORDING_DATE, RUN_ID]=get_path_variables(5,1,1);
 
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
 % PATIENT_ID='ET_CL_002';
@@ -47,8 +47,8 @@ dtf_startup;
 
 MIDPATH='preproc';
 MIDPATH_postacq='process';
-ADDON='_CUE';
-NOTES='Using the methods as written up in the Methods document. Only cues are available for this run';
+ADDON='';
+NOTES='Using the methods as written up in the Methods document. Testing postacq file';
 
 cues_only=true;
 extrap_method='';
@@ -280,7 +280,7 @@ save(newFile,'ADDON','ar','channels','conditions','cond_labels','crit','optimal_
     'gamma_filt','surrogate_filt','distribution_filt','pxx_filt','visit_type','cues_only',...
     'extrap_method','subjID','dateID','runID','contactNames','alpha','data_postacq',...
     'numChannels','numRealizations','FILE_postacq','pass_filt','numRealizations_filt',...
-    'date_pipeline_was_run');
+    'date_pipeline_was_run','data');
 
 
 

@@ -34,7 +34,7 @@ elseif strcmp(subjID,'TS04 Double DBS Implantation') || strcmp(subjID,'S04')
         names={'R Vim','L Vim','L PSA','R PM/M1','R M1/S1','L M1','L S1/S2'};
     end
 elseif strcmp(subjID,'ET_CL_001') || strcmp(subjID,'S05')
-    names={'R Vim','R PSA','R M1/S1','R S1/S2'};
+    names={'R VOp','R PSA','R M1/S1','R S1/S2'};
 else
     names={};
 end
