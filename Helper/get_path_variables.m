@@ -160,6 +160,42 @@ switch subjID
                 recordDate='';
         end
         
+    case 6
+        pre='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
+        patID='ET_CL_006';
+        patID_post='ET06';
+        
+        switch dateID
+            case 1
+                recordDate='2020_05_21';
+                
+                switch runID
+                    case 1
+                        runNum='run3';
+                        
+                    case 2
+                        runNum='run4';
+                        
+                    case 3
+                        runNum='run7';
+                        
+                    case 4
+                        runNum='run8';
+                        
+                    case 5
+                        runNum='run9';
+                        
+                    case 6
+                        runNum='run10';
+                        
+                    otherwise
+                        runNum='';
+                end
+                
+            otherwise
+                recordDate='';
+        end
+        
     otherwise
         pre='';
         patID='';

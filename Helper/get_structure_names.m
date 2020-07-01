@@ -36,6 +36,7 @@ elseif strcmp(subjID,'TS04 Double DBS Implantation') || strcmp(subjID,'S04')
 elseif strcmp(subjID,'ET_CL_001') || strcmp(subjID,'S05')
     names={'R VOp','R PSA','R M1/S1','R S1/S2'};
 else
+    warning('No contact names are set for this subject.');
     names={};
 end
 

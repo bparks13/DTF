@@ -81,7 +81,13 @@ else
 end
 
 if numChannels ~= length(labels)
-    warning('There is a different number of channels than the labels given.');
+    warning('There is a different number of channels than the labels given. Using channel number instead');
+    
+    labels=cell(numChannels,1);
+    
+    for i=1:numChannels
+        labels{i}=sprintf('Ch%d',i-1);
+    end
 end
 
 if bool_multipleBands && bool_multipleConds

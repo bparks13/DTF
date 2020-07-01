@@ -22,7 +22,12 @@ function instruct=extract_visual_stim_for_intraop(data,cues_only,data_postacq,mi
 %
 
 if cues_only
-    instruct=data.datastorage.src.visual_stim.data;
+    if isfield(data.datastorage.src,'visual_stim')
+        instruct=data.datastorage.src.visual_stim.data;
+    elseif isfield(data.datastorage.src.LFP,'state')
+        instruct=data.datastorage.src.LFP.state;
+    end
+    
     return
 end
 

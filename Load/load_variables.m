@@ -232,6 +232,38 @@ if bool_default
         else
             error('WARNING: Invalid recording date given. Please set channels/labels for this combination');
         end
+    elseif strcmp(patient,'ET_CL_006') % S06
+        if strcmp(record_date,'2020_05_21') % D01
+            visit_type='intraop';
+            channels=[8,7;6,5;4,3;2,1];
+            labels={'Vim (3-2)','Vim (1-0)','Cort (3-2)','Cort (1-0)'};
+            
+            if strcmp(run_id,'run3') % R01
+                conditions=[1,2,3,4,5];
+                cond_labels={'Rest','CueRight','CueLeft','MoveRight','MoveLeft'};
+                postacq_type='R_CR_CL_MR_ML';
+                return
+%             elseif strcmp(run_id,'run13') % R02
+%                 conditions=[1,2];
+%                 cond_labels={'CupReachRight','CupReachLeft'};
+%                 postacq_type='CuR_CuL';
+%                 return
+%             elseif strcmp(run_id,'run15') % R03
+%                 conditions=[1,2];
+%                 cond_labels={'Finger_CupToNoseRight','Finger_CupToNoseLeft'};
+%                 postacq_type='CuR_CuL';
+%                 return
+%             elseif strcmp(run_id,'run17') % R04
+%                 conditions=[1,2,3,4,5];
+%                 cond_labels={'Rest','MoveRight','MoveLeft','ImagineRight','ImagineLeft'};
+%                 postacq_type='R_MR_ML_IR_IL';
+%                 return
+            else
+                error('WARNING: Invalid run number given. Please set channels/labels for this combination');
+            end
+        else
+            error('WARNING: Invalid recording date given. Please set channels/labels for this combination');
+        end
     else
         error('WARNING: Invalid patient ID given. Please set channels/labels for this combination');
     end

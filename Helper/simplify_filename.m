@@ -110,6 +110,16 @@ elseif strcmp(subjID,'ET_CL_001')
             runID_simple='R04';
         end
     end
+elseif strcmp(subjID,'ET_CL_006')
+    subjID_simple='S06';
+    
+    if strcmp(dateID,'2020_05_21')
+        dateID_simple='D01';
+        
+        if strcmp(runID,'run3')
+            runID_simple='R01';
+        end
+    end
 end
 
 if isempty(subjID_simple) || isempty(dateID_simple) || isempty(runID_simple)

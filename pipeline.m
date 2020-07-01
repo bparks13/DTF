@@ -14,13 +14,13 @@ dtf_startup;
 
 %% Definitions
 
-% See file "\\gunduz-lab.bme.ufl.edu\Lab\Brandon\DTF\Conditionss.xlsx" for a list of all
+% See file "\\gunduz-lab.bme.ufl.edu\Lab\Brandon\DTF\Conditions.xlsx" for a list of all
 % available conditions in each trial
 
 % Give the simplified subject ID, date ID, and run ID to get all relevant patient specific
 % variables
 
-[PREPATH, PATIENT_ID, PATIENT_ID_postacq, RECORDING_DATE, RUN_ID]=get_path_variables(5,1,1);
+[PREPATH, PATIENT_ID, PATIENT_ID_postacq, RECORDING_DATE, RUN_ID]=get_path_variables(6,1,1);
 
 % PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
 % PATIENT_ID='ET_CL_002';
@@ -47,8 +47,8 @@ dtf_startup;
 
 MIDPATH='preproc';
 MIDPATH_postacq='process';
-ADDON='';
-NOTES='Using the methods as written up in the Methods document. Testing postacq file';
+ADDON='_NEW_PATIENTS';
+NOTES='Data collected from RC+S in the Vim';
 
 cues_only=true;
 extrap_method='';
