@@ -14,62 +14,35 @@ dtf_startup;
 
 %% Definitions
 
-% See file "\\gunduz-lab.bme.ufl.edu\Lab\Brandon\DTF\Conditions.xlsx" for a list of all
+% See file "\\gunduz-lab.bme.ufl.edu\Study_ET_Closed_Loop\Conditions.xlsx" for a list of all
 % available conditions in each trial
 
 % Give the simplified subject ID, date ID, and run ID to get all relevant patient specific
 % variables
 
-[PREPATH, PATIENT_ID, PATIENT_ID_postacq, RECORDING_DATE, RUN_ID]=get_path_variables(6,1,1);
+meta=get_path_variables(6,1,1,'_NEW_PATIENT','RC+S recorded the Vim signals');
 
-% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
-% PATIENT_ID='ET_CL_002';
-% PATIENT_ID_postacq='ET02';
-% RECORDING_DATE='2018_02_01';
-% RUN_ID='run12';
-% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
-% PATIENT_ID='ET_CL_004';
-% PATIENT_ID_postacq='ET04';
-% RECORDING_DATE='2018_06_20';
-% RUN_ID='run5';
-% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET\\OR\\with_DBS';
-% PATIENT_ID='ET_OR_STIM_018';
-% RECORDING_DATE='2018_11_28';
-% RUN_ID='run12';
-% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_Tourette';
-% PATIENT_ID='TS04 Double DBS Implantation';
-% RECORDING_DATE='2017_03_01';
-% RUN_ID='run16';
-% PREPATH='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
-% PATIENT_ID='ET_CL_001';
-% RECORDING_DATE='2017_05_17';
-% RUN_ID='run15';
-
-MIDPATH='preproc';
-MIDPATH_postacq='process';
-ADDON='_NEW_PATIENTS';
-NOTES='Data collected from RC+S in the Vim';
-
-cues_only=true;
-extrap_method='';
-alpha=0.05;
+meta.settings.cues_only=true;
+meta.settings.extrap_method='';
+meta.settings.alpha=0.05;
 
 %% Load Data
 
-% Original data
-FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
+[file,file_postacq]=create_file_path(meta);
 
-% Postacquisition data
-FILE_postacq=fullfile(PREPATH,MIDPATH_postacq,PATIENT_ID_postacq,RECORDING_DATE,['postacq_' RUN_ID]);
+% % Original data
+% FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
+% 
+% % Postacquisition data
+% FILE_postacq=fullfile(PREPATH,MIDPATH_postacq,PATIENT_ID_postacq,RECORDING_DATE,['postacq_' RUN_ID]);
 
 % config_load=struct('preset',1);
 % [channels,labels,conditions,cond_labels,visit_type]=load_variables(PATIENT_ID,RECORDING_DATE,RUN_ID,config_load);
 
-[channels,labels,conditions,cond_labels,visit_type,postacq_type]=load_variables(PATIENT_ID,RECORDING_DATE,RUN_ID);
+% [channels,labels,conditions,cond_labels,visit_type,postacq_type]=load_variables(PATIENT_ID,RECORDING_DATE,RUN_ID);
+meta=load_variables(meta);
 
-if isempty(channels) || isempty(labels) || isempty(conditions) || isempty(cond_labels)
-    return
-end
+%%  HERE
 
 if ~cues_only
     data_postacq=load(FILE_postacq,'datastorage_postacq');

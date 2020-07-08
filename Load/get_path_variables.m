@@ -215,6 +215,6 @@ end
 meta.path.midpath='preproc';
 meta.path.midpath_postacq='process';
 meta.path.addon=addon;
-meta.path.notes=notes;
+meta.notes=notes;
 
 end
