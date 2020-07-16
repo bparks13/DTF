@@ -71,7 +71,7 @@ if isstruct(gamma)
     bool_multipleConds=true;
     condLabels=fieldnames(gamma);
     bool_showLegend=true;
-    config.legend=condLabels;
+%     config.legend=condLabels;
     
     numChannels=size(gamma.(condLabels{1}),1);
     numTrials=size(gamma.(condLabels{1}),4);

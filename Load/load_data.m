@@ -1,63 +1,70 @@
-function [x,fs,instruct]=load_data(file,channels,condition,filtering,visit_type,cues_only,data_postacq,extrap_method)
-%% [x,fs,instruct]=load_data(file,channels,condition,filtering,visit_type,cues_only,data_postacq,extrap_method)
+function [x,instruct]=load_data(datastorage,meta,filtering,datastorage_postacq,condition)
+%% [x,instruct]=load_data(datastorage,meta,filtering,data_postacq,condition)
 %
 %  Given a filename and the specific condition to take data from, returns the signal from
 %  all the trials matching that condition, and the sampling frequency used for this file.
 %  Filters the data before it is separated into its constitutent trials
 %
 %   Inputs:
-%    - file: Filename specifying the full file path to the file. OR Struct containing the
-%       datastorage field that would have been found in the file. 
-%    - condition: Integer value defining the state matching a specific condition
-%    - channels: Vector of ints defining which channels to extract. If it is a matrix, the
-%       bipolar combination of channels is taken, with the second column channel subtracted
-%       from the first column channel. Size is [c x 2], where c is the number of channels
-%    - filtering: Struct containing optional additional filtering parameters
+%    - datastorage: The datastorage struct in its entirety
+%    - meta: Struct containing all relevant information for this run
+%    -- settings: Struct defining settings relevant to the DTF being performed
+%    --- cues_only: Boolean defining if the cues should be used by themselves (true), or
+%         if there exists a postacquisition file with better resolution of movement epochs
+%    --- extrap_method: String defining the method to use for extrapolation. Only used for
+%         PC+S data. Inputs are ['linear', default], ['pchip'], and ['spline']
+%    -- vars: Struct that contains the variables used in this run
+%    --- channels: Depending on the inputs given, is either a vector of monopolar channels,
+%         or a matrix of bipolar channels, with size [c x 2], where c is the number of
+%         bipolar channels, and the second channel is subtracted from the first channel
+%    --- labels: Cell array consisting of strings corresponding to the channels given back.
+%         If monopolar channels are given, it lists the structure and number (i.e. Vim0), if
+%         bipolar channels are given, it lists the structure and the order of subtraction
+%        (i.e. Vim (3-2)).
+%    --- conditions: Vector containing all possible conditions available for this specific
+%         set of inputs. Size is [1 x m], where m is the number of conditions returned
+%    --- cond_labels: Cell array consisting of strings denoting what each condition is
+%    --- visit_type: String defining whether the run is 'intraop' or 'closed-loop'
+%    --- postacq_type: String used as a regular expression of the order/numbering of conditions,
+%         where the string R_CR_CL_MR_ML means there is Rest, Cue Right/Left, Move
+%         Right/Left, and the corresponding condition values are 1,2,3,4,5, respectively. 
+%    - filtering: Struct containing filtering parameters
 %    -- hpf: If defined, should be a struct containing num and den for a high pass filter. 
-%           Default is to use a 4th order butterworth filter, with a cutoff of 1 Hz
+%        Default is to use a 4th order butterworth filter, with a cutoff of 1 Hz
 %    -- comb: If defined, should be a struct containing num and den for a comb filter. 
-%           Default is to use a 60 Hz comb filter, with a qFactor of 35. If this field is
-%           empty, the default comb is used
+%        Default is to use a 60 Hz comb filter, with a qFactor of 35. If this field is
+%        empty, the default comb is used
 %    -- lpf: If defined, should be a struct containing num and den for a low pass filter. 
-%           No default
+%        No default
 %    -- notch: If defined, should be a struct containing num and den for a notch filter. 
-%           No default. Can contain more than one set of num and den for multiple notches
+%        No default. Can contain more than one set of num and den for multiple notches
 %    -- ma: If defined, should be an integer defining the number of samples to run
-%           through the moving average
+%        through the moving average
 %    -- normalize: Separate from all other filtering techniques, the signal can be
-%           normalized. String containing the method to normalize; 'none' performs no
-%           additional normalization, 'z-score' normalizes the signals by dividing by the
-%           standard deviation of the respective condition extracted (for x) or the
-%           standard deviation of the entire signal
+%        normalized. String containing the method to normalize; 'none' performs no
+%        additional normalization, 'z-score' normalizes the signals by dividing by the
+%        standard deviation of the respective condition extracted (for x) or the
+%        standard deviation of the entire signal
 %    -- downsample: Separate from everything else, if defined, the signal will be
-%           downsampled to match the sampling frequency given in this field. Note that
-%           this value should be an even multiple of the original sampling frequency.
-%           Additionally, it is recommended that this step is only performed if there is
-%           no low-pass filtering done
+%        downsampled to match the sampling frequency given in this field. Note that
+%        this value should be an even multiple of the original sampling frequency.
+%        Additionally, it is recommended that this step is only performed if there is
+%        no low-pass filtering done
 %    -- realizations: Sub-struct with field 'length' defining the length of realizations
-%           to split the trials into. Should be given as the number of samples to be taken
-%           for each realization. If realizations is empty, default length is 1 second
-%           times the sampling frequency. Note that this is the initial sampling
-%           frequency, but the time of each realization in seconds will remain the same is
-%           'downsample' is specified
-%    - visit_type: String defining what type of recording this file came from, typically
-%       either 'intraop' or 'closed-loop'. Used for determining how to extract the times
-%       of each trial in each condition
-%    - cues_only: Boolean defining whether or not to use the trials based on acceleration
-%       data (false) or to go based on the cues only (true, default)
-%    - data_postacq: Struct containing two fields; one is the datastorage_postacq struct,
-%       for aligning data according to acceleration, and the other is the postacq_type
-%       string defining the types of tasks run, as well as the corresponding value of that
-%       task for creating an instruct variable not based on cues 
-%    - extrap_method: String defining the method to use for extrapolation. Only used for
-%       PC+S data. Common inputs are ['linear', default], ['pchip'], and ['spline']
+%        to split the trials into. Should be given as the number of samples to be taken
+%        for each realization. If realizations is empty, default length is 1 second
+%        times the sampling frequency. Note that this is the initial sampling
+%        frequency, but the time of each realization in seconds will remain the same is
+%        'downsample' is specified
+%    - datastorage_postacq: Struct containing the datastorage_postacq struct,
+%       for aligning data according to acceleration
+%    - condition: Integer value defining the state matching a specific condition
 %
 %   Outputs:
 %    - x: Matrix of values for all channels and all trials matching a particular
 %       condition, with size [n x c x t], where n is the number of samples found in the
 %       shortest length trial, c is the number of channels, and t is the number of trials
 %       for that particular condition
-%    - fs: Sampling frequency in Hz
 %    - instruct: Variable that contains either the cues for each event (cues_only == true)
 %       or the time points of when the hands moved based on acceleration data (false)
 %
@@ -68,46 +75,46 @@ function [x,fs,instruct]=load_data(file,channels,condition,filtering,visit_type,
 % example conditions: for ET_CL_04, 2018_06_20, run 5: 1 (rest), 2 (cue right), 3 (cue 
 % left), 4 (move right), 5 (move left)
 
-if nargin == 4
-    visit_type='';
-    cues_only=true;
-    extrap_method='linear';
-elseif nargin == 5
-    cues_only=true;
-    extrap_method='linear';
-elseif nargin == 6
-    extrap_method='linear';
-elseif nargin == 7
-    extrap_method='linear';
-elseif nargin == 8 && isempty(extrap_method)
-    extrap_method='linear';
-end
+%% HERE/STILL REWRITING THE HELP AND FUNCTION CALL ITSELF
 
-if ischar(file)
-    data=load(file);
-elseif isstruct(file)
-    if isfield(file,'datastorage')
-        data=file;
-    else
-        error('Wrong struct given.');
-    end
+if isfield(meta.vars,'visit_type')
+    visit_type=meta.vars.visit_type;
 else
-    error('Invalid input.');
+    visit_type='';
 end
 
-fs=data.datastorage.src.LFP.Fs;
+if isfield(meta.settings,'cues_only')
+    cues_only=meta.settings.cues_only;
+else
+    cues_only=true;
+end
 
+if isfield(meta.settings,'extrap_method') && ~isempty(meta.settings.extrap_method)
+    extrap_method=meta.settings.extrap_method;
+else
+    extrap_method='linear';
+end
+
+if isfield(meta.vars,'postacq_type')
+    postacq_type=meta.vars.postacq_type;
+else
+    error('postacq_type is a required field in the meta struct')
+end
+
+fs=datastorage.src.LFP.Fs;
+
+channels=meta.vars.channels;
 numChannels=size(channels,1);
 
-x_all=zeros(size(data.datastorage.src.LFP.data,1)-1,numChannels);
+x_all=zeros(size(datastorage.src.LFP.data,1)-1,numChannels);
 
 if size(channels,2) > 1
     for i=1:numChannels
-        x_all(:,i)=data.datastorage.src.LFP.data(1:end-1,channels(i,1))-data.datastorage.src.LFP.data(1:end-1,channels(i,2));
+        x_all(:,i)=datastorage.src.LFP.data(1:end-1,channels(i,1))-datastorage.src.LFP.data(1:end-1,channels(i,2));
     end
 else
     for i=1:numChannels
-        x_all(:,i)=data.datastorage.src.LFP.data(1:end-1,channels(i));
+        x_all(:,i)=datastorage.src.LFP.data(1:end-1,channels(i));
     end
 end
 
@@ -206,9 +213,9 @@ end
 % Load the visual_stim (in whatever form) in case it is being returned for x_all
 
 if strcmp(visit_type,'intraop') || strcmp(visit_type,'')
-    instruct=extract_visual_stim_for_intraop(file,cues_only,data_postacq,realizationLength);
+    instruct=extract_visual_stim_for_intraop(datastorage,datastorage_postacq,cues_only,postacq_type,realizationLength);
 elseif strcmp(visit_type,'closed-loop')
-    instruct=extract_visual_stim_for_closed_loop(data_postacq,cues_only);
+    instruct=extract_visual_stim_for_closed_loop(datastorage_postacq,cues_only);
 else
     error('Invalid visit_type variable given')
 end
@@ -242,13 +249,8 @@ if isempty(condition) || ~any(condition)
         end
     
         x=downsample(x,freqRatio);
-        fs=filtering.downsample;
     end
     
-    if nargout==2
-        clear instruct;
-    end
-
     return
 end
 
@@ -293,7 +295,7 @@ if ~bool_realizations
     
     % Manually drop certain trials based on artifacts
 
-    trialsToDrop=drop_trials(file,condition);
+    trialsToDrop=drop_trials(datastorage,condition);
     x(:,:,trialsToDrop)=[];
     numTrials=numTrials-length(trialsToDrop);
 else
@@ -314,7 +316,7 @@ else
     
     % Manually drop certain trials based on artifacts
 
-    trialsToDrop=drop_trials(file,condition,sum(numRealizations));
+    trialsToDrop=drop_trials(datastorage,condition,sum(numRealizations));
     x(:,:,trialsToDrop)=[];
     numTrials=sum(numRealizations)-length(trialsToDrop);
 end
@@ -350,10 +352,9 @@ if isfield(filtering,'downsample')
     end
 
     x=downsample(x,freqRatio);
-    fs=filtering.downsample;
 end
 
-if nargout==2
+if nargout == 1
     clear instruct;
 end
 

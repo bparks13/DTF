@@ -1,137 +1,138 @@
-function [newFile,subjID_simple,dateID_simple,runID_simple]=simplify_filename(subjID,dateID,runID,addOn)
-%% [newFile,subjID_simple,dateID_simple,runID_simple]=simplify_filename(subjID,dateID,runID,addOn)
+function newFile=simplify_filename(meta)
+%% newFile=simplify_filename(meta)
 %
 %  Instead of using the entire subject ID/date of recording/run ID, simplify the new
-%  filename by assigning a number to each input; i.e. subjID == 'ET_CL_04' becomes S02,
-%  dateID == '2018_06_20' becomes D01, etc.
+%  filename by assigning a number to each input; i.e. meta.patID == 'ET_CL_04' becomes S02,
+%  meta.record_date == '2018_06_20' becomes D01, etc.
 %
 %   Inputs:
-%    - subjID: Subject ID as a string
-%    - dateID: Date of recording as a string
-%    - runID: Run number for the particular date given as a string
-%    - addOn: Optional input, contains any additional information needed in the filename
+%    - meta: Struct containing all data relevant to this run
+%    -- patID: String containing the patient ID
+%    -- record_date: String containing the recording date
+%    -- run_num: String containing the run number
+%    -- addon: String containing anything to add at the end of the file name
 %
 %   Outputs:
 %    - newFile: String containing the absolute path to the folder that contains all of the
 %       processed files; guaranteed to be unique
-%    - subjID_simple: Simplified subject ID, in the format SXX, where XX is the ID number
-%    - dateID_simple: Simplified date, in the format DXX, where XX is the date value
-%    - runID_simple: Simplified run ID, in the format RXX, where XX is the run number
 %
 %  See also: processing_pipeline
 %
 
-if nargin==3
-    addOn='';
-end
-
-subjID_simple='';
-dateID_simple='';
-runID_simple='';
-
-%  TEMPLATE 
-%
-% elseif strcmp(subjID,'')
-%     subjID_simp='Sxx';
-%     
-%     if strcmp(dateID,'')
-%         dateID_simp='Dxx';
-%         
-%         if strcmp(runID,'')
-%             runID_simp='Rxx';
-%         end
-%     end
-
-if strcmp(subjID,'ET_CL_002')
-    subjID_simple='S01';
+if strcmp(meta.path.patID,'ET_CL_002')
+    subjID='S01';
     
-    if strcmp(dateID,'2018_02_01')
-        dateID_simple='D01';
+    if strcmp(meta.path.record_date,'2018_02_01')
+        dateID='D01';
         
-        if strcmp(runID,'run9')
-            runID_simple='R01';
-        elseif strcmp(runID,'run10')
-            runID_simple='R02';
-        elseif strcmp(runID,'run11')
-            runID_simple='R03';
-        elseif strcmp(runID,'run12')
-            runID_simple='R04';
+        if strcmp(meta.path.run_num,'run9')
+            runID='R01';
+        elseif strcmp(meta.path.run_num,'run10')
+            runID='R02';
+        elseif strcmp(meta.path.run_num,'run11')
+            runID='R03';
+        elseif strcmp(meta.path.run_num,'run12')
+            runID='R04';
+        else
+            error('Invalid run ID given');
         end
+    else
+        error('Invalid date ID given');
     end
-elseif strcmp(subjID,'ET_CL_004')
-    subjID_simple='S02';
+elseif strcmp(meta.path.patID,'ET_CL_004')
+    subjID='S02';
     
-    if strcmp(dateID,'2018_06_20')
-        dateID_simple='D01';
+    if strcmp(meta.path.record_date,'2018_06_20')
+        dateID='D01';
         
-        if strcmp(runID,'run5')
-            runID_simple='R01';
+        if strcmp(meta.path.run_num,'run5')
+            runID='R01';
+        else
+            error('Invalid run ID given');
         end
-    elseif strcmp(dateID,'2018_08_23')
-        dateID_simple='D02';
+    elseif strcmp(meta.path.record_date,'2018_08_23')
+        dateID='D02';
         
-        if strcmp(runID,'run1')
-            runID_simple='R01';
+        if strcmp(meta.path.run_num,'run1')
+            runID='R01';
+        else
+            error('Invalid run ID given');
         end
+    else
+        error('Invalid date ID given');
     end
-elseif strcmp(subjID,'ET_OR_STIM_018')
-    subjID_simple='S03';
+elseif strcmp(meta.path.patID,'ET_OR_STIM_018')
+    subjID='S03';
     
-    if strcmp(dateID,'2018_11_28')
-        dateID_simple='D01';
+    if strcmp(meta.path.record_date,'2018_11_28')
+        dateID='D01';
         
-        if strcmp(runID,'run12')
-            runID_simple='R01';
+        if strcmp(meta.path.run_num,'run12')
+            runID='R01';
+        else
+            error('Invalid run ID given');
         end
+    else
+        error('Invalid date ID given');
     end
-elseif strcmp(subjID,'TS04 Double DBS Implantation')
-    subjID_simple='S04';
+elseif strcmp(meta.path.patID,'TS04 Double DBS Implantation')
+    subjID='S04';
     
-    if strcmp(dateID,'2017_03_01')
-        dateID_simple='D01';
+    if strcmp(meta.path.record_date,'2017_03_01')
+        dateID='D01';
         
-        if strcmp(runID,'run16')
-            runID_simple='R01';
+        if strcmp(meta.path.run_num,'run16')
+            runID='R01';
+        else
+            error('Invalid run ID given');
         end
+    else
+        error('Invalid date ID given');
     end
-elseif strcmp(subjID,'ET_CL_001')
-    subjID_simple='S05';
+elseif strcmp(meta.path.patID,'ET_CL_001')
+    subjID='S05';
     
-    if strcmp(dateID,'2017_05_17')
-        dateID_simple='D01';
+    if strcmp(meta.path.record_date,'2017_05_17')
+        dateID='D01';
         
-        if strcmp(runID,'run12')
-            runID_simple='R01';
-        elseif strcmp(runID,'run13')
-            runID_simple='R02';
-        elseif strcmp(runID,'run15')
-            runID_simple='R03';
-        elseif strcmp(runID,'run17')
-            runID_simple='R04';
+        if strcmp(meta.path.run_num,'run12')
+            runID='R01';
+        elseif strcmp(meta.path.run_num,'run13')
+            runID='R02';
+        elseif strcmp(meta.path.run_num,'run15')
+            runID='R03';
+        elseif strcmp(meta.path.run_num,'run17')
+            runID='R04';
+        else
+            error('Invalid run ID given');
         end
+    else
+        error('Invalid date ID given');
     end
-elseif strcmp(subjID,'ET_CL_006')
-    subjID_simple='S06';
+elseif strcmp(meta.path.patID,'ET_CL_006')
+    subjID='S06';
     
-    if strcmp(dateID,'2020_05_21')
-        dateID_simple='D01';
+    if strcmp(meta.path.record_date,'2020_05_21')
+        dateID='D01';
         
-        if strcmp(runID,'run3')
-            runID_simple='R01';
+        if strcmp(meta.path.run_num,'run3')
+            runID='R01';
+        else
+            error('Invalid run ID given');
         end
+    else
+        error('Invalid date ID given');
     end
-end
-
-if isempty(subjID_simple) || isempty(dateID_simple) || isempty(runID_simple)
-    error('Invalid inputs given. Check that all inputs match expected values. Check that these inputs exist in the current context');
+else
+    error('Invalid patient ID given');
 end
 
 counter=1;
 
-newFile=fullfile(get_root_path,'Files',sprintf('%s_%s_%s%s.mat',subjID_simple,dateID_simple,runID_simple,addOn));
+newFile=fullfile(get_root_path,'Files',sprintf('%s_%s_%s%s.mat',subjID,dateID,runID,meta.path.addon));
 
 while exist(newFile,'file') == 2
-    newFile=fullfile(get_root_path,'Files',sprintf('%s_%s_%s%s_(%d).mat',subjID_simple,dateID_simple,runID_simple,addOn,counter));
+    newFile=fullfile(get_root_path,'Files',sprintf('%s_%s_%s%s_(%d).mat',subjID,dateID,runID,addOn,counter));
     counter=counter+1;
 end
 

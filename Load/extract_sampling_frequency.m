@@ -7,8 +7,7 @@ function fs=extract_sampling_frequency(file)
 %
 %   Inputs:
 %    - file: Complete file path to the file. OR The datastorage struct. If the datastorage
-%       struct, it is assumed that the first field level contains only 'datastorage' as a
-%       field.
+%       struct, it is assumed that it is the datastorage struct itself
 %
 %   Outputs:
 %    - fs: Sampling frequency in Hz
@@ -20,11 +19,7 @@ if ischar(file)
     tmp=load(file,'datastorage');
     fs=tmp.datastorage.src.LFP.Fs;
 elseif isstruct(file)
-    if isfield(file,'datastorage')  
-        fs=file.datastorage.src.LFP.Fs;
-    else
-        error('Wrong struct given.');
-    end
+    fs=file.src.LFP.Fs;
 else
     error('Invalid input');
 end

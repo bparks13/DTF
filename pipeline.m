@@ -14,102 +14,44 @@ dtf_startup;
 
 %% Definitions
 
-% See file "\\gunduz-lab.bme.ufl.edu\Study_ET_Closed_Loop\Conditions.xlsx" for a list of all
-% available conditions in each trial
-
-% Give the simplified subject ID, date ID, and run ID to get all relevant patient specific
-% variables
-
 meta=get_path_variables(6,1,1,'_NEW_PATIENT','RC+S recorded the Vim signals');
 
 meta.settings.cues_only=true;
 meta.settings.extrap_method='';
 meta.settings.alpha=0.05;
+meta.settings.freqForAnalysis=4:0.5:100;
 
 %% Load Data
 
 [file,file_postacq]=create_file_path(meta);
 
-% % Original data
-% FILE=fullfile(PREPATH,PATIENT_ID,RECORDING_DATE,MIDPATH,RUN_ID);
-% 
-% % Postacquisition data
-% FILE_postacq=fullfile(PREPATH,MIDPATH_postacq,PATIENT_ID_postacq,RECORDING_DATE,['postacq_' RUN_ID]);
-
-% config_load=struct('preset',1);
-% [channels,labels,conditions,cond_labels,visit_type]=load_variables(PATIENT_ID,RECORDING_DATE,RUN_ID,config_load);
-
-% [channels,labels,conditions,cond_labels,visit_type,postacq_type]=load_variables(PATIENT_ID,RECORDING_DATE,RUN_ID);
 meta=load_variables(meta);
 
-%%  HERE
-
-if ~cues_only
-    data_postacq=load(FILE_postacq,'datastorage_postacq');
-    data_postacq.postacq_type=postacq_type;
+if ~meta.settings.cues_only
+    datastorage_postacq=load(file_postacq,'datastorage_postacq');
+    datastorage_postacq.postacq_type=meta.vars.postacq_type;
 else
-    data_postacq=struct;
+    datastorage_postacq=struct;
 end
 
-data=load(FILE,'datastorage');
-fs_init=extract_sampling_frequency(data);
+datastorage=load(file,'datastorage');
+datastorage=datastorage.datastorage;
+fs_init=extract_sampling_frequency(datastorage);
 
-filtering=struct;
+datastorage_dtf=struct;
 
-order_hp=3;
-cutoff_hp=4;
-[filtering.hpf.num,filtering.hpf.den]=CreateHPF_butter(fs_init,order_hp,cutoff_hp);
-filtering.hpf.note=sprintf('High-Pass Butterworth filter. Order = %d, cutoff = %d Hz',order_hp,cutoff_hp);
+fs_new=200;
+filtering=set_filtering_parameters(fs_init,fs_new);
 
-filtering.downsample=200;
-filtering.normalize='z-score';
-realizationLengthInSeconds=1.5;
-filtering.realizations.length=floor(realizationLengthInSeconds*fs_init);
+[datastorage_dtf.x_all,datastorage_dtf.instruct]=load_data(datastorage,meta,filtering,datastorage_postacq,[]);
+fs=fs_new;
 
-order_notch=3;
-cutoff_notch=[58,62];
-[filtering.notch.num,filtering.notch.den]=CreateBSF_butter(fs_init,order_notch,cutoff_notch);
-filtering.notch.note=sprintf('Notch Butterworth filter from %d-%d Hz, order = %d',cutoff_notch(1),cutoff_notch(2),order_notch);
+numChannels=size(datastorage_dtf.x_all,2);
+numConditions=length(meta.vars.conditions);
 
-order_lp=8;
-cutoff_lp=floor(filtering.downsample/2);
-[filtering.lpf.num,filtering.lpf.den]=CreateLPF_butter(fs_init,order_lp,cutoff_lp);
-filtering.lpf.note=sprintf('Low-Pass Butterworth filter. Order = %d, cutoff = %d Hz',order_lp,cutoff_lp);
+config=struct;
 
-[x_all,fs,instruct]=load_data(data,channels,[],filtering,visit_type,cues_only,data_postacq,extrap_method);
-
-numChannels=size(x_all,2);
-numConditions=length(conditions);
-numRealizations=nan(numConditions,1);
-numRealizations_filt=nan(numConditions,1);
-
-x=struct;
-ar=struct;
-res=struct; 
-crit=struct;
-h=struct;
-pVal=struct;
-gamma=struct;
-% avg_psd=struct;
-% avg_gamma=struct;
-pass=struct;
-
-surrogate=nan;
-distribution=nan;
-pxx=nan;
-pxx_filt=nan;
-
-ar_filt=struct;
-res_filt=struct;
-crit_filt=struct;
-h_filt=struct;
-pVal_filt=struct;
-gamma_filt=struct;
-optimal_order=struct;
-
-freqForAnalysis=4:0.5:100;
-
-config_mvar=struct(...
+config.mvar=struct(...
     'orderSelection','diff2',...
     'crit','bic',...
     'method','arfit',...
@@ -117,16 +59,16 @@ config_mvar=struct(...
     'modelOrder',[],...     % This is the optimal model order
     'fs',fs,...
     'epsilon',0.001,...
-    'freqRange',freqForAnalysis,...
+    'freqRange',meta.settings.freqForAnalysis,...
     'output',0,...          % Since I'm using the optimal model order, don't output the search in mvar
     'logLikelihoodMethod',2);   % 1 == Matlab, 2 == Ding, 3 == Awareness Paper (see calculate_bic.m)
-config_plot=struct(...
+config.plot=struct(...
     'hFig',[],...
     'seriesType',1,...
     'plotType','avgerr',...
-    'freqLims',freqForAnalysis,...
+    'freqLims',meta.settings.freqForAnalysis,...
     'fs',fs);
-config_surr=struct(...
+config.surrogate=struct(...
     'method','sample',...
     'numSamples',1,...
     'iterations',1000);
@@ -136,97 +78,88 @@ config_surr=struct(...
 fprintf('First pass beginning...\n');
 
 for j=1:numConditions
-    currCond=cond_labels{j};
+    currCond=meta.vars.cond_labels{j};
     
     fprintf('Beginning condition ''%s''\n',currCond);
     
-    [x.(currCond),~]=load_data(data,channels,conditions(j),filtering,visit_type,cues_only,data_postacq,extrap_method);
-    numRealizations(j)=size(x.(currCond),3);
+    datastorage_dtf.x.(currCond)=load_data(datastorage,meta,filtering,datastorage_postacq,meta.vars.conditions(j));
     
-    numTrials=size(x.(currCond),3);
-    numChannels=length(channels);
-    numSamples=length(x.(currCond)(:,1));
+    numTrials=size(datastorage_dtf.x.(currCond),3);
+    numChannels=length(meta.vars.channels);
 
-    h.(currCond)=nan(numTrials,numChannels);
-    pVal.(currCond)=nan(numTrials,numChannels);
-    pass.(currCond)=nan(numTrials,1);
+    datastorage_dtf.test.h.(currCond)=nan(numTrials,numChannels);
+    datastorage_dtf.test.pVal.(currCond)=nan(numTrials,numChannels);
+    datastorage_dtf.test.pass.(currCond)=nan(numTrials,1);
 
-    gamma.(currCond)=nan;
-    
     fprintf('Calculating optimal order...');
 
-    [optimal_order.(currCond),crit.(currCond)]=calculate_optimal_model_order(x.(currCond),config_mvar);
-    config_mvar.modelOrder=optimal_order.(currCond);
+    [optimal_order,datastorage_dtf.criterion.(currCond)]=calculate_optimal_model_order(datastorage_dtf.x.(currCond),config.mvar);
+    config.mvar.modelOrder=optimal_order;
     
-    fprintf('Optimal Model Order = %d\n',optimal_order.(currCond));
+    fprintf('Optimal Model Order = %d\n',optimal_order);
 
     for i=1:numTrials
         fprintf('%d/%d\n',i,numTrials);
         
         %% Calculate MVAR model
-        [ar.(currCond)(i).mdl, res.(currCond)(i).E] = mvar(squeeze(x.(currCond)(:,:,i)), config_mvar);
+        [datastorage_dtf.mvar.ar.(currCond)(i).mdl, datastorage_dtf.mvar.res.(currCond)(i).E] = mvar(squeeze(datastorage_dtf.x.(currCond)(:,:,i)), config.mvar);
         
         %% Test Whiteness
-        [pass.(currCond)(i), h.(currCond)(i,:), pVal.(currCond)(i,:)]=...
-            test_model(res.(currCond)(i).E,length(x.(currCond)(:,:,i)));
-        
-        %% Calculate DTF Connectivity (No DTF for correlated data)
+        [datastorage_dtf.test.pass.(currCond)(i), datastorage_dtf.test.h.(currCond)(i,:), datastorage_dtf.test.pVal.(currCond)(i,:)]=...
+            test_model(datastorage_dtf.mvar.res.(currCond)(i).E,size(datastorage_dtf.mvar.res.(currCond)(i).E,1));
     end
 end
 
 fprintf('First pass completed.\n');
 
-%% Surrogate Analysis (No surrogate for correlated data)
-
 %% Decorrelation
 
 fprintf('Decorrelating time series channels...\n');
-[x_filt,filt_values]=filter_serial_correlation(x,res,h,config_mvar);
+[datastorage_dtf.x,filt_values]=filter_serial_correlation(datastorage_dtf.x,datastorage_dtf.mvar.res,datastorage_dtf.test.h,config.mvar);
 fprintf('Decorrelation completed.\n');
 
 %% Main Loop for decorrelated data
 
 fprintf('Decorrelated data connectivity calculations beginning...\n');
 
-for i=1:length(cond_labels)
-    currCond=cond_labels{i};
+for i=1:numConditions
+    currCond=meta.vars.cond_labels{i};
     
     fprintf('Beginning condition ''%s''\n',currCond);
     
-    numTrials=size(x_filt.(currCond),3);
+    numTrials=size(datastorage_dtf.x.(currCond),3);
     
-    numRealizations_filt(i)=numTrials;
-    
-    h_filt.(currCond)=nan(numTrials,numChannels);
-    pVal_filt.(currCond)=nan(numTrials,numChannels);
-    pass_filt.(currCond)=ones(numTrials,1);
+    datastorage_dtf.test.h.(currCond)=nan(numTrials,numChannels);
+    datastorage_dtf.test.pVal.(currCond)=nan(numTrials,numChannels);
+    datastorage_dtf.test.pass.(currCond)=ones(numTrials,1);
 
-    gamma_filt.(currCond)=zeros(numChannels,numChannels,length(freqForAnalysis),numTrials);
+    datastorage_dtf.gamma.(currCond)=zeros(numChannels,numChannels,length(meta.settings.freqForAnalysis),numTrials);
 
-    [optimal_order.filt.(currCond),crit_filt.(currCond)]=calculate_optimal_model_order(x_filt.(currCond), config_mvar);
-    config_mvar.modelOrder=optimal_order.filt.(currCond);
+    [optimal_order,datastorage_dtf.criterion.(currCond)]=calculate_optimal_model_order(datastorage_dtf.x.(currCond), config.mvar);
+    config.mvar.modelOrder=optimal_order;
 
-    fprintf('Optimal Model Order = %d\n',optimal_order.filt.(currCond));
+    fprintf('Optimal Model Order = %d\n',optimal_order);
 
     for j=1:numTrials
         if filt_values.(currCond)(j).decorrelated
             fprintf('%d/%d\n',j,numTrials);
 
             %% Calculate MVAR model
-            [ar_filt.(currCond)(j).mdl,res_filt.(currCond)(j).E]=mvar(x_filt.(currCond)(:,:,j),config_mvar);
+            [datastorage_dtf.mvar.ar.(currCond)(j).mdl,datastorage_dtf.mvar.res.(currCond)(j).E]=mvar(datastorage_dtf.x.(currCond)(:,:,j),config.mvar);
 
             %% Test whiteness
-            [pass_filt.(currCond)(j),h_filt.(currCond)(j,:),pVal_filt.(currCond)(j,:)]=...
-                test_model(res_filt.(currCond)(j).E,length(res_filt.(currCond)(j).E));
+            [datastorage_dtf.test.pass.(currCond)(j),datastorage_dtf.test.h.(currCond)(j,:),datastorage_dtf.test.pVal.(currCond)(j,:)]=...
+                test_model(datastorage_dtf.mvar.res.(currCond)(j).E,size(datastorage_dtf.mvar.res.(currCond)(j).E,1));
 
             %% Calculate DTF Connectivity
-            gamma_filt.(currCond)(:,:,:,j)=dtf(ar_filt.(currCond)(j).mdl,freqForAnalysis,fs);
+            datastorage_dtf.gamma.(currCond)(:,:,:,j)=directedTransferFunction(datastorage_dtf.mvar.ar.(currCond)(j).mdl,...
+                meta.settings.freqForAnalysis,fs);
         else
             warning('Trial %d of %d was not properly decorrelated',j,numTrials)
         end
     end
     
-    print_whiteness(h_filt.(currCond),pVal_filt.(currCond),labels);
+    print_whiteness(datastorage_dtf.test.h.(currCond),datastorage_dtf.test.pVal.(currCond),meta.vars.labels);
 end
 
 fprintf('Decorrelated data connectivity calculations completed.\n');
@@ -234,26 +167,19 @@ fprintf('Decorrelated data connectivity calculations completed.\n');
 %% Surrogate Analysis on Decorrelated Data
 
 fprintf('Surrogate analysis of decorrelated data beginning...\n');
-[surrogate_filt,distribution_filt]=surrogate_analysis(x_filt,fs,freqForAnalysis,config_mvar,config_surr);
+[datastorage_dtf.surrogate.data,datastorage_dtf.surrogate.distribution]=surrogate_analysis(datastorage_dtf.x,fs,meta.settings.freqForAnalysis,config.mvar,config.surrogate);
 fprintf('Surrogate analyis of decorrelated data completed.\n');
 
 %% Save all relevant variables
 
-[newFile,subjID,dateID,runID]=simplify_filename(PATIENT_ID,RECORDING_DATE,RUN_ID,ADDON);
+newFile=simplify_filename(meta);
 
-contactNames=get_structure_names(subjID);
+meta.vars.contactNames=get_structure_names(meta.path.patID);
 
-date_pipeline_was_run=datetime;
+meta.date_pipeline_was_run=datetime;
 
-save(newFile,'ADDON','ar','channels','conditions','cond_labels','crit','optimal_order',...
-    'FILE','freqForAnalysis','filtering','filt_values','fs','fs_init','gamma','h','labels',...
-    'newFile','pass','PATIENT_ID','pVal','RECORDING_DATE','res','RUN_ID','x','x_all',...
-    'config_mvar','config_plot','config_surr','NOTES','surrogate','distribution','pxx',...
-    'x_filt','filt_values','ar_filt','res_filt','crit_filt','h_filt','pVal_filt','instruct',...
-    'gamma_filt','surrogate_filt','distribution_filt','pxx_filt','visit_type','cues_only',...
-    'extrap_method','subjID','dateID','runID','contactNames','alpha','data_postacq',...
-    'numChannels','numRealizations','FILE_postacq','pass_filt','numRealizations_filt',...
-    'date_pipeline_was_run','data');
+save(newFile,'config','datastorage_dtf','filtering','meta');
+
 
 
 

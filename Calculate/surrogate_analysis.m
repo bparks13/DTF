@@ -276,7 +276,7 @@ elseif strcmp(method,'sample')
             end
 
             [tmp_mdl,~,~]=mvar(tmp_x,config_crit);
-            gamma_dist(:,:,:,i)=dtf(tmp_mdl,freqRange,fs);
+            gamma_dist(:,:,:,i)=directedTransferFunction(tmp_mdl,freqRange,fs);
 
             dist_cell{k}(i,:)=randomTrials;
             
