@@ -1,5 +1,5 @@
-function [connectivity,H]=dtf(mdl,freqRange,fs,normalize)
-%% [connectivity,H]=dtf(mdl,freqRange,fs,normalize)
+function [connectivity,H]=directedTransferFunction(mdl,freqRange,fs,normalize)
+%% [connectivity,H]=directedTransferFunction(mdl,freqRange,fs,normalize)
 %
 %  Using the estimated AR model, calculate the connectivity of the series in question. Can
 %  return either the raw connections or the normalized connections as specified in config
