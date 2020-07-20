@@ -172,7 +172,7 @@ fprintf('Surrogate analyis of decorrelated data completed.\n');
 
 %% Save all relevant variables
 
-newFile=simplify_filename(meta);
+[newFile,meta]=simplify_filename(meta,file);
 
 meta.vars.contactNames=get_structure_names(meta.path.patID);
 
