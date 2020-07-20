@@ -14,7 +14,7 @@ dtf_startup;
 
 %% Definitions
 
-meta=get_path_variables(6,1,1,'_NEW_PATIENT','RC+S recorded the Vim signals');
+meta=get_path_variables(1,1,1,'_TESTING_DATASTORAGE','Trying to implement a datastorage_dtf struct');
 
 meta.settings.cues_only=true;
 meta.settings.extrap_method='';
@@ -44,7 +44,7 @@ fs_new=200;
 filtering=set_filtering_parameters(fs_init,fs_new);
 
 [datastorage_dtf.x_all,datastorage_dtf.instruct]=load_data(datastorage,meta,filtering,datastorage_postacq,[]);
-fs=fs_new;
+meta.settings.fs=fs_new;
 
 numChannels=size(datastorage_dtf.x_all,2);
 numConditions=length(meta.vars.conditions);
@@ -57,7 +57,7 @@ config.mvar=struct(...
     'method','arfit',...
     'orderRange',1:20,...   % Used to find the optimal model order
     'modelOrder',[],...     % This is the optimal model order
-    'fs',fs,...
+    'fs',meta.settings.fs,...
     'epsilon',0.001,...
     'freqRange',meta.settings.freqForAnalysis,...
     'output',0,...          % Since I'm using the optimal model order, don't output the search in mvar
@@ -67,7 +67,7 @@ config.plot=struct(...
     'seriesType',1,...
     'plotType','avgerr',...
     'freqLims',meta.settings.freqForAnalysis,...
-    'fs',fs);
+    'fs',meta.settings.fs);
 config.surrogate=struct(...
     'method','sample',...
     'numSamples',1,...
@@ -153,7 +153,7 @@ for i=1:numConditions
 
             %% Calculate DTF Connectivity
             datastorage_dtf.gamma.(currCond)(:,:,:,j)=directedTransferFunction(datastorage_dtf.mvar.ar.(currCond)(j).mdl,...
-                meta.settings.freqForAnalysis,fs);
+                meta.settings.freqForAnalysis,meta.settings.fs);
         else
             warning('Trial %d of %d was not properly decorrelated',j,numTrials)
         end
@@ -167,14 +167,14 @@ fprintf('Decorrelated data connectivity calculations completed.\n');
 %% Surrogate Analysis on Decorrelated Data
 
 fprintf('Surrogate analysis of decorrelated data beginning...\n');
-[datastorage_dtf.surrogate.data,datastorage_dtf.surrogate.distribution]=surrogate_analysis(datastorage_dtf.x,fs,meta.settings.freqForAnalysis,config.mvar,config.surrogate);
+[datastorage_dtf.surrogate.data,datastorage_dtf.surrogate.distribution]=surrogate_analysis(datastorage_dtf.x,meta.settings.fs,meta.settings.freqForAnalysis,config.mvar,config.surrogate);
 fprintf('Surrogate analyis of decorrelated data completed.\n');
 
 %% Save all relevant variables
 
 [newFile,meta]=simplify_filename(meta,file);
 
-meta.vars.contactNames=get_structure_names(meta.path.patID);
+meta=get_structure_names(meta);
 
 meta.date_pipeline_was_run=datetime;
 

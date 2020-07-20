@@ -35,7 +35,7 @@ meta=struct;
 
 switch subjID
     case 1
-        meta.path.prepath='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
+        meta.path.pre='\\gunduz-lab.bme.ufl.edu\\Study_ET_Closed_Loop';
         meta.path.patID='ET_CL_002';
         meta.path.patID_postacq='ET02';
         

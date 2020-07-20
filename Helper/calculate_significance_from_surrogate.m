@@ -2,7 +2,9 @@ function significance=calculate_significance_from_surrogate(surrogate,alpha,type
 %% significance=calculate_significance_from_surrogate(surrogate,alpha,type)
 %
 %  This is a helper function to calculate the significance threshold based on the
-%  surrogate values.
+%  surrogate values. The surrogate variable can be a struct, which will then iteratively
+%  call this function with the individual conditions defined by the top level of the
+%  struct
 %
 %   Inputs:
 %    - surrogate: Matrix containing all of the surrogate analysis values for a particular
